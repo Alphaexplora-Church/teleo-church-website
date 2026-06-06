@@ -1,0 +1,62 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100;300;400;500;600;700;800&display=swap');
+
+@font-face {
+  font-family: 'Vogun';
+  src: url('./assets/fonts/Vogun-Medium.ttf') format('truetype'); 
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-soft-linen: #E6EDEF; 
+    --color-deep-teal: #074F56;  
+    --color-midnight-teal: #002E38; 
+    --color-harvest-orange: #EC662C; 
+  }
+
+html {
+    height: 100%;
+    width: 100vw; 
+    overflow-x: clip; /* <-- CHANGED FROM hidden */
+    background-color: theme('colors.midnight-teal');
+    scroll-behavior: auto; 
+    scrollbar-width: none; 
+  }
+
+body {
+    font-family: 'Outfit', sans-serif;
+    color: theme('colors.soft-linen');
+    margin: 0;
+    padding: 0;
+    width: 100vw; 
+    min-height: 100%;
+    overflow-x: clip; /* <-- CHANGED FROM hidden */
+    -ms-overflow-style: none;
+  }
+
+  *::-webkit-scrollbar {
+    display: none !important;
+  }
+}
+
+@layer utilities {
+  .bg-soft-linen { background-color: var(--color-soft-linen); }
+  .bg-deep-teal { background-color: var(--color-deep-teal); }
+  .text-soft-linen { color: var(--color-soft-linen); }
+  .text-harvest-orange { color: var(--color-harvest-orange); }
+
+  /* Premium "Clip-Path" reveal for images */
+  .reveal-inset {
+    clip-path: inset(100% 0 0 0);
+    transition: clip-path 1.2s cubic-bezier(0.77, 0, 0.175, 1);
+  }
+  .reveal-inset.active {
+    clip-path: inset(0% 0 0 0);
+  }
+}

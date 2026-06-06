@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-21T00:00:00Z",
+  "title": "Design System: Words of Life Christian Ministries",
+  "extensions": {
+    "colorMeta": {
+      "ember": {
+        "role": "primary",
+        "displayName": "Ember",
+        "canonical": "#EC662C",
+        "tonalRamp": ["#3d1800", "#5a2500", "#7a3300", "#9e4300", "#c55200", "#ec662c", "#f08a5a", "#f5ad87", "#facfb4", "#fef0e7"]
+      },
+      "abyssal-deep": {
+        "role": "neutral-bg",
+        "displayName": "Abyssal Deep",
+        "canonical": "#002E38",
+        "tonalRamp": ["#000a0d", "#001219", "#001e26", "#002431", "#002e38", "#0d4652", "#1a5e6d", "#4a8a99", "#8ab8c2", "#c8dde0"]
+      },
+      "teal-vault": {
+        "role": "neutral-surface",
+        "displayName": "Teal Vault",
+        "canonical": "#074F56",
+        "tonalRamp": ["#011518", "#021f22", "#03292d", "#053c42", "#074f56", "#0d6872", "#1a8290", "#4da8b4", "#8fd0d8", "#d0eef1"]
+      },
+      "cold-shore": {
+        "role": "neutral-fg",
+        "displayName": "Cold Shore",
+        "canonical": "#E6EDEF",
+        "tonalRamp": ["#1a2224", "#2e3d40", "#435a5e", "#5d7c80", "#80a0a4", "#a5bfc3", "#c5d8db", "#dce8ea", "#e6edef", "#f5f9fa"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Full-screen hero lockups and maximum-scale section anchors. Vogun only. UPPERCASE declares, lowercase confides." },
+      "headline": { "displayName": "Headline", "purpose": "Section introductions, modal titles, full-screen nav items. The intimate register of Vogun." },
+      "title": { "displayName": "Title", "purpose": "Card headings, sidebar labels, admin panel section titles." },
+      "body": { "displayName": "Body", "purpose": "Paragraph copy, descriptions, modal body. Max 65ch line length." },
+      "label": { "displayName": "Label", "purpose": "Navigation links, button text, overlines, floating input labels. The system's smallest and sharpest type." }
+    },
+    "shadows": [
+      { "name": "ember-glow", "value": "0 20px 60px rgba(236, 102, 44, 0.20)", "purpose": "Primary CTA buttons only. The halo that signals interactability. Not a lift, a light." },
+      { "name": "float", "value": "0 25px 50px rgba(0, 0, 0, 0.25)", "purpose": "Dropdowns and overlays. Paired with backdrop-blur-xl. Provides disambiguation without a hard edge." }
+    ],
+    "motion": [
+      { "name": "house-curve", "value": "cubic-bezier(0.77, 0, 0.175, 1)", "purpose": "Significant transitions: menu open/close, clip-path reveals, hero entrances. 500ms–750ms duration." },
+      { "name": "ease-state", "value": "cubic-bezier(0.0, 0.0, 0.2, 1)", "purpose": "Smaller state transitions: hover, focus, color changes. 150ms–300ms duration." },
+      { "name": "pulse", "value": "animate-pulse (Tailwind)", "purpose": "Live indicator dots only. Ember fill, 6px circle." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" },
+      { "name": "2xl", "value": "1536px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Pill-shaped Ember CTA. Every primary action in the system.",
+      "html": "<button class=\"ds-btn-primary\"><svg class=\"ds-btn-icon\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"2.5\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z\" /></svg>Plan a Visit</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: 6px; padding: 8px 20px; border-radius: 9999px; background: #EC662C; color: #002E38; font-family: 'Outfit', sans-serif; font-size: 0.625rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; border: none; cursor: pointer; box-shadow: 0 20px 60px rgba(236,102,44,0.20); transition: background 0.2s ease, transform 0.15s ease; } .ds-btn-primary:hover { background: #d4581d; transform: scale(1.05); } .ds-btn-primary:active { transform: scale(0.95); } .ds-btn-primary:focus-visible { outline: 2px solid #EC662C; outline-offset: 3px; } .ds-btn-icon { width: 12px; height: 12px; flex-shrink: 0; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Outline-only secondary action. Always paired alongside a Primary button.",
+      "html": "<button class=\"ds-btn-ghost\"><span class=\"ds-live-dot\"></span>Watch Live</button>",
+      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; gap: 6px; padding: 8px 20px; border-radius: 9999px; background: transparent; color: #E6EDEF; font-family: 'Outfit', sans-serif; font-size: 0.625rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; border: 1px solid rgba(230,237,239,0.30); cursor: pointer; transition: background 0.2s ease, transform 0.15s ease; } .ds-btn-ghost:hover { background: rgba(230,237,239,0.10); } .ds-btn-ghost:active { transform: scale(0.95); } .ds-btn-ghost:focus-visible { outline: 2px solid #EC662C; outline-offset: 3px; } .ds-live-dot { width: 6px; height: 6px; border-radius: 50%; background: #EC662C; flex-shrink: 0; animation: ds-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; } @keyframes ds-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }"
+    },
+    {
+      "name": "Info Chip",
+      "kind": "chip",
+      "refersTo": "chip-info",
+      "description": "Non-interactive metadata tag. Service times, contextual labels, live indicators.",
+      "html": "<div class=\"ds-chip\"><span class=\"ds-chip-dot\"></span><span class=\"ds-chip-text\">Sunday · 10:00 AM & 2:00 PM · Greenhills</span></div>",
+      "css": ".ds-chip { display: inline-flex; align-items: center; gap: 12px; padding: 8px 16px; border-radius: 9999px; background: rgba(230,237,239,0.05); border: 1px solid rgba(230,237,239,0.10); } .ds-chip-dot { width: 6px; height: 6px; border-radius: 50%; background: #EC662C; flex-shrink: 0; animation: ds-pulse 2s cubic-bezier(0.4,0,0.6,1) infinite; } .ds-chip-text { font-family: 'Outfit', sans-serif; font-size: 0.625rem; font-weight: 700; letter-spacing: 0.25em; text-transform: uppercase; color: rgba(230,237,239,0.60); } @keyframes ds-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }"
+    },
+    {
+      "name": "Navigation Pill",
+      "kind": "nav",
+      "refersTo": "nav-pill",
+      "description": "The floating pill nav. Dark glass at top, dark solid on scroll.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-logo\" href=\"/\">words of life.</a><div class=\"ds-nav-links\"><a class=\"ds-nav-link\" href=\"/\">Home</a><a class=\"ds-nav-link ds-nav-active\" href=\"/about\">About</a><a class=\"ds-nav-link\" href=\"/experience\">Connect</a></div><div class=\"ds-nav-ctas\"><button class=\"ds-btn-primary\" style=\"font-size:0.625rem;padding:8px 20px\">Plan a Visit</button></div></nav>",
+      "css": ".ds-nav { display: flex; justify-content: space-between; align-items: center; height: 64px; padding: 0 32px; border-radius: 9999px; background: rgba(0,46,56,0.95); border: 1px solid rgba(230,237,239,0.10); backdrop-filter: blur(12px); box-shadow: 0 8px 32px rgba(0,0,0,0.20); } .ds-nav-logo { font-family: 'Vogun', serif; font-size: 1.125rem; letter-spacing: -0.04em; text-transform: lowercase; color: #E6EDEF; text-decoration: none; transition: opacity 0.2s; } .ds-nav-logo:hover { opacity: 0.7; } .ds-nav-links { display: flex; align-items: center; gap: 4px; } .ds-nav-link { padding: 8px 12px; border-radius: 9999px; font-family: 'Outfit', sans-serif; font-size: 0.625rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: #E6EDEF; text-decoration: none; transition: color 0.2s; } .ds-nav-link:hover { color: #EC662C; } .ds-nav-active { color: #EC662C; } .ds-nav-ctas { display: flex; gap: 8px; }"
+    },
+    {
+      "name": "Display Heading",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "The Vogun headline at maximum scale. The design moment.",
+      "html": "<div class=\"ds-display-block\"><span class=\"ds-overline\">Estd. 2002</span><h1 class=\"ds-display\">WORDS OF LIFE</h1><p class=\"ds-subline\">Christian Ministries Inc.</p></div>",
+      "css": ".ds-display-block { display: flex; flex-direction: column; align-items: center; text-align: center; } .ds-overline { font-family: 'Outfit', sans-serif; font-size: 0.625rem; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; color: #E6EDEF; opacity: 0.6; margin-bottom: 8px; } .ds-display { font-family: 'Vogun', serif; font-size: clamp(3rem, 10vw, 9rem); font-weight: 500; line-height: 1; letter-spacing: -0.04em; text-transform: uppercase; color: #E6EDEF; margin: 0; } .ds-subline { font-family: 'Outfit', sans-serif; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.35em; text-transform: uppercase; color: #E6EDEF; margin-top: 16px; }"
+    },
+    {
+      "name": "Form Input (Underline)",
+      "kind": "input",
+      "refersTo": null,
+      "description": "The open-form input: no box, no background, underline only. Used in contact, plan-visit, and all public forms.",
+      "html": "<div class=\"ds-field\"><label class=\"ds-field-label\">Your Name</label><input class=\"ds-input\" type=\"text\" placeholder=\"I am...\" /></div>",
+      "css": ".ds-field { position: relative; padding-top: 24px; } .ds-field-label { position: absolute; top: 0; left: 0; font-family: 'Outfit', sans-serif; font-size: 0.625rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: #EC662C; opacity: 0; transition: opacity 0.2s ease; pointer-events: none; } .ds-field:focus-within .ds-field-label { opacity: 1; } .ds-input { width: 100%; background: transparent; border: none; border-bottom: 1px solid rgba(230,237,239,0.10); padding: 16px 0; font-family: 'Vogun', serif; font-size: clamp(1.5rem, 3vw, 3rem); font-weight: 500; color: #E6EDEF; outline: none; transition: border-color 0.2s ease; } .ds-input::placeholder { color: rgba(230,237,239,0.08); } .ds-input:focus { border-color: #EC662C; }"
+    },
+    {
+      "name": "Section Overline Block",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "The recurring overline + headline pattern used at the top of every major section.",
+      "html": "<div class=\"ds-section-header\"><span class=\"ds-section-tag\">Direct Connection</span><h2 class=\"ds-section-headline\">reach out.</h2></div>",
+      "css": ".ds-section-header { text-align: center; } .ds-section-tag { display: block; font-family: 'Outfit', sans-serif; font-size: 0.625rem; font-weight: 700; letter-spacing: 0.4em; text-transform: uppercase; color: #EC662C; margin-bottom: 24px; } .ds-section-headline { font-family: 'Vogun', serif; font-size: clamp(2rem, 5vw, 5rem); font-weight: 500; line-height: 1.1; letter-spacing: -0.02em; text-transform: lowercase; color: #E6EDEF; margin: 0; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Compass in the Dark",
+    "overview": "WLCM's visual system is built on a single premise: navigation by faith in the absence of easy clarity. The dominant surface is ocean-floor dark — a darkness that earns meaning rather than evokes mood. Type is the signal. Vogun, WLCM's custom serif, appears at full-screen scale and functions as a landmark: a declaration that tells you exactly where you are. Outfit handles everything functional with military precision. The single accent, Ember, does not decorate. It points. Every appearance of Ember is directional — a CTA, an active state, a live indicator, a label that says 'go here.'\n\nThe system refuses two failure modes simultaneously. The first is the generic megachurch SaaS template: stock photography of praying hands, warm gradient CTAs, 'Join Us This Sunday' in Proxima Nova. The second is the startup-minimalist white page that reduces faith to a brand statement. WLCM is darker and more specific than either.",
+    "keyCharacteristics": [
+      "Typography-led: Vogun at display scale IS the design moment",
+      "Flat tonal depth: no resting shadows; depth through layered opacities and tonal steps",
+      "One accent: Ember on no more than 10% of any public-facing surface",
+      "Pill geometry throughout: nav, buttons, chips — never square corners on interactive elements",
+      "Case as register: UPPERCASE = formal/institutional authority, lowercase = intimate/approachable"
+    ],
+    "rules": [
+      { "name": "The One Ember Rule", "body": "Ember appears on no more than 10% of any given public-facing screen. Its scarcity is the mechanism. The instant it fills backgrounds or appears in body copy, it stops pointing and starts cluttering.", "section": "colors" },
+      { "name": "The Light-Flip Rule", "body": "Admin surfaces flip to Cold Shore base and white panels. The dark cinematic aesthetic serves atmosphere on public pages; it impedes productivity in the admin layer.", "section": "colors" },
+      { "name": "The Flat-By-Default Rule", "body": "Surfaces rest at the same level. Shadows appear only as a response to state. No decorative box-shadows on cards, sections, or containers.", "section": "elevation" },
+      { "name": "The Vogun Threshold Rule", "body": "Vogun below 1.5rem is forbidden. Its letterforms are built for scale; collapsed, they lose legibility and authority simultaneously.", "section": "typography" },
+      { "name": "The Case Register Rule", "body": "UPPERCASE Vogun declares; it is the voice of the institution. Lowercase Vogun confides. The same word carries entirely different weight depending on case.", "section": "typography" },
+      { "name": "The Open Form Rule", "body": "No rectangular input wrappers, no background-fill boxes, no rounded corners on text fields. The underline-only treatment preserves the open, planar aesthetic of the form.", "section": "components" }
+    ],
+    "dos": [
+      "Do use Ember to point, never to decorate.",
+      "Do reserve Vogun for display and headline scale.",
+      "Do vary UPPERCASE vs. lowercase Vogun with intention.",
+      "Do use underline-only inputs with transparent backgrounds.",
+      "Do flip to the light register for admin and tool surfaces.",
+      "Do use the house easing curve cubic-bezier(0.77, 0, 0.175, 1) for significant transitions.",
+      "Do honor prefers-reduced-motion for clip-path reveals, the circle menu expand, and pulse animations.",
+      "Do maintain WCAG AA contrast ratios, especially with opacity-modified text."
+    ],
+    "donts": [
+      "Don't use stock photography of praying hands or faded cross imagery.",
+      "Don't put meaningful content on an all-white background with 14px light-weight Outfit.",
+      "Don't apply gradient text (background-clip: text + gradient).",
+      "Don't use border-left greater than 1px as a colored accent stripe.",
+      "Don't use Vogun below 1.5rem.",
+      "Don't put Ember on more than 10% of any public-facing screen.",
+      "Don't add decorative box-shadows or glassmorphism effects to card surfaces.",
+      "Don't use bounce or elastic easing curves.",
+      "Don't use identical-grid layouts of same-sized cards with icon + heading + text."
+    ]
+  }
+}
