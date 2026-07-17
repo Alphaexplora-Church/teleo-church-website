@@ -1,27 +1,32 @@
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
-import ScrollToTop from './components/ScrollToTop'; //
-
-// --- IMPORT YOUR PAGES ---
-
-import Login from './pages/Login';
-import AdminDashboard from './features/Admin/AdminDashboard';
-import AdminEvents from './features/Admin/AdminEvents';
-import AdminRegistrations from './features/Admin/AdminRegistrations';
+import ScrollToTop from './shared/components/ScrollToTop';
+import LoginView from './features/Auth/login/view/LoginView';
+import AdminDashboardView from './features/Admin/dashboard/view/AdminDashboardView';
+import AdminEventsView from './features/Admin/events/view/AdminEventsView';
+import AdminRegistrationsView from './features/Admin/registrations/view/AdminRegistrationsView';
+import AdminSettingsView from './features/Admin/settings/view/AdminSettingsView';
+import AdminUsersView from './features/Admin/users/view/AdminUsersView';
+import AdminPrayerWallView from './features/Admin/prayer-wall/view/AdminPrayerWallView';
 
 export default function App() {
   const location = useLocation();
 
   return (
-    <AnimatePresence mode="wait">
-      {/* Reset scroll on every route change */}
+    <>
       <ScrollToTop />
-      <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<Login />} />
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        <Route path="/admin/events" element={<AdminEvents />} />
-        <Route path="/admin/registrations" element={<AdminRegistrations />} />
-      </Routes>
-    </AnimatePresence>
+      <AnimatePresence mode="wait">
+        <Routes location={location} key={location.pathname}>
+          <Route path="/" element={<LoginView />} />
+          <Route path="/login" element={<LoginView />} />
+          <Route path="/admin/dashboard" element={<AdminDashboardView />} />
+          <Route path="/admin/events" element={<AdminEventsView />} />
+          <Route path="/admin/registrations" element={<AdminRegistrationsView />} />
+          <Route path="/admin/settings" element={<AdminSettingsView />} />
+          <Route path="/admin/users" element={<AdminUsersView />} />
+          <Route path="/admin/prayer-wall" element={<AdminPrayerWallView />} />
+        </Routes>
+      </AnimatePresence>
+    </>
   );
 }
