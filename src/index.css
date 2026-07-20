@@ -60,3 +60,118 @@ body {
     clip-path: inset(0% 0 0 0);
   }
 }
+
+@layer components {
+  html:has(body .admin-shell) {
+    height: 100%;
+    overflow: hidden;
+    background-color: #d9dfdd;
+  }
+
+  body:has(.admin-shell) {
+    height: 100%;
+    overflow: hidden;
+    background: #d9dfdd;
+  }
+
+  .admin-shell {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    width: min(1500px, calc(100% - 2rem));
+    height: calc(100vh - 2rem);
+    min-height: 0;
+    margin: 1rem auto;
+    border: 1px solid rgb(255 255 255 / 62%);
+    border-radius: 2rem;
+    color: var(--color-midnight-teal);
+    background:
+      linear-gradient(135deg, rgb(235 242 239 / 84%), rgb(247 244 236 / 90%)),
+      url('./assets/admin-bg.jpg') center / cover fixed no-repeat;
+    box-shadow: 0 2rem 6rem rgb(0 46 56 / 18%);
+  }
+
+  .admin-shell > .admin-nav + div {
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .admin-shell .admin-main {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  /* Keeps the featured prayer card from being cut off. */
+  .prayer-featured-stage {
+    min-height: 610px;
+  }
+
+  /* Gives the layered prayer cards a fixed animation area. */
+  .prayer-card-deck {
+    height: 470px;
+    min-height: 470px;
+  }
+
+  .admin-shell::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background:
+      radial-gradient(circle at 16% 10%, rgb(255 255 255 / 38%), transparent 28rem),
+      linear-gradient(180deg, rgb(255 255 255 / 8%), rgb(0 46 56 / 8%));
+    pointer-events: none;
+  }
+
+  .admin-shell .bg-white {
+    background-color: rgb(255 255 255 / 58%) !important;
+    backdrop-filter: blur(18px);
+  }
+
+  .admin-shell .admin-solid-surface {
+    background-color: #fff !important;
+    backdrop-filter: none;
+  }
+
+  .admin-shell .admin-solid-surface input {
+    background-color: #f3f7f6 !important;
+    border-color: rgb(0 46 56 / 24%) !important;
+    box-shadow: inset 0 1px 2px rgb(0 46 56 / 5%);
+  }
+
+  .admin-shell .admin-solid-surface input:focus {
+    background-color: #fff !important;
+    border-color: rgb(0 46 56 / 55%) !important;
+  }
+
+  .admin-shell .bg-gray-50 {
+    background-color: rgb(246 249 248 / 62%) !important;
+  }
+
+  .admin-shell .border-gray-100,
+  .admin-shell .border-gray-200 {
+    border-color: rgb(255 255 255 / 62%) !important;
+  }
+
+  .admin-shell .shadow-sm {
+    box-shadow: 0 1rem 2.5rem rgb(0 46 56 / 7%);
+  }
+
+  .admin-shell input,
+  .admin-shell table {
+    backdrop-filter: blur(12px);
+  }
+
+  @media (max-width: 1023px) {
+    .admin-shell {
+      width: 100%;
+      height: 100vh;
+      min-height: 0;
+      margin: 0;
+      border: 0;
+      border-radius: 0;
+    }
+  }
+}
