@@ -1,6 +1,5 @@
 // ─── Admin Registrations: ViewModel ───────────────────────────────────────────
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import type { Registration } from '../model/adminRegistrations.types';
 import type { EncounterRegistration } from '../model/adminEncounterRegistrations.types';
 import type { DiscipleshipRegistration } from '../model/adminDiscipleshipRegistrations.types';
@@ -50,8 +49,6 @@ export interface AdminRegistrationsViewModel {
 }
 
 export function useAdminRegistrationsViewModel(): AdminRegistrationsViewModel {
-    const navigate = useNavigate();
-
     const [activeTab, setActiveTabState] = useState<RegistrationTab>('plan-a-visit');
     const [search, setSearchState] = useState('');
     const [page, setPage] = useState(1);
@@ -89,12 +86,8 @@ export function useAdminRegistrationsViewModel(): AdminRegistrationsViewModel {
     };
 
     useEffect(() => {
-        if (!localStorage.getItem('token')) {
-            navigate('/login');
-        } else {
-            loadAll();
-        }
-    }, [navigate]);
+        loadAll();
+    }, []);
 
     // Reset search and page when switching tabs
     const setActiveTab = (tab: RegistrationTab) => {

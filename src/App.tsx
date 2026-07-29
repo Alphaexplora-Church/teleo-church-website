@@ -1,6 +1,8 @@
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import ScrollToTop from './shared/components/ScrollToTop';
+import ProtectedRoute from './shared/components/ProtectedRoute';
+import { AuthProvider } from './shared/context/AuthContext';
 import LoginView from './features/Auth/login/view/LoginView';
 import AdminDashboardView from './features/Admin/dashboard/view/AdminDashboardView';
 import AdminEventsView from './features/Admin/events/view/AdminEventsView';
@@ -13,20 +15,25 @@ export default function App() {
   const location = useLocation();
 
   return (
-    <>
+    <AuthProvider>
       <ScrollToTop />
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
           <Route path="/" element={<LoginView />} />
           <Route path="/login" element={<LoginView />} />
-          <Route path="/admin/dashboard" element={<AdminDashboardView />} />
-          <Route path="/admin/events" element={<AdminEventsView />} />
-          <Route path="/admin/registrations" element={<AdminRegistrationsView />} />
-          <Route path="/admin/settings" element={<AdminSettingsView />} />
-          <Route path="/admin/users" element={<AdminUsersView />} />
-          <Route path="/admin/prayer-wall" element={<AdminPrayerWallView />} />
+
+          {/* Always-accessible admin routes */}
+          <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboardView /></ProtectedRoute>} />
+          <Route path="/admin/users" element={<ProtectedRoute><AdminUsersView /></ProtectedRoute>} />
+          <Route path="/admin/settings" element={<ProtectedRoute><AdminSettingsView /></ProtectedRoute>} />
+          <Route path="/admin/registrations" element={<ProtectedRoute requiredFeature="registrations"><AdminRegistrationsView /></ProtectedRoute>} />
+
+          {/* Feature-gated routes — redirect to dashboard if church lacks the feature */}
+          <Route path="/admin/events" element={<ProtectedRoute requiredFeature="content_management"><AdminEventsView /></ProtectedRoute>} />
+          <Route path="/admin/prayer-wall" element={<ProtectedRoute requiredFeature="prayer_wall"><AdminPrayerWallView /></ProtectedRoute>} />
         </Routes>
       </AnimatePresence>
-    </>
+    </AuthProvider>
   );
 }
+

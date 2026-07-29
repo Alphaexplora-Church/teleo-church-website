@@ -11,7 +11,7 @@ export default function AdminUsersView() {
         <div className="admin-shell flex flex-col lg:flex-row">
             <AdminSidebar />
             <div className="relative z-10 flex flex-1 flex-col">
-                <AdminHeader userName="Admin" />
+                <AdminHeader />
                 <main className="admin-main mx-auto w-full max-w-7xl flex-1 space-y-6 px-6 py-8 lg:px-10">
                     <header>
                         <h1 className="font-serif text-2xl text-midnight-teal">User Account Management</h1>

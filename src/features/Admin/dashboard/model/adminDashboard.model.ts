@@ -9,15 +9,6 @@ const isThisMonth = (value: string) => {
 };
 
 export const AdminDashboardModel = {
-    getUserName: () => {
-        try {
-            const user = JSON.parse(localStorage.getItem('adminUser') || '{}') as { username?: string };
-            return user.username || 'Admin';
-        } catch {
-            return 'Admin';
-        }
-    },
-
     load: async (): Promise<DashboardData> => {
         const [statsResult, eventsResult, announcementsResult, visitsResult, encounterResult, discipleshipResult] = await Promise.allSettled([
             AdminEventsService.fetchStats(),
