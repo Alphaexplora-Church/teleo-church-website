@@ -14,7 +14,7 @@ export default function AdminDashboardView() {
         <div className="admin-shell flex flex-col lg:flex-row">
             <AdminSidebar />
             <div className="relative z-10 flex flex-1 flex-col">
-                <AdminHeader userName={vm.userName} />
+                <AdminHeader />
                 <main className="admin-main mx-auto w-full max-w-7xl flex-1 space-y-6 px-6 pb-5 pt-8 lg:px-10">
                     <header>
                         <h1 className="font-serif text-2xl text-midnight-teal">Home Dashboard</h1>

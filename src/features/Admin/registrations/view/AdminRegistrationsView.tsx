@@ -71,7 +71,7 @@ export default function AdminRegistrationsView() {
             <AdminSidebar />
 
             <div className="relative z-10 flex flex-1 flex-col">
-                <AdminHeader userName="Admin" />
+                <AdminHeader />
 
                 <main className="admin-main mx-auto w-full max-w-7xl flex-1 space-y-6 px-6 py-8 lg:px-10">
                     {/* ── Page Title ─────────────────────────────────── */}

@@ -1,25 +1,19 @@
-import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { AuthUser } from '../../../Auth/login/model/login.model';
-import { AdminSettingsModel } from '../model/adminSettings.model';
+import { useAuth } from '../../../../shared/context/useAuth';
 
 export function useAdminSettingsViewModel() {
     const navigate = useNavigate();
-    const [user] = useState<AuthUser>(() => AdminSettingsModel.getStoredUser());
+    const { user, logout: authLogout } = useAuth();
 
-    useEffect(() => {
-        if (!localStorage.getItem('token')) navigate('/login');
-    }, [navigate]);
-
-    const logout = () => {
-        AdminSettingsModel.clearSession();
+    const logout = async () => {
+        await authLogout();
         navigate('/login');
     };
 
     return {
-        user,
-        userName: user.username || 'Admin',
-        roles: user.roles?.length ? user.roles : ['Not assigned'],
+        user: user ?? { email: '' },
+        userName: user?.username || 'Admin',
+        roles: user?.roles?.length ? user.roles : ['Not assigned'],
         logout,
     };
 }

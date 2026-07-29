@@ -13,59 +13,72 @@ export interface AuthUser {
 }
 
 interface LoginApiResponse {
-    data?: {
-        userProfile?: AuthUser;
-        session?: { access_token?: string };
-    };
-    token?: string;
-    session?: { access_token?: string };
-    error?: string | { message?: string };
+    data?: { userProfile?: AuthUser };
+    message?: string;
+    errorCode?: string;
+    details?: Array<{ field: string; message: string }>;
+}
+
+interface MeApiResponse {
+    data?: { id?: string; email?: string };
     message?: string;
 }
 
-export interface AuthSession {
-    token: string;
-    user: AuthUser;
+interface LogoutApiResponse {
+    message?: string;
 }
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000';
 
-const getErrorMessage = (data: LoginApiResponse): string => {
-    if (typeof data.error === 'string') return data.error;
-    return data.error?.message || data.message || 'Login failed';
-};
+const getErrorMessage = (data: { message?: string; details?: Array<{ message: string }> }): string =>
+    data.details?.[0]?.message || data.message || 'Something went wrong';
 
 export const LoginModel = {
-    authenticate: async ({ email, password }: LoginCredentials): Promise<AuthSession> => {
-        const response = await fetch(`${API_BASE}/api/auth/login`, {
+    /**
+     * Authenticates against the admin-only endpoint. The backend sets the
+     * session as HTTP-only cookies (access_token / refresh_token) on the
+     * response — no token is ever returned in the JSON body or stored client-side.
+     */
+    authenticate: async ({ email, password }: LoginCredentials): Promise<AuthUser> => {
+        const response = await fetch(`${API_BASE}/api/auth/login/admin`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({ email, password }),
         });
 
         const data = await response.json() as LoginApiResponse;
 
         if (!response.ok) throw new Error(getErrorMessage(data));
+        if (!data.data?.userProfile) throw new Error('Malformed login response from the server');
 
-        const token = data.data?.session?.access_token
-            || data.token
-            || data.session?.access_token;
-
-        if (!token) throw new Error('No valid token received from the server');
-
-        return {
-            token,
-            user: data.data?.userProfile ?? { email },
-        };
+        return data.data.userProfile;
     },
 
-    createDevelopmentSession: (email: string): AuthSession => ({
-        token: 'local-development-preview',
-        user: { email, username: 'Admin', roles: ['admin'] },
-    }),
+    /** Verifies the current HTTP-only session cookie against the backend. */
+    getCurrentUser: async (): Promise<AuthUser | null> => {
+        const response = await fetch(`${API_BASE}/api/auth/me`, {
+            method: 'GET',
+            credentials: 'include',
+        });
 
-    saveSession: ({ token, user }: AuthSession): void => {
-        localStorage.setItem('token', token);
-        localStorage.setItem('adminUser', JSON.stringify(user));
+        if (!response.ok) return null;
+
+        const data = await response.json() as MeApiResponse;
+        if (!data.data?.email) return null;
+
+        return { uid: data.data.id, email: data.data.email };
+    },
+
+    logout: async (): Promise<void> => {
+        const response = await fetch(`${API_BASE}/api/auth/logout`, {
+            method: 'POST',
+            credentials: 'include',
+        });
+
+        if (!response.ok && response.status !== 401) {
+            const data = await response.json() as LogoutApiResponse;
+            throw new Error(data.message ?? 'Logout failed');
+        }
     },
 };

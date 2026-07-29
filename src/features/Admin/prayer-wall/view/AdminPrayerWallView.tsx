@@ -9,19 +9,12 @@ import { NewPrayerModal } from './NewPrayerModal';
 export default function AdminPrayerWallView() {
     const vm = useAdminPrayerWallViewModel();
     const theme = CARD_THEMES[vm.featuredIndex % CARD_THEMES.length];
-    let userName = 'Admin';
-    try {
-        const user = JSON.parse(localStorage.getItem('adminUser') || '{}') as { username?: string };
-        userName = user.username || 'Admin';
-    } catch {
-        // Keep the default display name.
-    }
 
     return (
         <div className="admin-shell flex flex-col lg:flex-row">
             <AdminSidebar />
             <div className="relative z-10 flex flex-1 flex-col">
-                <AdminHeader userName={userName} />
+                <AdminHeader />
                 <main className="admin-main mx-auto w-full max-w-7xl flex-1 space-y-8 px-6 py-8 lg:px-10">
                     <header>
                         <div>

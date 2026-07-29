@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import type { Announcement, AdminContentStats, ChurchEvent, ContentItem } from '../model/content.types';
 import type { ContentSort, ContentStatusFilter, ContentTab, EventFormData } from '../model/adminEvents.types';
 import { AdminEventsService } from '../model/adminEvents.service';
@@ -51,7 +50,6 @@ const itemDateValue = (item: ContentItem, preferCreatedAt = false) => {
 };
 
 export function useAdminEventsViewModel(): AdminEventsViewModel {
-    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<ContentTab>('event');
     const [events, setEvents] = useState<ChurchEvent[]>([]);
     const [eventsTotal, setEventsTotal] = useState(0);
@@ -71,10 +69,6 @@ export function useAdminEventsViewModel(): AdminEventsViewModel {
     const [previewTarget, setPreviewTarget] = useState<ContentItem | null>(null);
     const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
     const limit = 10;
-
-    useEffect(() => {
-        if (!localStorage.getItem('token')) navigate('/login');
-    }, [navigate]);
 
     const loadAll = async (currentPage: number) => {
         setIsLoading(true);

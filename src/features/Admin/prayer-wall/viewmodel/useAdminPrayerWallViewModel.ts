@@ -1,12 +1,10 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { AdminPrayerWallModel } from '../model/adminPrayerWall.model';
 import type { NewPrayerForm, PrayerRequest } from '../model/adminPrayerWall.types';
 
 const PRAYERS_PER_PAGE = 10;
 
 export function useAdminPrayerWallViewModel() {
-    const navigate = useNavigate();
     // Prayer Wall screen state.
     const [prayers, setPrayers] = useState<PrayerRequest[]>(() => AdminPrayerWallModel.getPrayers());
     const [featuredIndex, setFeaturedIndex] = useState(0);
@@ -22,10 +20,6 @@ export function useAdminPrayerWallViewModel() {
         (listPage - 1) * PRAYERS_PER_PAGE,
         listPage * PRAYERS_PER_PAGE,
     );
-
-    useEffect(() => {
-        if (!localStorage.getItem('token')) navigate('/login');
-    }, [navigate]);
 
     // Updates the screen and local preview data.
     const persist = (next: PrayerRequest[]) => {

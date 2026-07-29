@@ -5,14 +5,12 @@ import type { DiscipleshipRegistration } from './adminDiscipleshipRegistrations.
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000';
 
-const authHeaders = () => {
-    const token = localStorage.getItem('token');
-    if (!token) throw new Error('No auth token found. Please log in.');
-    return {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-    };
-};
+/** The session is authenticated via the HTTP-only access_token cookie sent with every request. */
+const authHeaders = () => ({ 'Content-Type': 'application/json' });
+
+/** Wraps fetch to always send the HTTP-only auth cookies to the API. */
+const authFetch = (url: string, init: RequestInit = {}): Promise<Response> =>
+    fetch(url, { ...init, credentials: 'include' });
 
 interface CollectionResponse<T> {
     data?: T[];
@@ -40,7 +38,7 @@ export const AdminRegistrationsService = {
      * GET /api/wlcm/registrations
      */
     fetchAll: async (page: number = 1, limit: number = 10): Promise<{ items: Registration[]; total: number }> => {
-        const response = await fetch(`${API_BASE}/api/wlcm/registrations?page=${page}&limit=${limit}`, {
+        const response = await authFetch(`${API_BASE}/api/wlcm/registrations?page=${page}&limit=${limit}`, {
             headers: authHeaders(),
         });
         if (!response.ok) throw new Error('Failed to fetch plan-a-visit registrations');
@@ -60,7 +58,7 @@ export const AdminRegistrationsService = {
      * GET /api/wlcm/encounter
      */
     fetchAllEncounter: async (page: number = 1, limit: number = 10): Promise<{ items: EncounterRegistration[]; total: number }> => {
-        const response = await fetch(`${API_BASE}/api/wlcm/encounter?page=${page}&limit=${limit}`, {
+        const response = await authFetch(`${API_BASE}/api/wlcm/encounter?page=${page}&limit=${limit}`, {
             headers: authHeaders(),
         });
         if (!response.ok) throw new Error('Failed to fetch encounter registrations');
@@ -80,7 +78,7 @@ export const AdminRegistrationsService = {
      * GET /api/wlcm/discipleship
      */
     fetchAllDiscipleship: async (page: number = 1, limit: number = 10): Promise<{ items: DiscipleshipRegistration[]; total: number }> => {
-        const response = await fetch(`${API_BASE}/api/wlcm/discipleship?page=${page}&limit=${limit}`, {
+        const response = await authFetch(`${API_BASE}/api/wlcm/discipleship?page=${page}&limit=${limit}`, {
             headers: authHeaders(),
         });
         if (!response.ok) throw new Error('Failed to fetch discipleship submissions');

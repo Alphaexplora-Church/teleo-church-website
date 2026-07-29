@@ -4,21 +4,13 @@ import type { EventFormData } from './adminEvents.types';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000';
 
-/** Retrieves the stored JWT and builds the Authorization header. */
-const getAuthHeaders = (isFormData: boolean = false): HeadersInit => {
-    const token = localStorage.getItem('token');
-    if (!token) throw new Error('No auth token found. Please log in.');
+/** The session is authenticated via the HTTP-only access_token cookie sent with every request. */
+const getAuthHeaders = (isFormData: boolean = false): HeadersInit =>
+    isFormData ? {} : { 'Content-Type': 'application/json' };
 
-    const headers: Record<string, string> = {
-        'Authorization': `Bearer ${token}`,
-    };
-
-    if (!isFormData) {
-        headers['Content-Type'] = 'application/json';
-    }
-
-    return headers;
-};
+/** Wraps fetch to always send the HTTP-only auth cookies to the API. */
+const authFetch = (url: string, init: RequestInit = {}): Promise<Response> =>
+    fetch(url, { ...init, credentials: 'include' });
 
 const buildFormData = (data: EventFormData, type: string): FormData => {
     const formData = new FormData();
@@ -66,7 +58,7 @@ const parseTotalFromResponse = <T>(json: unknown): { items: T[]; total: number }
 
 export const AdminEventsService = {
     fetchStats: async (): Promise<AdminContentStats> => {
-        const response = await fetch(`${API_BASE}/api/contents/admin/stats`, {
+        const response = await authFetch(`${API_BASE}/api/contents/admin/stats`, {
             headers: getAuthHeaders(),
         });
         if (!response.ok) throw new Error('Failed to fetch content statistics');
@@ -77,7 +69,7 @@ export const AdminEventsService = {
      * Fetches all events from the admin endpoint (requires authentication).
      */
     fetchEvents: async (page: number = 1, limit: number = 10): Promise<{ items: ChurchEvent[]; total: number }> => {
-        const response = await fetch(`${API_BASE}/api/contents/admin/events?page=${page}&limit=${limit}`, {
+        const response = await authFetch(`${API_BASE}/api/contents/admin/events?page=${page}&limit=${limit}`, {
             headers: getAuthHeaders(),
         });
         if (!response.ok) throw new Error('Failed to fetch events');
@@ -89,7 +81,7 @@ export const AdminEventsService = {
      * Fetches all announcements from the admin endpoint (requires authentication).
      */
     fetchAnnouncements: async (page: number = 1, limit: number = 10): Promise<{ items: Announcement[]; total: number }> => {
-        const response = await fetch(`${API_BASE}/api/contents/admin/announcements?page=${page}&limit=${limit}`, {
+        const response = await authFetch(`${API_BASE}/api/contents/admin/announcements?page=${page}&limit=${limit}`, {
             headers: getAuthHeaders(),
         });
         if (!response.ok) throw new Error('Failed to fetch announcements');
@@ -102,7 +94,7 @@ export const AdminEventsService = {
      */
     createEvent: async (data: EventFormData, type: string = 'event'): Promise<void> => {
         const formData = buildFormData(data, type);
-        const response = await fetch(`${API_BASE}/api/contents/admin`, {
+        const response = await authFetch(`${API_BASE}/api/contents/admin`, {
             method: 'POST',
             headers: getAuthHeaders(true),
             body: formData,
@@ -118,7 +110,7 @@ export const AdminEventsService = {
      */
     updateEvent: async (id: number, data: EventFormData, type: string = 'event'): Promise<void> => {
         const formData = buildFormData(data, type);
-        const response = await fetch(`${API_BASE}/api/contents/admin/${id}`, {
+        const response = await authFetch(`${API_BASE}/api/contents/admin/${id}`, {
             method: 'PATCH',
             headers: getAuthHeaders(true),
             body: formData,
@@ -133,7 +125,7 @@ export const AdminEventsService = {
      * Deletes an event by ID (requires authentication).
      */
     archiveContent: async (id: number): Promise<void> => {
-        const response = await fetch(`${API_BASE}/api/contents/admin/${id}`, {
+        const response = await authFetch(`${API_BASE}/api/contents/admin/${id}`, {
             method: 'DELETE',
             headers: getAuthHeaders(),
         });
