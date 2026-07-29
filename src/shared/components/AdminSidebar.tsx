@@ -10,10 +10,9 @@ export default function AdminSidebar({ className = '' }: AdminSidebarProps) {
     const vm = useAdminSidebarViewModel();
 
     const navClass = ({ isActive }: { isActive: boolean }) =>
-        `rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200 ${
-            isActive
-                ? 'bg-midnight-teal text-soft-linen shadow-lg shadow-midnight-teal/15'
-                : 'text-midnight-teal/65 hover:bg-white/60 hover:text-midnight-teal'
+        `rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200 ${isActive
+            ? 'bg-midnight-teal text-soft-linen shadow-lg shadow-midnight-teal/15'
+            : 'text-midnight-teal/65 hover:bg-white/60 hover:text-midnight-teal'
         }`;
 
     return (
@@ -36,13 +35,13 @@ export default function AdminSidebar({ className = '' }: AdminSidebarProps) {
 
                 {vm.showContentManagement && (
                     <NavLink to="/admin/events" className={navClass}>
-                        Content
+                        Events and Announcements
                     </NavLink>
                 )}
 
                 {vm.showEventsAnnouncement && (
-                    <NavLink to="/admin/announcements" className={navClass}>
-                        Events & Announcements
+                    <NavLink to="/admin/content" className={navClass}>
+                        Content Management
                     </NavLink>
                 )}
 
