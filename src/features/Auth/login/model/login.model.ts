@@ -1,3 +1,5 @@
+import type { ChurchFeatures } from '../../../../shared/models/globalTypes';
+
 export interface LoginCredentials {
     email: string;
     password: string;
@@ -10,6 +12,8 @@ export interface AuthUser {
     roles?: string[];
     home_church_id?: number | string | null;
     profile_picture_url?: string | null;
+    /** Feature flags from church_profile.features_config — null means not loaded yet */
+    features_config?: ChurchFeatures | null;
 }
 
 interface LoginApiResponse {
@@ -20,7 +24,15 @@ interface LoginApiResponse {
 }
 
 interface MeApiResponse {
-    data?: { id?: string; email?: string };
+    data?: {
+        id?: string;
+        email?: string;
+        username?: string | null;
+        profile_picture_url?: string | null;
+        roles?: string[];
+        home_church_id?: number | null;
+        features_config?: ChurchFeatures | null;
+    };
     message?: string;
 }
 
@@ -67,7 +79,15 @@ export const LoginModel = {
         const data = await response.json() as MeApiResponse;
         if (!data.data?.email) return null;
 
-        return { uid: data.data.id, email: data.data.email };
+        return {
+            uid: data.data.id,
+            email: data.data.email ?? '',
+            username: data.data.username ?? null,
+            profile_picture_url: data.data.profile_picture_url ?? null,
+            roles: data.data.roles ?? [],
+            home_church_id: data.data.home_church_id ?? null,
+            features_config: data.data.features_config ?? null,
+        };
     },
 
     logout: async (): Promise<void> => {

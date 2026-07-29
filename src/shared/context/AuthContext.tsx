@@ -32,9 +32,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         isAuthenticated: Boolean(user),
         isLoading,
+        /** Derived from user.features_config — null when logged out or not yet loaded */
+        features: user?.features_config ?? null,
         login,
         logout,
     }), [user, isLoading, login, logout]);
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
+

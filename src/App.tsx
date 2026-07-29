@@ -21,14 +21,19 @@ export default function App() {
         <Routes location={location} key={location.pathname}>
           <Route path="/" element={<LoginView />} />
           <Route path="/login" element={<LoginView />} />
+
+          {/* Always-accessible admin routes */}
           <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboardView /></ProtectedRoute>} />
-          <Route path="/admin/events" element={<ProtectedRoute><AdminEventsView /></ProtectedRoute>} />
-          <Route path="/admin/registrations" element={<ProtectedRoute><AdminRegistrationsView /></ProtectedRoute>} />
-          <Route path="/admin/settings" element={<ProtectedRoute><AdminSettingsView /></ProtectedRoute>} />
           <Route path="/admin/users" element={<ProtectedRoute><AdminUsersView /></ProtectedRoute>} />
-          <Route path="/admin/prayer-wall" element={<ProtectedRoute><AdminPrayerWallView /></ProtectedRoute>} />
+          <Route path="/admin/settings" element={<ProtectedRoute><AdminSettingsView /></ProtectedRoute>} />
+          <Route path="/admin/registrations" element={<ProtectedRoute requiredFeature="registrations"><AdminRegistrationsView /></ProtectedRoute>} />
+
+          {/* Feature-gated routes — redirect to dashboard if church lacks the feature */}
+          <Route path="/admin/events" element={<ProtectedRoute requiredFeature="content_management"><AdminEventsView /></ProtectedRoute>} />
+          <Route path="/admin/prayer-wall" element={<ProtectedRoute requiredFeature="prayer_wall"><AdminPrayerWallView /></ProtectedRoute>} />
         </Routes>
       </AnimatePresence>
     </AuthProvider>
   );
 }
+

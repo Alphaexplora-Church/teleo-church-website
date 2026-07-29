@@ -1,9 +1,16 @@
 import type { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
+import type { ChurchFeatures } from '../models/globalTypes';
 
-export default function ProtectedRoute({ children }: { children: ReactNode }) {
-    const { isAuthenticated, isLoading } = useAuth();
+interface ProtectedRouteProps {
+    children: ReactNode;
+    /** If provided, the user is redirected to the dashboard if their church lacks this feature. */
+    requiredFeature?: keyof ChurchFeatures;
+}
+
+export default function ProtectedRoute({ children, requiredFeature }: ProtectedRouteProps) {
+    const { isAuthenticated, isLoading, features } = useAuth();
 
     if (isLoading) {
         return (
@@ -15,5 +22,11 @@ export default function ProtectedRoute({ children }: { children: ReactNode }) {
 
     if (!isAuthenticated) return <Navigate to="/login" replace />;
 
+    // If a feature is required but the church has it disabled, redirect to dashboard
+    if (requiredFeature && features?.[requiredFeature] === false) {
+        return <Navigate to="/admin/dashboard" replace />;
+    }
+
     return <>{children}</>;
 }
+
