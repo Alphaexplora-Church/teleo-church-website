@@ -1,6 +1,7 @@
 import type { FormEvent } from 'react';
 import { motion } from 'framer-motion';
 import { useLoginViewModel } from '../viewmodel/useLoginViewModel';
+import teleoLogo from '../../../../assets/teleo-logo.png';
 
 export default function LoginView() {
     const vm = useLoginViewModel();
@@ -25,8 +26,15 @@ export default function LoginView() {
                 className="w-full max-w-md bg-white/5 backdrop-blur-xl border border-soft-linen/10 rounded-3xl p-8 md:p-10 shadow-2xl relative z-10"
             >
                 <div className="text-center mb-10">
-                    <h1 className="font-serif text-3xl md:text-4xl tracking-tighter lowercase text-soft-linen mb-2">
-                        words of life.
+                    <div className="flex items-center justify-center mb-4">
+                        <img
+                            src={teleoLogo}
+                            alt="Teleo"
+                            className="h-16 w-16 object-contain drop-shadow-lg"
+                        />
+                    </div>
+                    <h1 className="font-sans text-3xl md:text-4xl tracking-widest font-black text-soft-linen mb-1.5">
+                        TELEO
                     </h1>
                     <p className="font-sans text-[11px] uppercase tracking-[0.2em] text-soft-linen/50 font-bold">
                         Admin Portal
@@ -61,7 +69,7 @@ export default function LoginView() {
                                 value={vm.email}
                                 onChange={(e) => vm.setEmail(e.target.value)}
                                 className="w-full bg-white/5 border border-soft-linen/10 rounded-xl px-4 py-3.5 text-soft-linen font-sans text-sm focus:outline-none focus:border-harvest-orange/50 focus:bg-white/10 transition-all placeholder:text-soft-linen/20"
-                                placeholder="admin@wordsoflife.com"
+                                placeholder="admin@teleo.app"
                             />
                         </div>
 

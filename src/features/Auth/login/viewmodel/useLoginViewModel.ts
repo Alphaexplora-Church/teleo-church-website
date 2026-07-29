@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LoginModel } from '../model/login.model';
+import { useAuth } from '../../../../shared/context/useAuth';
 
 export function useLoginViewModel() {
     const [email, setEmail] = useState('');
@@ -8,17 +8,14 @@ export function useLoginViewModel() {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
+    const { login } = useAuth();
 
     const submit = async (): Promise<void> => {
         setError('');
         setIsLoading(true);
 
         try {
-            const session = import.meta.env.DEV
-                ? LoginModel.createDevelopmentSession(email)
-                : await LoginModel.authenticate({ email, password });
-
-            LoginModel.saveSession(session);
+            await login({ email, password });
             navigate('/admin/dashboard');
         } catch (error: unknown) {
             setError(error instanceof Error ? error.message : 'An error occurred during login');

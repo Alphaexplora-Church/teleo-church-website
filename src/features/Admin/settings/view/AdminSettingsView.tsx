@@ -11,7 +11,7 @@ export default function AdminSettingsView() {
         <div className="admin-shell flex flex-col lg:flex-row">
             <AdminSidebar />
             <div className="relative z-10 flex flex-1 flex-col">
-                <AdminHeader userName={vm.userName} />
+                <AdminHeader />
                 <main className="admin-main mx-auto w-full max-w-7xl flex-1 space-y-6 px-6 py-8 lg:px-10">
                     <header>
                         <h1 className="font-serif text-2xl text-midnight-teal">Settings</h1>
@@ -43,7 +43,7 @@ export default function AdminSettingsView() {
                             <section className="rounded-3xl border border-red-100 bg-white/80 p-6 shadow-xl shadow-midnight-teal/5 backdrop-blur-xl">
                                 <h2 className="font-serif text-xl text-midnight-teal">Session & security</h2>
                                 <p className="mt-2 text-sm leading-6 text-gray-500">Signing out removes the stored session from this browser.</p>
-                                <button onClick={vm.logout} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600 transition-colors hover:bg-red-600 hover:text-white"><LogOut size={16} /> Log out</button>
+                                <button onClick={() => void vm.logout()} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600 transition-colors hover:bg-red-600 hover:text-white"><LogOut size={16} /> Log out</button>
                             </section>
                         </div>
                     </div>

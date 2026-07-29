@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { AdminDashboardModel } from '../model/adminDashboard.model';
 import type { DashboardData } from '../model/adminDashboard.types';
+import { useNavigate } from 'react-router-dom';
 
 export function useAdminDashboardViewModel() {
     const navigate = useNavigate();
@@ -9,21 +9,15 @@ export function useAdminDashboardViewModel() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [reloadKey, setReloadKey] = useState(0);
-    const [userName] = useState(() => AdminDashboardModel.getUserName());
 
     useEffect(() => {
-        if (!localStorage.getItem('token')) {
-            navigate('/login');
-            return;
-        }
-
         let active = true;
         AdminDashboardModel.load()
             .then(result => { if (active) setData(result); })
             .catch(() => { if (active) setError('Could not load dashboard data. Make sure the backend is running.'); })
             .finally(() => { if (active) setIsLoading(false); });
         return () => { active = false; };
-    }, [navigate, reloadKey]);
+    }, [reloadKey]);
 
     const retry = () => {
         setError(null);
@@ -32,7 +26,6 @@ export function useAdminDashboardViewModel() {
     };
 
     return {
-        userName,
         data,
         isLoading,
         error,
