@@ -1,43 +1,56 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { LoginModel, type AuthUser, type LoginCredentials } from '../../features/Auth/login/model/login.model';
+import type { AuthUser, ChurchFeatures } from '../models/globalTypes';
 import { AuthContext, type AuthContextValue } from './authContextInstance';
+import { LoginModel } from '../../features/Auth/login/model/login.model';
+
+const MOCK_USER: AuthUser = {
+    uid: 'design-mode',
+    email: 'admin@teleo.church',
+    username: 'Admin',
+    roles: ['admin'],
+    home_church_id: 1,
+    profile_picture_url: null,
+    features_config: {
+        prayer_wall: true,
+        content_management: true,
+        services: true,
+        community: true,
+        giving: true,
+        events_announcement: true,
+        registrations: true,
+    },
+};
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const [user, setUser] = useState<AuthUser | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const isDev = import.meta.env.DEV;
+
+    const [user, setUser] = useState<AuthUser | null>(isDev ? MOCK_USER : null);
+    const [isLoading, setIsLoading] = useState(!isDev);
 
     useEffect(() => {
-        let active = true;
+        if (isDev) return;
+        let cancelled = false;
         LoginModel.getCurrentUser()
-            .then(current => { if (active) setUser(current); })
-            .catch(() => { if (active) setUser(null); })
-            .finally(() => { if (active) setIsLoading(false); });
-        return () => { active = false; };
-    }, []);
-
-    const login = useCallback(async (credentials: LoginCredentials) => {
-        const authUser = await LoginModel.authenticate(credentials);
-        setUser(authUser);
-    }, []);
+            .then((u) => { if (!cancelled) setUser(u); })
+            .finally(() => { if (!cancelled) setIsLoading(false); });
+        return () => { cancelled = true; };
+    }, [isDev]);
 
     const logout = useCallback(async () => {
-        try {
-            await LoginModel.logout();
-        } finally {
-            setUser(null);
-        }
-    }, []);
+        if (isDev) return;
+        await LoginModel.logout();
+        setUser(null);
+    }, [isDev]);
+
+    const features: ChurchFeatures | null = user?.features_config ?? null;
 
     const value = useMemo<AuthContextValue>(() => ({
         user,
-        isAuthenticated: Boolean(user),
+        isAuthenticated: !!user,
         isLoading,
-        /** Derived from user.features_config — null when logged out or not yet loaded */
-        features: user?.features_config ?? null,
-        login,
+        features,
         logout,
-    }), [user, isLoading, login, logout]);
+    }), [user, isLoading, features, logout]);
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
-
