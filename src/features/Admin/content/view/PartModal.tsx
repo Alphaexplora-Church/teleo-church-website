@@ -3,11 +3,12 @@
 // carry a validated video link (A), a written passage (B), or both (C),
 // plus the "Validation & Error Handling" flow for invalid/broken links.
 import { useState } from 'react';
-import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Loader2, X } from 'lucide-react';
 import type { JourneyPart, PartContentType, PartFormData, PartStatus } from '../model/adminContent.types';
 import { EMPTY_PART_FORM } from '../model/adminContent.types';
 import { validateVideoLink, type VideoPreview } from '../model/adminContent.service';
 import { useModalTransition } from '../../../../shared/hooks/useModalTransition';
+import { fieldClass, labelClass, modalOverlayClass, modalPanelClass, segmentedButtonClass } from './contentStyles';
 
 interface PartModalProps {
     title: string;
@@ -15,9 +16,6 @@ interface PartModalProps {
     onClose: () => void;
     onSave: (form: PartFormData, preview: VideoPreview | null) => void;
 }
-
-const labelClass = 'mb-2 block text-[11px] font-bold uppercase tracking-[0.14em] text-midnight-teal/75';
-const fieldClass = 'w-full rounded-xl border border-midnight-teal/10 bg-white/90 px-4 py-3 text-sm text-midnight-teal shadow-sm outline-none transition-all placeholder:text-midnight-teal/30 focus:border-harvest-orange/50 focus:ring-4 focus:ring-harvest-orange/10';
 
 const TYPE_OPTIONS: { value: PartContentType; label: string }[] = [
     { value: 'video', label: 'Video Link' },
@@ -67,11 +65,11 @@ export function PartModal({ title, initial, onClose, onSave }: PartModalProps) {
         && (!needsText || form.textContent.trim().length > 0);
 
     return (
-        <div className={`fixed inset-0 z-[60] flex items-center justify-center bg-midnight-teal/45 p-4 backdrop-blur-md transition-opacity duration-200 ${visible ? 'opacity-100' : 'opacity-0'}`}>
-            <div className={`max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-3xl border border-white/70 bg-[#f7faf8] shadow-2xl shadow-midnight-teal/30 transition-all duration-200 ease-out ${visible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}>
+        <div className={`z-[60] ${modalOverlayClass(visible)}`}>
+            <div className={`max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-3xl border border-white/70 bg-[#f7faf8] shadow-2xl shadow-midnight-teal/30 ${modalPanelClass(visible)}`}>
                 <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-midnight-teal/95 px-6 py-5 backdrop-blur-xl">
                     <h2 className="font-serif text-2xl text-soft-linen">{title}</h2>
-                    <button onClick={requestClose} className="flex h-9 w-9 items-center justify-center rounded-full text-2xl leading-none text-soft-linen/60 transition-colors hover:bg-white/10 hover:text-soft-linen">×</button>
+                    <button onClick={requestClose} aria-label="Close" className="flex h-9 w-9 items-center justify-center rounded-full text-soft-linen/60 transition-colors hover:bg-white/10 hover:text-soft-linen"><X size={18} /></button>
                 </div>
 
                 <div className="space-y-5 bg-[#f7faf8]/95 p-6 sm:p-7">
@@ -88,7 +86,7 @@ export function PartModal({ title, initial, onClose, onSave }: PartModalProps) {
                                     key={option.value}
                                     type="button"
                                     onClick={() => setForm(prev => ({ ...prev, type: option.value }))}
-                                    className={`rounded-xl px-4 py-2 text-sm font-bold transition-colors ${form.type === option.value ? 'bg-midnight-teal text-soft-linen shadow' : 'border border-midnight-teal/10 bg-white text-midnight-teal/60 hover:text-midnight-teal'}`}
+                                    className={segmentedButtonClass(form.type === option.value)}
                                 >
                                     {option.label}
                                 </button>

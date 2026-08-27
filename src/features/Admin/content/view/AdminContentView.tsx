@@ -8,21 +8,17 @@ import { Archive, BookOpen, ChevronLeft, ChevronRight, Layers, Loader2, Pencil, 
 import AdminHeader from '../../../../shared/components/AdminHeader';
 import AdminSidebar from '../../../../shared/components/AdminSidebar';
 import { CONTENT_TYPE_OPTIONS, STATUS_OPTIONS } from '../model/adminContent.types';
-import type { Journey, JourneyStatus } from '../model/adminContent.types';
+import type { Journey } from '../model/adminContent.types';
 import type { ToastMessage } from '../viewmodel/useAdminContentViewModel';
 import { useAdminContentViewModel } from '../viewmodel/useAdminContentViewModel';
+import { ConfirmArchiveModal } from './ConfirmArchiveModal';
 import { ConfirmDeleteJourneyModal } from './ConfirmDeleteJourneyModal';
 import { JourneyEditor } from './JourneyEditor';
+import { iconButtonClass, statusBadgeClass, toggleChipClass, type IconButtonVariant } from './contentStyles';
 
 const CONTENT_TYPE_LABELS: Record<string, string> = Object.fromEntries(
     CONTENT_TYPE_OPTIONS.map(option => [option.value, option.label]),
 );
-
-const STATUS_BADGE_CLASSES: Record<JourneyStatus, string> = {
-    draft: 'bg-gray-100 text-gray-600',
-    published: 'bg-emerald-50 text-emerald-700',
-    archived: 'bg-amber-50 text-amber-700',
-};
 
 export default function AdminContentView() {
     const vm = useAdminContentViewModel();
@@ -38,7 +34,7 @@ export default function AdminContentView() {
                             <h1 className="font-serif text-2xl text-midnight-teal">Journeys</h1>
                             <p className="mt-0.5 text-sm text-gray-400">Build and publish sermon series, bible studies, and devotional plans.</p>
                         </div>
-                        <button onClick={vm.openCreateEditor} className="flex items-center justify-center gap-2 rounded-xl bg-midnight-teal px-5 py-2.5 text-sm font-bold text-soft-linen shadow transition-colors hover:bg-midnight-teal/90">
+                        <button onClick={vm.openCreateEditor} className="flex items-center justify-center gap-2 rounded-xl bg-midnight-teal px-5 py-2.5 text-sm font-bold text-soft-linen shadow transition-colors hover:bg-deep-teal">
                             <Plus size={16} /> New Journey
                         </button>
                     </header>
@@ -74,7 +70,7 @@ export default function AdminContentView() {
                                             isPending={vm.pendingStatusId === journey.id}
                                             onEdit={() => vm.openEditEditor(journey)}
                                             onDelete={() => vm.openDeleteModal(journey)}
-                                            onArchive={() => void vm.handleSetStatus(journey, 'archived')}
+                                            onArchive={() => vm.openArchiveModal(journey)}
                                             onRestore={() => void vm.handleSetStatus(journey, 'draft')}
                                         />
                                     </div>
@@ -110,6 +106,15 @@ export default function AdminContentView() {
                 isDeleting={vm.isDeleting}
                 onCancel={vm.closeDeleteModal}
                 onConfirm={() => void vm.handleDelete()}
+            />
+
+            <ConfirmArchiveModal
+                open={Boolean(vm.archiveTarget)}
+                itemKind="Journey"
+                itemTitle={vm.archiveTarget?.title ?? ''}
+                isArchiving={vm.pendingStatusId === vm.archiveTarget?.id}
+                onCancel={vm.closeArchiveModal}
+                onConfirm={() => void vm.confirmArchive()}
             />
         </div>
     );
@@ -213,11 +218,7 @@ function FilterBar({ vm }: { vm: ReturnType<typeof useAdminContentViewModel> }) 
                             onClick={() => vm.toggleStatusFilter(option.value)}
                             aria-pressed={active}
                             title={option.description}
-                            className={`rounded-full border px-3 py-1.5 text-xs font-bold uppercase tracking-wide transition-colors ${
-                                active
-                                    ? 'border-midnight-teal bg-midnight-teal text-soft-linen'
-                                    : 'border-gray-200 bg-white text-midnight-teal/60 hover:border-midnight-teal/30'
-                            }`}
+                            className={toggleChipClass(active)}
                         >
                             {option.label}
                         </button>
@@ -294,7 +295,7 @@ function JourneyCard({ journey, isPending, onEdit, onDelete, onArchive, onRestor
             <div className="min-w-0 flex-1">
                 <div className="mb-1 flex flex-wrap items-center gap-2">
                     <h3 className="truncate font-serif text-base font-semibold text-midnight-teal">{journey.title}</h3>
-                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest transition-colors duration-200 ${STATUS_BADGE_CLASSES[journey.status]}`}>{journey.status}</span>
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest transition-colors duration-200 ${statusBadgeClass(journey.status)}`}>{journey.status}</span>
                     <span className="rounded-full bg-midnight-teal/5 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-midnight-teal/60">
                         {CONTENT_TYPE_LABELS[journey.contentType] ?? journey.contentType}
                     </span>
@@ -308,24 +309,24 @@ function JourneyCard({ journey, isPending, onEdit, onDelete, onArchive, onRestor
             <div className="flex shrink-0 items-center gap-1">
                 <IconButton title="Edit" onClick={onEdit} disabled={isPending}><Pencil size={16} /></IconButton>
                 {journey.status === 'archived' ? (
-                    <IconButton title="Restore to draft" onClick={onRestore} disabled={isPending} loading={isPending}><RotateCcw size={16} /></IconButton>
+                    <IconButton title="Restore to draft" onClick={onRestore} disabled={isPending} loading={isPending} variant="warn"><RotateCcw size={16} /></IconButton>
                 ) : (
-                    <IconButton title="Archive" onClick={onArchive} disabled={isPending} loading={isPending}><Archive size={16} /></IconButton>
+                    <IconButton title="Archive" onClick={onArchive} disabled={isPending} loading={isPending} variant="warn"><Archive size={16} /></IconButton>
                 )}
-                <IconButton title="Delete" onClick={onDelete} disabled={isPending} danger><Trash2 size={16} /></IconButton>
+                <IconButton title="Delete" onClick={onDelete} disabled={isPending} variant="danger"><Trash2 size={16} /></IconButton>
             </div>
         </article>
     );
 }
 
-function IconButton({ title, onClick, danger = false, disabled = false, loading = false, children }: { title: string; onClick: () => void; danger?: boolean; disabled?: boolean; loading?: boolean; children: React.ReactNode }) {
+function IconButton({ title, onClick, variant = 'default', disabled = false, loading = false, children }: { title: string; onClick: () => void; variant?: IconButtonVariant; disabled?: boolean; loading?: boolean; children: React.ReactNode }) {
     return (
         <button
             onClick={onClick}
             title={title}
             aria-label={title}
             disabled={disabled}
-            className={`grid h-9 w-9 place-items-center rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${danger ? 'text-red-400 hover:bg-red-50 hover:text-red-500' : 'text-midnight-teal/60 hover:bg-midnight-teal/10 hover:text-midnight-teal'}`}
+            className={`grid h-9 w-9 place-items-center rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${iconButtonClass(variant)}`}
         >
             {loading ? <Loader2 size={16} className="animate-spin" /> : children}
         </button>

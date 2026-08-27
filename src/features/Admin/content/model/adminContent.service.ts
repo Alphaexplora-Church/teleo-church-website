@@ -134,6 +134,23 @@ export const AdminContentService = {
         return settle(undefined);
     },
 
+    /** Persists a new Part order. Payload is `[{ partId, position }]`, 1-based; completion progress is untouched server-side. */
+    reorderParts: async (journeyId: string, payload: { partId: string; position: number }[]): Promise<Journey> => {
+        const all = readAll();
+        const index = all.findIndex(item => item.id === journeyId);
+        if (index === -1) throw new Error('Journey not found');
+
+        const positionById = new Map(payload.map(item => [item.partId, item.position]));
+        const parts = [...all[index].parts]
+            .map(part => ({ ...part, order: positionById.get(part.id) ?? part.order }))
+            .sort((a, b) => a.order - b.order);
+
+        const updated: Journey = { ...all[index], parts, updatedAt: new Date().toISOString() };
+        all[index] = updated;
+        writeAll(all);
+        return settle(updated);
+    },
+
     /** Quick lifecycle transition used by the list view's Archive/Restore actions (does not touch metadata or parts). */
     setStatus: async (id: string, status: JourneyStatus): Promise<Journey> => {
         const all = readAll();

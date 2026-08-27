@@ -22,8 +22,13 @@ export type JourneyCategory = typeof CATEGORY_OPTIONS[number];
 /** Whether a Part carries a video link, a written passage, or both. */
 export type PartContentType = 'video' | 'text' | 'both';
 
-/** A single Part's publish state. A journey may only be published once at least one Part is 'published'. */
-export type PartStatus = 'draft' | 'published';
+/**
+ * A single Part's lifecycle state. A journey may only be published once at
+ * least one Part is 'published'. 'archived' hides the Part from Members
+ * (and from the publish-eligibility check below) while keeping it — and any
+ * Member completion record tied to it — intact for reference/restoration.
+ */
+export type PartStatus = 'draft' | 'published' | 'archived';
 
 /** A journey's own publish state — hidden from members while draft, visible once published, hidden again (but retained) once archived. */
 export type JourneyStatus = 'draft' | 'published' | 'archived';

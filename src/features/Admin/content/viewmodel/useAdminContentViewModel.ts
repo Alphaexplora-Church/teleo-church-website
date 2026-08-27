@@ -24,6 +24,8 @@ export function useAdminContentViewModel() {
     const [isEditorOpen, setIsEditorOpen] = useState(false);
     const [editingJourney, setEditingJourney] = useState<Journey | null>(null);
     const [deleteTarget, setDeleteTarget] = useState<Journey | null>(null);
+    /** Journey pending confirmation before the (destructive-to-visibility) Archive action fires. Restore has no confirmation — it's non-destructive. */
+    const [archiveTarget, setArchiveTarget] = useState<Journey | null>(null);
     const [toast, setToast] = useState<ToastMessage>(null);
 
     /** Id of the journey whose Archive/Restore action is in flight, so its row can show a spinner instead of doing nothing. */
@@ -97,6 +99,29 @@ export function useAdminContentViewModel() {
 
     const hasActiveFilters = search.trim() !== '' || statusFilter.length > 0 || contentTypeFilter !== 'all' || categoryFilter !== 'all';
 
+    const applyStatus = async (journey: Journey, status: JourneyStatus) => {
+        const previousStatus = journey.status;
+        setPendingStatusId(journey.id);
+        // Optimistic update: reflect the new status immediately instead
+        // of leaving the row looking frozen for the ~250ms round trip.
+        setJourneys(current => current.map(item => item.id === journey.id ? { ...item, status } : item));
+        try {
+            const updated = await AdminContentService.setStatus(journey.id, status);
+            setJourneys(current => current.map(item => item.id === updated.id ? updated : item));
+            showToast(
+                status === 'archived'
+                    ? `“${updated.title}” archived.`
+                    : `“${updated.title}” moved to ${status}.`,
+            );
+        } catch {
+            // Roll back the optimistic change.
+            setJourneys(current => current.map(item => item.id === journey.id ? { ...item, status: previousStatus } : item));
+            showToast('Failed to update journey status.', 'error');
+        } finally {
+            setPendingStatusId(null);
+        }
+    };
+
     return {
         journeys, filteredJourneys, paginatedJourneys, isLoading, error,
         search, setSearch,
@@ -137,27 +162,17 @@ export function useAdminContentViewModel() {
 
         /** Quick list-view action: archive a journey (or restore an archived one back to draft). */
         pendingStatusId,
-        handleSetStatus: async (journey: Journey, status: JourneyStatus) => {
-            const previousStatus = journey.status;
-            setPendingStatusId(journey.id);
-            // Optimistic update: reflect the new status immediately instead
-            // of leaving the row looking frozen for the ~250ms round trip.
-            setJourneys(current => current.map(item => item.id === journey.id ? { ...item, status } : item));
-            try {
-                const updated = await AdminContentService.setStatus(journey.id, status);
-                setJourneys(current => current.map(item => item.id === updated.id ? updated : item));
-                showToast(
-                    status === 'archived'
-                        ? `“${updated.title}” archived.`
-                        : `“${updated.title}” moved to ${status}.`,
-                );
-            } catch {
-                // Roll back the optimistic change.
-                setJourneys(current => current.map(item => item.id === journey.id ? { ...item, status: previousStatus } : item));
-                showToast('Failed to update journey status.', 'error');
-            } finally {
-                setPendingStatusId(null);
-            }
+        handleSetStatus: (journey: Journey, status: JourneyStatus) => applyStatus(journey, status),
+
+        /** Archive requires a confirmation step first (spec: downstream effects on Member completion/visibility must be surfaced before it fires). Restore stays a direct one-click action since it's non-destructive. */
+        archiveTarget,
+        openArchiveModal: setArchiveTarget,
+        closeArchiveModal: () => setArchiveTarget(null),
+        confirmArchive: async () => {
+            if (!archiveTarget) return;
+            const target = archiveTarget;
+            setArchiveTarget(null);
+            await applyStatus(target, 'archived');
         },
 
         onJourneySaved: (journey: Journey, isNew: boolean) => {

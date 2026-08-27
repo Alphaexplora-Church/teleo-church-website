@@ -3,13 +3,16 @@
 // metadata + the Series builder for adding/editing Parts, with Publish
 // gated on at least one Published Part, and the edit-flow rule that saving
 // retains the journey's current status unless the Pastor explicitly Publishes.
-import { useState } from 'react';
-import { ArrowDown, ArrowUp, FileText, ImageOff, Loader2, Pencil, Plus, Trash2, Video } from 'lucide-react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { Archive, ChevronDown, FileText, GripVertical, ImageOff, Loader2, Pencil, Plus, RotateCcw, Trash2, Video, X } from 'lucide-react';
 import type { Journey, JourneyFormData, JourneyPart, PartFormData } from '../model/adminContent.types';
 import { CATEGORY_OPTIONS, CONTENT_TYPE_OPTIONS, EMPTY_JOURNEY_FORM, canPublishJourney } from '../model/adminContent.types';
 import { AdminContentService, buildPart, type VideoPreview } from '../model/adminContent.service';
 import { useModalTransition } from '../../../../shared/hooks/useModalTransition';
 import { PartModal } from './PartModal';
+import { ConfirmArchiveModal } from './ConfirmArchiveModal';
+import { fieldClass, iconButtonClass, labelClass, modalOverlayClass, modalPanelClass, statusBadgeClass, toggleChipClass, type IconButtonVariant } from './contentStyles';
 
 interface JourneyEditorProps {
     journey: Journey | null;
@@ -17,9 +20,6 @@ interface JourneyEditorProps {
     onSaved: (journey: Journey, isNew: boolean) => void;
     showToast: (msg: string, type?: 'success' | 'error') => void;
 }
-
-const labelClass = 'mb-2 block text-[11px] font-bold uppercase tracking-[0.14em] text-midnight-teal/75';
-const fieldClass = 'w-full rounded-xl border border-midnight-teal/10 bg-white/90 px-4 py-3 text-sm text-midnight-teal shadow-sm outline-none transition-all placeholder:text-midnight-teal/30 focus:border-harvest-orange/50 focus:ring-4 focus:ring-harvest-orange/10';
 
 export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyEditorProps) {
     const { visible, requestClose } = useModalTransition(onClose);
@@ -35,6 +35,135 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
     const [isSaving, setIsSaving] = useState(false);
     const [partModal, setPartModal] = useState<{ mode: 'add' } | { mode: 'edit'; part: JourneyPart } | null>(null);
 
+    // ── Drag-and-drop reordering ──────────────────────────────────────────
+    // Order changes are applied to local state only — nothing is persisted
+    // until the Pastor explicitly saves, matching the rest of this form. A
+    // Part's identity (and therefore any Member's completion record against
+    // it) is keyed on `id`, never on position, so dragging a row only ever
+    // rewrites the `order` field and never touches completion data.
+    //
+    // This is pointer-driven rather than native HTML5 drag/drop: the row
+    // being dragged is pulled out of the list and rendered as a floating
+    // clone that tracks the cursor directly, while its old slot collapses
+    // to a placeholder and the rows it passes over slide out of the way
+    // live (via the FLIP effect below). Native drag/drop can't do this —
+    // its "ghost" is a static browser-rendered snapshot that just floats
+    // near the cursor without any of the list actually reacting to it.
+    const itemRefs = useRef<Record<string, HTMLLIElement | null>>({});
+    const dragMeta = useRef<{ id: string; offsetY: number; left: number; width: number; height: number } | null>(null);
+    const [draggingId, setDraggingId] = useState<string | null>(null);
+    const [pointerY, setPointerY] = useState(0);
+    const originalOrder = useRef<string[]>((journey?.parts ?? []).map(part => part.id));
+    const orderChanged = parts.map(part => part.id).join(',') !== originalOrder.current.join(',');
+
+    // Rows animate into their new slot as they get displaced (FLIP: measure
+    // before the reorder, then transition away the delta after React commits).
+    const prevTops = useRef<Record<string, number>>({});
+
+    useLayoutEffect(() => {
+        const nextTops: Record<string, number> = {};
+        parts.forEach(part => {
+            const el = itemRefs.current[part.id];
+            if (el) nextTops[part.id] = el.getBoundingClientRect().top;
+        });
+
+        parts.forEach(part => {
+            if (part.id === draggingId) return; // the dragged row is a floating clone, not this slot
+            const el = itemRefs.current[part.id];
+            const prevTop = prevTops.current[part.id];
+            const nextTop = nextTops[part.id];
+            if (!el || prevTop === undefined || nextTop === undefined) return;
+            const delta = prevTop - nextTop;
+            if (Math.abs(delta) < 1) return;
+
+            el.style.transition = 'none';
+            el.style.transform = `translateY(${delta}px)`;
+            requestAnimationFrame(() => {
+                el.style.transition = 'transform 220ms cubic-bezier(0.2, 0, 0.2, 1)';
+                el.style.transform = '';
+            });
+        });
+
+        prevTops.current = nextTops;
+    }, [parts, draggingId]);
+
+    const movePart = (from: number, to: number) => {
+        if (from === to || from < 0 || to < 0 || from >= parts.length || to >= parts.length) return;
+        setParts(prev => {
+            const next = [...prev];
+            const [moved] = next.splice(from, 1);
+            next.splice(to, 0, moved);
+            return next.map((part, i) => ({ ...part, order: i + 1 }));
+        });
+    };
+
+    const handleGripPointerDown = (e: React.PointerEvent, id: string) => {
+        if (e.button !== 0) return;
+        const el = itemRefs.current[id];
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        dragMeta.current = { id, offsetY: e.clientY - rect.top, left: rect.left, width: rect.width, height: rect.height };
+        setDraggingId(id);
+        setPointerY(e.clientY);
+    };
+
+    useEffect(() => {
+        if (!draggingId) return;
+
+        const handleMove = (e: PointerEvent) => {
+            setPointerY(e.clientY);
+            const meta = dragMeta.current;
+            if (!meta) return;
+            const draggedCenter = (e.clientY - meta.offsetY) + meta.height / 2;
+
+            setParts(prev => {
+                const currentIndex = prev.findIndex(p => p.id === meta.id);
+                if (currentIndex === -1) return prev;
+                const others = prev.filter(p => p.id !== meta.id);
+                let targetIndex = others.length;
+                for (let i = 0; i < others.length; i++) {
+                    const otherEl = itemRefs.current[others[i].id];
+                    if (!otherEl) continue;
+                    const rect = otherEl.getBoundingClientRect();
+                    if (draggedCenter < rect.top + rect.height / 2) { targetIndex = i; break; }
+                }
+                if (targetIndex === currentIndex) return prev;
+                const next = [...prev];
+                const [moved] = next.splice(currentIndex, 1);
+                next.splice(targetIndex, 0, moved);
+                return next.map((p, i) => ({ ...p, order: i + 1 }));
+            });
+        };
+
+        const handleUp = () => {
+            dragMeta.current = null;
+            setDraggingId(null);
+        };
+
+        window.addEventListener('pointermove', handleMove);
+        window.addEventListener('pointerup', handleUp);
+        window.addEventListener('pointercancel', handleUp);
+        const prevUserSelect = document.body.style.userSelect;
+        document.body.style.userSelect = 'none';
+        return () => {
+            window.removeEventListener('pointermove', handleMove);
+            window.removeEventListener('pointerup', handleUp);
+            window.removeEventListener('pointercancel', handleUp);
+            document.body.style.userSelect = prevUserSelect;
+        };
+    }, [draggingId]);
+
+    // ── Per-part archive/restore ──────────────────────────────────────────
+    // Archiving is staged locally (like everything else in this form) and
+    // only takes effect on Save; a confirmation is required either way since
+    // it hides a Part from Members while leaving any completion already
+    // recorded against it untouched.
+    const [archivePartTarget, setArchivePartTarget] = useState<JourneyPart | null>(null);
+
+    const setPartStatus = (id: string, status: JourneyPart['status']) => {
+        setParts(prev => prev.map(part => part.id === id ? { ...part, status } : part));
+    };
+
     const toggleCategory = (category: string) => {
         setForm(prev => ({
             ...prev,
@@ -42,16 +171,6 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
                 ? prev.categories.filter(item => item !== category)
                 : [...prev.categories, category],
         }));
-    };
-
-    const reorder = (index: number, direction: -1 | 1) => {
-        setParts(prev => {
-            const next = [...prev];
-            const swapIndex = index + direction;
-            if (swapIndex < 0 || swapIndex >= next.length) return prev;
-            [next[index], next[swapIndex]] = [next[swapIndex], next[index]];
-            return next.map((part, i) => ({ ...part, order: i + 1 }));
-        });
     };
 
     const removePart = (id: string) => {
@@ -73,8 +192,10 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
 
     const isMetadataValid = form.title.trim().length > 0 && form.description.trim().length > 0 && form.categories.length > 0;
     const isPublishable = canPublishJourney(parts);
+    const [archiveJourneyOpen, setArchiveJourneyOpen] = useState(false);
+    const [isArchivingJourney, setIsArchivingJourney] = useState(false);
 
-    const persist = async (nextStatus?: 'draft' | 'published') => {
+    const persist = async (nextStatus?: Journey['status'], options?: { closeOnSave?: boolean }) => {
         if (!isMetadataValid) {
             showToast('Title, description, and at least one category are required.', 'error');
             return;
@@ -92,16 +213,20 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
             let saved: Journey;
             if (journey) {
                 // Rule: editing content retains its current status unless the
-                // Pastor explicitly Publishes from this screen.
+                // Pastor explicitly Publishes/Unpublishes/Archives from this screen.
                 saved = await AdminContentService.saveJourney(journey.id, form, parts, nextStatus ?? journey.status);
-                showToast(nextStatus === 'published' ? `“${saved.title}” published.` : `“${saved.title}” updated.`);
+                const message = nextStatus === 'published' ? `“${saved.title}” published.`
+                    : nextStatus === 'draft' && journey.status !== 'draft' ? `“${saved.title}” unpublished — hidden from Members.`
+                    : nextStatus === 'archived' ? `“${saved.title}” archived.`
+                    : `“${saved.title}” updated.`;
+                showToast(message);
             } else {
                 const created = await AdminContentService.createJourney(form);
                 saved = await AdminContentService.saveJourney(created.id, form, parts, nextStatus ?? 'draft');
                 showToast(nextStatus === 'published' ? `“${saved.title}” published.` : `“${saved.title}” saved as draft.`);
             }
             onSaved(saved, isNew);
-            requestClose();
+            if (options?.closeOnSave !== false) requestClose();
         } catch {
             showToast('Failed to save the journey.', 'error');
         } finally {
@@ -109,15 +234,28 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
         }
     };
 
+    const handleArchiveJourney = async () => {
+        setIsArchivingJourney(true);
+        await persist('archived');
+        setIsArchivingJourney(false);
+        setArchiveJourneyOpen(false);
+    };
+
+    const handleArchivePart = () => {
+        if (!archivePartTarget) return;
+        setPartStatus(archivePartTarget.id, 'archived');
+        setArchivePartTarget(null);
+    };
+
     return (
-        <div className={`fixed inset-0 z-50 flex items-center justify-center bg-midnight-teal/45 p-4 backdrop-blur-md transition-opacity duration-200 ${visible ? 'opacity-100' : 'opacity-0'}`}>
-            <div className={`max-h-[94vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/70 bg-[#f7faf8] shadow-2xl shadow-midnight-teal/30 transition-all duration-200 ease-out ${visible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}>
+        <div className={`z-50 ${modalOverlayClass(visible, !archiveJourneyOpen && !archivePartTarget)}`}>
+            <div className={`max-h-[94vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/70 bg-[#f7faf8] shadow-2xl shadow-midnight-teal/30 ${modalPanelClass(visible)}`}>
                 <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-midnight-teal/95 px-6 py-5 backdrop-blur-xl">
                     <div>
                         <h2 className="font-serif text-2xl text-soft-linen">{journey ? 'Edit Journey' : 'New Journey'}</h2>
                         {journey && <p className="text-xs font-semibold uppercase tracking-widest text-soft-linen/50">Currently {journey.status}</p>}
                     </div>
-                    <button onClick={requestClose} className="flex h-9 w-9 items-center justify-center rounded-full text-2xl leading-none text-soft-linen/60 transition-colors hover:bg-white/10 hover:text-soft-linen">×</button>
+                    <button onClick={requestClose} aria-label="Close" className="flex h-9 w-9 items-center justify-center rounded-full text-soft-linen/60 transition-colors hover:bg-white/10 hover:text-soft-linen"><X size={18} /></button>
                 </div>
 
                 <div className="space-y-8 bg-[#f7faf8]/95 p-6 sm:p-7">
@@ -138,9 +276,16 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div>
                                 <label className={labelClass}>Content Type</label>
-                                <select value={form.contentType} onChange={e => setForm(prev => ({ ...prev, contentType: e.target.value as JourneyFormData['contentType'] }))} className={fieldClass}>
-                                    {CONTENT_TYPE_OPTIONS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
-                                </select>
+                                <div className="relative">
+                                    <select
+                                        value={form.contentType}
+                                        onChange={e => setForm(prev => ({ ...prev, contentType: e.target.value as JourneyFormData['contentType'] }))}
+                                        className={`${fieldClass} appearance-none pr-10`}
+                                    >
+                                        {CONTENT_TYPE_OPTIONS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+                                    </select>
+                                    <ChevronDown size={16} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-midnight-teal/40" />
+                                </div>
                             </div>
                             <div>
                                 <label className={labelClass}>Summary <span className="normal-case font-semibold text-midnight-teal/40">(optional)</span></label>
@@ -154,7 +299,7 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
                                 {CATEGORY_OPTIONS.map(category => {
                                     const active = form.categories.includes(category);
                                     return (
-                                        <button key={category} type="button" onClick={() => toggleCategory(category)} className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors ${active ? 'bg-harvest-orange text-white shadow' : 'border border-midnight-teal/15 bg-white text-midnight-teal/60 hover:text-midnight-teal'}`}>
+                                        <button key={category} type="button" onClick={() => toggleCategory(category)} className={toggleChipClass(active)}>
                                             {category}
                                         </button>
                                     );
@@ -182,12 +327,60 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
                             </div>
                         ) : (
                             <ul className="space-y-2">
-                                {parts.map((part, index) => (
-                                    <li key={part.id} className="animate-fade-in-up">
-                                        <PartRow part={part} index={index} total={parts.length} onMoveUp={() => reorder(index, -1)} onMoveDown={() => reorder(index, 1)} onEdit={() => setPartModal({ mode: 'edit', part })} onRemove={() => removePart(part.id)} />
-                                    </li>
-                                ))}
+                                {parts.map(part => {
+                                    const isBeingDragged = draggingId === part.id;
+                                    return (
+                                        <li
+                                            key={part.id}
+                                            ref={el => { itemRefs.current[part.id] = el; }}
+                                            className="animate-fade-in-up"
+                                        >
+                                            {isBeingDragged ? (
+                                                <div
+                                                    className="rounded-2xl border-2 border-dashed border-harvest-orange/30 bg-harvest-orange/5"
+                                                    style={{ height: dragMeta.current?.height }}
+                                                />
+                                            ) : (
+                                                <PartRow
+                                                    part={part}
+                                                    onGripPointerDown={e => handleGripPointerDown(e, part.id)}
+                                                    onEdit={() => setPartModal({ mode: 'edit', part })}
+                                                    onRemove={() => removePart(part.id)}
+                                                    onArchive={() => setArchivePartTarget(part)}
+                                                    onRestore={() => setPartStatus(part.id, 'draft')}
+                                                />
+                                            )}
+                                        </li>
+                                    );
+                                })}
                             </ul>
+                        )}
+
+                        {draggingId && dragMeta.current && (() => {
+                            const meta = dragMeta.current!;
+                            const draggedPart = parts.find(p => p.id === draggingId);
+                            if (!draggedPart) return null;
+                            return createPortal(
+                                <div
+                                    className="pointer-events-none fixed z-[70]"
+                                    style={{ top: pointerY - meta.offsetY, left: meta.left, width: meta.width }}
+                                >
+                                    <PartRow
+                                        part={draggedPart}
+                                        isFloating
+                                        onGripPointerDown={() => {}}
+                                        onEdit={() => {}}
+                                        onRemove={() => {}}
+                                        onArchive={() => {}}
+                                        onRestore={() => {}}
+                                    />
+                                </div>,
+                                document.body,
+                            );
+                        })()}
+
+                        {orderChanged && (
+                            <p className="text-xs font-semibold text-harvest-orange">Part order changed — save to apply. Members' existing completion progress is unaffected either way.</p>
                         )}
 
                         <div className={`flex items-center gap-2 rounded-xl px-4 py-3 text-xs font-bold ${isPublishable ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
@@ -196,10 +389,19 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
                     </section>
                 </div>
 
-                <div className="sticky bottom-0 flex flex-col-reverse gap-3 border-t border-midnight-teal/10 bg-white/85 px-6 py-4 backdrop-blur-xl sm:flex-row sm:justify-end">
+                <div className="sticky bottom-0 flex flex-col-reverse flex-wrap gap-3 border-t border-midnight-teal/10 bg-white/85 px-6 py-4 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-end">
+                    {journey && journey.status !== 'archived' && (
+                        <button
+                            onClick={() => setArchiveJourneyOpen(true)}
+                            disabled={isSaving}
+                            className="flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-bold text-amber-700 transition-colors hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50 sm:mr-auto"
+                        >
+                            <Archive size={14} /> Archive Journey
+                        </button>
+                    )}
                     <button onClick={requestClose} disabled={isSaving} className="rounded-xl px-5 py-2.5 text-sm font-bold text-midnight-teal/55 transition-colors hover:bg-midnight-teal/5 hover:text-midnight-teal disabled:cursor-not-allowed disabled:opacity-50">Cancel</button>
                     <button onClick={() => void persist('draft')} disabled={isSaving} className="flex items-center justify-center gap-2 rounded-xl border border-midnight-teal/15 bg-white px-5 py-2.5 text-sm font-bold text-midnight-teal transition-colors hover:bg-midnight-teal/5 disabled:opacity-50">
-                        {isSaving && <Loader2 size={14} className="animate-spin" />} Save as Draft
+                        {isSaving && <Loader2 size={14} className="animate-spin" />} {journey?.status === 'published' ? 'Unpublish' : 'Save as Draft'}
                     </button>
                     {journey?.status === 'published' ? (
                         <button onClick={() => void persist('published')} disabled={isSaving} className="flex items-center justify-center gap-2 rounded-xl bg-midnight-teal px-5 py-2.5 text-sm font-bold text-soft-linen shadow-lg shadow-midnight-teal/15 transition-all hover:-translate-y-0.5 hover:bg-deep-teal disabled:opacity-50 disabled:hover:translate-y-0">
@@ -226,20 +428,54 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
                     onSave={handlePartSave}
                 />
             )}
+
+            <ConfirmArchiveModal
+                open={archiveJourneyOpen}
+                itemKind="Journey"
+                itemTitle={form.title || 'this journey'}
+                isArchiving={isArchivingJourney}
+                onCancel={() => setArchiveJourneyOpen(false)}
+                onConfirm={() => void handleArchiveJourney()}
+            />
+
+            <ConfirmArchiveModal
+                open={Boolean(archivePartTarget)}
+                itemKind="Part"
+                itemTitle={archivePartTarget?.title ?? ''}
+                onCancel={() => setArchivePartTarget(null)}
+                onConfirm={handleArchivePart}
+            />
         </div>
     );
 }
 
-function PartRow({ part, index, total, onMoveUp, onMoveDown, onEdit, onRemove }: {
-    part: JourneyPart; index: number; total: number;
-    onMoveUp: () => void; onMoveDown: () => void; onEdit: () => void; onRemove: () => void;
+function PartRow({ part, isFloating = false, onGripPointerDown, onEdit, onRemove, onArchive, onRestore }: {
+    part: JourneyPart; isFloating?: boolean;
+    onGripPointerDown: (e: React.PointerEvent) => void;
+    onEdit: () => void; onRemove: () => void;
+    onArchive: () => void; onRestore: () => void;
 }) {
     const hasVideo = part.type === 'video' || part.type === 'both';
     const hasText = part.type === 'text' || part.type === 'both';
     const linkBroken = hasVideo && !part.videoTitle;
+    const isArchived = part.status === 'archived';
 
     return (
-        <div className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm transition-shadow hover:shadow-md">
+        <div
+            style={isFloating ? { transform: 'scale(1.03) rotate(-1deg)' } : undefined}
+            className={`relative flex items-center gap-2 rounded-2xl border bg-white p-3 transition-[box-shadow,border-color] duration-150 ${
+                isFloating ? 'border-harvest-orange bg-white shadow-2xl shadow-midnight-teal/25 ring-2 ring-harvest-orange/40' : 'border-gray-100 shadow-sm hover:shadow-md'
+            } ${isArchived ? 'opacity-60' : ''}`}
+        >
+            <span
+                title="Drag to reorder"
+                onPointerDown={onGripPointerDown}
+                style={{ touchAction: 'none' }}
+                className="grid h-8 w-6 shrink-0 cursor-grab place-items-center text-midnight-teal/25 hover:text-midnight-teal/50 active:cursor-grabbing"
+            >
+                <GripVertical size={16} />
+            </span>
+
             <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-midnight-teal/5 text-xs font-bold text-midnight-teal/60">{part.order}</span>
 
             <div className="h-12 w-16 shrink-0 overflow-hidden rounded-lg bg-gray-100">
@@ -253,7 +489,7 @@ function PartRow({ part, index, total, onMoveUp, onMoveDown, onEdit, onRemove }:
             <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                     <p className="truncate font-serif text-sm font-semibold text-midnight-teal">{part.title}</p>
-                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest ${part.status === 'published' ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>{part.status}</span>
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest ${statusBadgeClass(part.status)}`}>{part.status}</span>
                     {linkBroken && <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-red-500">Link needs attention</span>}
                 </div>
                 <div className="flex items-center gap-2 text-xs text-gray-400">
@@ -263,18 +499,21 @@ function PartRow({ part, index, total, onMoveUp, onMoveDown, onEdit, onRemove }:
             </div>
 
             <div className="flex shrink-0 items-center gap-1">
-                <IconButton title="Move up" disabled={index === 0} onClick={onMoveUp}><ArrowUp size={14} /></IconButton>
-                <IconButton title="Move down" disabled={index === total - 1} onClick={onMoveDown}><ArrowDown size={14} /></IconButton>
                 <IconButton title="Edit part" onClick={onEdit}><Pencil size={14} /></IconButton>
-                <IconButton title="Remove part" onClick={onRemove} danger><Trash2 size={14} /></IconButton>
+                {isArchived ? (
+                    <IconButton title="Restore part" onClick={onRestore} variant="warn"><RotateCcw size={14} /></IconButton>
+                ) : (
+                    <IconButton title="Archive part" onClick={onArchive} variant="warn"><Archive size={14} /></IconButton>
+                )}
+                <IconButton title="Remove part" onClick={onRemove} variant="danger"><Trash2 size={14} /></IconButton>
             </div>
         </div>
     );
 }
 
-function IconButton({ title, onClick, disabled, danger, children }: { title: string; onClick: () => void; disabled?: boolean; danger?: boolean; children: React.ReactNode }) {
+function IconButton({ title, onClick, disabled, variant = 'default', children }: { title: string; onClick: () => void; disabled?: boolean; variant?: IconButtonVariant; children: React.ReactNode }) {
     return (
-        <button title={title} aria-label={title} onClick={onClick} disabled={disabled} className={`grid h-8 w-8 place-items-center rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-30 ${danger ? 'text-red-400 hover:bg-red-50 hover:text-red-500' : 'text-midnight-teal/60 hover:bg-midnight-teal/10 hover:text-midnight-teal'}`}>
+        <button title={title} aria-label={title} onClick={onClick} disabled={disabled} className={`grid h-8 w-8 place-items-center rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-30 ${iconButtonClass(variant)}`}>
             {children}
         </button>
     );
