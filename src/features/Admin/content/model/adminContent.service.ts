@@ -193,6 +193,110 @@ export interface JourneyQuery {
     category?: string;
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** A locally staged Part carries a client-side id until the API assigns a real one. */
+const isPersisted = (partId: string) => UUID_RE.test(partId);
+
+const mediaTypeFor = (url?: string): string | null => {
+    if (!url) return null;
+    if (YOUTUBE_RE.test(url)) return 'youtube';
+    if (VIMEO_RE.test(url)) return 'vimeo';
+    return null;
+};
+
+const partContentBody = (part: JourneyPart) => ({
+    title: part.title,
+    media_url: part.videoUrl?.trim() || null,
+    media_type: mediaTypeFor(part.videoUrl),
+    reading_text: part.textContent?.trim() || null,
+});
+
+const hasSameContent = (a: JourneyPart, b: JourneyPart) =>
+    a.title === b.title
+    && (a.videoUrl ?? '') === (b.videoUrl ?? '')
+    && (a.textContent ?? '') === (b.textContent ?? '');
+
+/**
+ * Reconciles the editor's staged Parts against what the server holds, and
+ * returns the Part ids in display order once every one of them is real.
+ *
+ * Creation is two calls on purpose: POST accepts only a title (a Draft Part
+ * is allowed to be an empty placeholder) and PUT fills in the content, which
+ * is the two-step authoring flow the API is built around. part_order is
+ * assigned server-side as max + 1, so a Part staged in the middle lands at
+ * the end and the reorder call afterwards puts it where the user dropped it.
+ */
+const syncParts = async (
+    journeyId: string,
+    parts: JourneyPart[],
+    originalParts: JourneyPart[],
+): Promise<string[]> => {
+    const originalById = new Map(originalParts.map(part => [part.id, part]));
+    const resolvedIds: string[] = [];
+
+    for (const part of parts) {
+        const before = originalById.get(part.id);
+
+        if (!before || !isPersisted(part.id)) {
+            const created = await request(`${API_BASE}/api/journeys/${journeyId}/parts`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: part.title }),
+            }, `Failed to add “${part.title}”.`);
+
+            const { partId } = await created.json() as { partId: string };
+            resolvedIds.push(partId);
+
+            if (part.videoUrl || part.textContent) {
+                await request(`${API_BASE}/api/journeys/${journeyId}/parts/${partId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(partContentBody(part)),
+                }, `Failed to save “${part.title}”.`);
+            }
+
+            if (part.status !== 'draft') {
+                await patchJson(
+                    `${API_BASE}/api/journeys/${journeyId}/parts/${partId}/publish`,
+                    { status: part.status },
+                    `Failed to publish “${part.title}”.`,
+                );
+            }
+
+            continue;
+        }
+
+        resolvedIds.push(part.id);
+
+        if (!hasSameContent(before, part)) {
+            await request(`${API_BASE}/api/journeys/${journeyId}/parts/${part.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(partContentBody(part)),
+            }, `Failed to save “${part.title}”.`);
+        }
+
+        if (before.status !== part.status) {
+            if (part.status === 'archived') {
+                await request(
+                    `${API_BASE}/api/journeys/${journeyId}/parts/${part.id}/archive`,
+                    { method: 'PATCH' },
+                    `Failed to archive “${part.title}”.`,
+                );
+            } else {
+                await patchJson(
+                    `${API_BASE}/api/journeys/${journeyId}/parts/${part.id}/publish`,
+                    { status: part.status },
+                    `Failed to update “${part.title}”.`,
+                );
+            }
+        }
+    }
+
+    return resolvedIds;
+};
+
 /** Standalone so the mutations below can re-read a journey without referencing the service object mid-definition. */
 const fetchJourneyDetail = async (journeyId: string): Promise<Journey> => {
     const response = await request(`${API_BASE}/api/journeys/${journeyId}`, {}, 'Failed to load the journey.');
@@ -228,14 +332,49 @@ export const AdminContentService = {
     fetchJourneyDetail,
 
     /**
-     * Creating a journey is a separate flow (POST /api/journeys, then a POST
-     * per Part) and is not wired up yet. Failing loudly beats the old
-     * localStorage write, which appeared to succeed and then vanished on the
-     * next refetch because the list reads from the API.
+     * Phase 1 of the builder: creates the Journey shell, then its Parts, then
+     * publishes if the Pastor asked for that. The Journey is always born a
+     * draft server-side, so publishing is a second call and it will refuse
+     * unless at least one Part came out published.
      */
-    createJourney: async (_form: JourneyFormData): Promise<Journey> => {
-        void _form;
-        throw new Error('Creating a journey is not connected to the API yet.');
+    createJourney: async (
+        form: JourneyFormData,
+        parts: JourneyPart[] = [],
+        nextStatus?: JourneyStatus,
+    ): Promise<Journey> => {
+        const categoryIds = await toCategoryIds(form.categories);
+
+        const created = await request(`${API_BASE}/api/journeys`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title: form.title.trim(),
+                description: form.description.trim(),
+                summary: form.summary.trim() || null,
+                content_type: CONTENT_TYPE_TO_API[form.contentType],
+                category_ids: categoryIds,
+            }),
+        }, 'Failed to create the journey.');
+
+        const { journeyId } = await created.json() as { journeyId: string };
+
+        const orderedIds = await syncParts(journeyId, parts, []);
+
+        // Parts are appended in creation order, so this only matters when the
+        // builder staged them out of order.
+        if (orderedIds.length > 1) {
+            await patchJson(
+                `${API_BASE}/api/journeys/${journeyId}/parts/reorder`,
+                { orderedPartIds: orderedIds },
+                'Failed to save the part order.',
+            );
+        }
+
+        if (nextStatus === 'published') {
+            await request(`${API_BASE}/api/journeys/${journeyId}/publish`, { method: 'PATCH' }, 'Failed to publish the journey.');
+        }
+
+        return fetchJourneyDetail(journeyId);
     },
 
     /**
@@ -266,34 +405,15 @@ export const AdminContentService = {
             category_ids: categoryIds,
         }, 'Failed to save the journey.');
 
-        const originalById = new Map(originalParts.map(part => [part.id, part]));
+        const orderedIds = await syncParts(id, parts, originalParts);
 
-        for (const part of parts) {
-            const before = originalById.get(part.id);
-            if (!before || before.status === part.status) continue;
-
-            if (part.status === 'archived') {
-                await request(
-                    `${API_BASE}/api/journeys/${id}/parts/${part.id}/archive`,
-                    { method: 'PATCH' },
-                    `Failed to archive “${part.title}”.`,
-                );
-            } else {
-                await patchJson(
-                    `${API_BASE}/api/journeys/${id}/parts/${part.id}/publish`,
-                    { status: part.status },
-                    `Failed to update “${part.title}”.`,
-                );
-            }
-        }
-
-        // The API needs a complete permutation, so this only fires when the
-        // editor is working from the full server-loaded set.
-        const orderChanged = parts.map(part => part.id).join(',') !== originalParts.map(part => part.id).join(',');
-        if (orderChanged && parts.length === originalParts.length) {
+        // The API needs a complete permutation of the Journey's Parts, which
+        // only holds once every staged Part has a real id.
+        const serverOrder = originalParts.map(part => part.id).join(',');
+        if (orderedIds.join(',') !== serverOrder && orderedIds.length >= originalParts.length) {
             await patchJson(
                 `${API_BASE}/api/journeys/${id}/parts/reorder`,
-                { orderedPartIds: parts.map(part => part.id) },
+                { orderedPartIds: orderedIds },
                 'Failed to save the new part order.',
             );
         }

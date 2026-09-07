@@ -255,8 +255,8 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
                 originalParts.current = saved.parts;
                 originalOrder.current = saved.parts.map(part => part.id);
             } else {
-                saved = await AdminContentService.createJourney(form);
-                showToast(`“${saved.title}” saved as draft.`);
+                saved = await AdminContentService.createJourney(form, parts, nextStatus);
+                showToast(nextStatus === 'published' ? `“${saved.title}” published.` : `“${saved.title}” saved as draft.`);
             }
             onSaved(saved, isNew);
             if (options?.closeOnSave !== false) requestClose();

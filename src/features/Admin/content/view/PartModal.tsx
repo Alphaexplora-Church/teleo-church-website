@@ -60,9 +60,14 @@ export function PartModal({ title, initial, onClose, onSave }: PartModalProps) {
         }
     };
 
+    // A Draft Part is allowed to be an empty placeholder — the two-step
+    // authoring flow creates it from a title and fills it in afterwards.
+    // Content is only required once the Part is actually being published.
+    const needsContent = form.status === 'published';
+
     const canSave = form.title.trim().length > 0
-        && (!needsVideo || (form.videoUrl.trim().length > 0 && linkState === 'valid'))
-        && (!needsText || form.textContent.trim().length > 0);
+        && (!needsContent || !needsVideo || (form.videoUrl.trim().length > 0 && linkState === 'valid'))
+        && (!needsContent || !needsText || form.textContent.trim().length > 0);
 
     return (
         <div className={`z-[60] ${modalOverlayClass(visible)}`}>
