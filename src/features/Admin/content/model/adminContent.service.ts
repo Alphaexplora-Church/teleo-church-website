@@ -88,16 +88,16 @@ const CONTENT_TYPE_FROM_API: Record<string, JourneyContentType> = {
 };
 
 interface ApiJourneyRow {
-    series_id: string;
+    journeyId: string;
     title: string;
     description: string | null;
     summary: string | null;
-    content_type: string | null;
+    contentType: string | null;
     status: JourneyStatus;
     categories: string[];
-    total_parts: number;
-    created_at: string;
-    updated_at: string;
+    totalPublishedParts: number;
+    createdAt: string;
+    updatedAt: string;
 }
 
 /**
@@ -106,16 +106,16 @@ interface ApiJourneyRow {
  * localStorage until that lands.
  */
 const toJourney = (row: ApiJourneyRow): Journey => ({
-    id: row.series_id,
+    id: row.journeyId,
     title: row.title,
     description: row.description ?? '',
-    contentType: CONTENT_TYPE_FROM_API[row.content_type ?? ''] ?? 'sermon-series',
+    contentType: CONTENT_TYPE_FROM_API[row.contentType ?? ''] ?? 'sermon-series',
     categories: row.categories ?? [],
     summary: row.summary ?? undefined,
     parts: [],
     status: row.status,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
 });
 
 /** Reverse of CONTENT_TYPE_FROM_API, for sending the filter back to the API. */
@@ -149,14 +149,14 @@ export const AdminContentService = {
         if (query.contentType) params.set('content_type', CONTENT_TYPE_TO_API[query.contentType]);
         if (query.category) params.set('category', query.category);
 
-        const response = await authFetch(`${API_BASE}/api/journeys?${params.toString()}`);
+        const response = await authFetch(`${API_BASE}/api/journeys/discover?${params.toString()}`);
 
         if (!response.ok) {
             throw new Error(`Failed to fetch journeys (${response.status})`);
         }
 
-        const body = await response.json() as { data: ApiJourneyRow[] };
-        return (body.data ?? []).map(toJourney);
+        const body = await response.json() as { journeys: ApiJourneyRow[] };
+        return (body.journeys ?? []).map(toJourney);
     },
 
     /** Phase 1: Initialization & Metadata — creates the shell of a new journey. */
