@@ -4,7 +4,7 @@
 // a real-time title search, a Content Type filter, a Category filter, and a
 // multi-select Status filter (Draft / Published / Archived).
 import { useEffect, useState } from 'react';
-import { Archive, BookOpen, ChevronLeft, ChevronRight, Layers, Loader2, Pencil, Plus, RotateCcw, Search, Trash2, X } from 'lucide-react';
+import { Archive, BookOpen, ChevronLeft, ChevronRight, Layers, Loader2, Pencil, Plus, RotateCcw, Search, X } from 'lucide-react';
 import AdminHeader from '../../../../shared/components/AdminHeader';
 import AdminSidebar from '../../../../shared/components/AdminSidebar';
 import { CONTENT_TYPE_OPTIONS, STATUS_OPTIONS } from '../model/adminContent.types';
@@ -12,7 +12,6 @@ import type { Journey } from '../model/adminContent.types';
 import type { ToastMessage } from '../viewmodel/useAdminContentViewModel';
 import { useAdminContentViewModel } from '../viewmodel/useAdminContentViewModel';
 import { ConfirmArchiveModal } from './ConfirmArchiveModal';
-import { ConfirmDeleteJourneyModal } from './ConfirmDeleteJourneyModal';
 import { JourneyEditor } from './JourneyEditor';
 import { iconButtonClass, statusBadgeClass, toggleChipClass, type IconButtonVariant } from './contentStyles';
 
@@ -69,9 +68,8 @@ export default function AdminContentView() {
                                             journey={journey}
                                             isPending={vm.pendingStatusId === journey.id}
                                             onEdit={() => vm.openEditEditor(journey)}
-                                            onDelete={() => vm.openDeleteModal(journey)}
                                             onArchive={() => vm.openArchiveModal(journey)}
-                                            onRestore={() => void vm.handleSetStatus(journey, 'draft')}
+                                            onRestore={() => void vm.handleSetStatus(journey, 'published')}
                                         />
                                     </div>
                                 ))}
@@ -99,14 +97,6 @@ export default function AdminContentView() {
                     showToast={vm.showToast}
                 />
             )}
-
-            <ConfirmDeleteJourneyModal
-                open={Boolean(vm.deleteTarget)}
-                journeyTitle={vm.deleteTarget?.title ?? ''}
-                isDeleting={vm.isDeleting}
-                onCancel={vm.closeDeleteModal}
-                onConfirm={() => void vm.handleDelete()}
-            />
 
             <ConfirmArchiveModal
                 open={Boolean(vm.archiveTarget)}
@@ -277,11 +267,10 @@ function Pagination({ page, totalPages, total, pageSize, onChange }: { page: num
     );
 }
 
-function JourneyCard({ journey, isPending, onEdit, onDelete, onArchive, onRestore }: {
+function JourneyCard({ journey, isPending, onEdit, onArchive, onRestore }: {
     journey: Journey;
     isPending: boolean;
     onEdit: () => void;
-    onDelete: () => void;
     onArchive: () => void;
     onRestore: () => void;
 }) {
@@ -309,11 +298,10 @@ function JourneyCard({ journey, isPending, onEdit, onDelete, onArchive, onRestor
             <div className="flex shrink-0 items-center gap-1">
                 <IconButton title="Edit" onClick={onEdit} disabled={isPending}><Pencil size={16} /></IconButton>
                 {journey.status === 'archived' ? (
-                    <IconButton title="Restore to draft" onClick={onRestore} disabled={isPending} loading={isPending} variant="warn"><RotateCcw size={16} /></IconButton>
+                    <IconButton title="Restore and publish" onClick={onRestore} disabled={isPending} loading={isPending} variant="warn"><RotateCcw size={16} /></IconButton>
                 ) : (
                     <IconButton title="Archive" onClick={onArchive} disabled={isPending} loading={isPending} variant="warn"><Archive size={16} /></IconButton>
                 )}
-                <IconButton title="Delete" onClick={onDelete} disabled={isPending} variant="danger"><Trash2 size={16} /></IconButton>
             </div>
         </article>
     );

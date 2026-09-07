@@ -1,11 +1,9 @@
 // ─── Admin Content — Journeys/Series: Service (Model) ───────────────────────
-// NOTE: The backend does not yet expose `/api/contents/admin/journeys`
-// endpoints (only `event`/`announcement` content types exist today — see
-// AdminEventsService). Persistence below is implemented against
-// localStorage so the flow is fully usable end-to-end in the meantime; the
-// public async signatures mirror AdminEventsService so swapping the body of
-// each function for a real `authFetch` call later is a drop-in change.
-import type { Journey, JourneyContentType, JourneyFormData, JourneyPart, JourneyStatus, PartFormData } from './adminContent.types';
+// Backed by the Journey API. The lifecycle is status-driven (draft /
+// published / archived) and nothing is ever hard-deleted, so there is no
+// delete call here and no path from published back to draft — those are not
+// omissions, the API deliberately does not expose them.
+import type { Journey, JourneyContentType, JourneyFormData, JourneyPart, JourneyStatus, PartFormData, PartStatus } from './adminContent.types';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000';
 
@@ -13,26 +11,29 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000';
 const authFetch = (url: string, init: RequestInit = {}): Promise<Response> =>
     fetch(url, { ...init, credentials: 'include' });
 
-const STORAGE_KEY = 'teleo_admin_journeys';
-
 const uid = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
-const readAll = (): Journey[] => {
+/** Errors come back as `{ status: 'failed', error }`; surface the API's own wording when it has one. */
+const request = async (url: string, init: RequestInit, fallback: string): Promise<Response> => {
+    const response = await authFetch(url, init);
+    if (response.ok) return response;
+
+    let message = fallback;
     try {
-        const raw = window.localStorage.getItem(STORAGE_KEY);
-        return raw ? JSON.parse(raw) as Journey[] : [];
+        const body = await response.json() as { error?: string };
+        if (body.error) message = body.error;
     } catch {
-        return [];
+        // Non-JSON body (gateway error page, empty 500) — keep the fallback.
     }
+    throw new Error(message);
 };
 
-const writeAll = (journeys: Journey[]) => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(journeys));
-};
-
-/** Simulates network latency so loading states are exercised realistically. */
-const settle = <T>(value: T, delay = 250): Promise<T> =>
-    new Promise(resolve => window.setTimeout(() => resolve(value), delay));
+const patchJson = (url: string, body: unknown, fallback: string): Promise<Response> =>
+    request(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+    }, fallback);
 
 // ─── Video link validation ───────────────────────────────────────────────
 export interface VideoPreview {
@@ -77,7 +78,7 @@ export async function validateVideoLink(url: string): Promise<VideoPreview | nul
     }
 }
 
-// ─── API mapping (GET /api/journeys) ─────────────────────────────────────
+// ─── API mapping ─────────────────────────────────────────────────────────
 // The API's content_type values do not match the frontend's. Mapping is
 // provisional — confirm the intended pairing with the team.
 const CONTENT_TYPE_FROM_API: Record<string, JourneyContentType> = {
@@ -100,11 +101,7 @@ interface ApiJourneyRow {
     updatedAt: string;
 }
 
-/**
- * Parts are not returned by GET /api/journeys — the API has no parts read
- * endpoint yet. Everything that depends on `parts` still reads from
- * localStorage until that lands.
- */
+/** The list endpoint returns no Parts; only GET /api/journeys/:journeyId does. */
 const toJourney = (row: ApiJourneyRow): Journey => ({
     id: row.journeyId,
     title: row.title,
@@ -118,12 +115,70 @@ const toJourney = (row: ApiJourneyRow): Journey => ({
     updatedAt: row.updatedAt,
 });
 
+interface ApiPartRow {
+    partId: string;
+    partOrder: number;
+    title: string;
+    mediaUrl: string | null;
+    mediaType: string | null;
+    readingText: string | null;
+    status: PartStatus;
+}
+
+const toPart = (row: ApiPartRow): JourneyPart => {
+    const hasVideo = Boolean(row.mediaUrl);
+    const hasText = Boolean(row.readingText);
+
+    return {
+        id: row.partId,
+        order: row.partOrder,
+        title: row.title,
+        type: hasVideo && hasText ? 'both' : hasText ? 'text' : 'video',
+        status: row.status,
+        videoUrl: row.mediaUrl ?? undefined,
+        textContent: row.readingText ?? undefined,
+    };
+};
+
 /** Reverse of CONTENT_TYPE_FROM_API, for sending the filter back to the API. */
 const CONTENT_TYPE_TO_API: Record<JourneyContentType, string> = {
     'sermon-series': 'sunday_service',
     'bible-study': 'bible_study',
     'devotional': 'devotional',
     'discipleship-course': 'general',
+};
+
+// ─── Category catalog ────────────────────────────────────────────────────
+// content_series_categories is keyed on UUIDs, so every write that touches
+// categories has to resolve names against the global catalog first. The
+// catalog is admin-managed and global, so it is fetched once per session.
+export interface JourneyCategoryOption {
+    categoryId: string;
+    name: string;
+    sortOrder: number;
+}
+
+let categoryCatalog: JourneyCategoryOption[] | null = null;
+
+export async function fetchCategoryCatalog(): Promise<JourneyCategoryOption[]> {
+    if (categoryCatalog) return categoryCatalog;
+
+    const response = await request(`${API_BASE}/api/journeys/categories`, {}, 'Failed to load categories.');
+    const body = await response.json() as { categories?: JourneyCategoryOption[] };
+
+    categoryCatalog = [...(body.categories ?? [])].sort((a, b) => a.sortOrder - b.sortOrder);
+    return categoryCatalog;
+}
+
+const toCategoryIds = async (names: string[]): Promise<string[]> => {
+    const catalog = await fetchCategoryCatalog();
+    const idByName = new Map(catalog.map(option => [option.name.toLowerCase(), option.categoryId]));
+
+    return names.map(name => {
+        const id = idByName.get(name.toLowerCase());
+        if (!id) throw new Error(`“${name}” is not a category in the catalog.`);
+        return id;
+    });
 };
 
 /**
@@ -137,6 +192,17 @@ export interface JourneyQuery {
     contentType?: JourneyContentType;
     category?: string;
 }
+
+/** Standalone so the mutations below can re-read a journey without referencing the service object mid-definition. */
+const fetchJourneyDetail = async (journeyId: string): Promise<Journey> => {
+    const response = await request(`${API_BASE}/api/journeys/${journeyId}`, {}, 'Failed to load the journey.');
+    const body = await response.json() as { journey: ApiJourneyRow; parts: ApiPartRow[] };
+
+    return {
+        ...toJourney(body.journey),
+        parts: (body.parts ?? []).map(toPart).sort((a, b) => a.order - b.order),
+    };
+};
 
 // ─── Journey (Series) persistence ────────────────────────────────────────
 export const AdminContentService = {
@@ -159,90 +225,107 @@ export const AdminContentService = {
         return (body.journeys ?? []).map(toJourney);
     },
 
-    /** Phase 1: Initialization & Metadata — creates the shell of a new journey. */
-    createJourney: async (form: JourneyFormData): Promise<Journey> => {
-        const now = new Date().toISOString();
-        const journey: Journey = {
-            id: uid(),
-            title: form.title.trim(),
-            description: form.description.trim(),
-            contentType: form.contentType,
-            categories: form.categories,
-            summary: form.summary.trim() || undefined,
-            parts: [],
-            status: 'draft',
-            createdAt: now,
-            updatedAt: now,
-        };
-        const all = readAll();
-        writeAll([journey, ...all]);
-        return settle(journey);
+    fetchJourneyDetail,
+
+    /**
+     * Creating a journey is a separate flow (POST /api/journeys, then a POST
+     * per Part) and is not wired up yet. Failing loudly beats the old
+     * localStorage write, which appeared to succeed and then vanished on the
+     * next refetch because the list reads from the API.
+     */
+    createJourney: async (_form: JourneyFormData): Promise<Journey> => {
+        void _form;
+        throw new Error('Creating a journey is not connected to the API yet.');
     },
 
     /**
-     * Phase 1 (Saving & Publication States) / Phase 1.1 (Save & Status
-     * Maintenance): persists metadata + parts. `nextStatus` lets the caller
-     * explicitly Publish; when omitted the journey's current status is
-     * retained per the edit-flow rule.
+     * Persists everything the editor stages locally, in the order the API
+     * requires: metadata first, then per-Part status changes, then the new
+     * Part order, and only then the Journey's own publish/archive. Publishing
+     * last matters because the API refuses to publish a Journey with no
+     * published Part, so the Part toggles have to land first.
+     *
+     * `nextStatus` undefined means "leave the lifecycle alone", which is the
+     * edit-flow rule. 'draft' is also a no-op: there is no endpoint that
+     * moves a Journey back to draft.
      */
     saveJourney: async (
         id: string,
         form: JourneyFormData,
         parts: JourneyPart[],
         nextStatus?: JourneyStatus,
+        originalParts: JourneyPart[] = [],
     ): Promise<Journey> => {
-        const all = readAll();
-        const index = all.findIndex(item => item.id === id);
-        if (index === -1) throw new Error('Journey not found');
+        const categoryIds = await toCategoryIds(form.categories);
 
-        const updated: Journey = {
-            ...all[index],
+        await patchJson(`${API_BASE}/api/journeys/${id}`, {
             title: form.title.trim(),
             description: form.description.trim(),
-            contentType: form.contentType,
-            categories: form.categories,
-            summary: form.summary.trim() || undefined,
-            parts,
-            status: nextStatus ?? all[index].status,
-            updatedAt: new Date().toISOString(),
-        };
-        all[index] = updated;
-        writeAll(all);
-        return settle(updated);
+            summary: form.summary.trim() || null,
+            content_type: CONTENT_TYPE_TO_API[form.contentType],
+            category_ids: categoryIds,
+        }, 'Failed to save the journey.');
+
+        const originalById = new Map(originalParts.map(part => [part.id, part]));
+
+        for (const part of parts) {
+            const before = originalById.get(part.id);
+            if (!before || before.status === part.status) continue;
+
+            if (part.status === 'archived') {
+                await request(
+                    `${API_BASE}/api/journeys/${id}/parts/${part.id}/archive`,
+                    { method: 'PATCH' },
+                    `Failed to archive “${part.title}”.`,
+                );
+            } else {
+                await patchJson(
+                    `${API_BASE}/api/journeys/${id}/parts/${part.id}/publish`,
+                    { status: part.status },
+                    `Failed to update “${part.title}”.`,
+                );
+            }
+        }
+
+        // The API needs a complete permutation, so this only fires when the
+        // editor is working from the full server-loaded set.
+        const orderChanged = parts.map(part => part.id).join(',') !== originalParts.map(part => part.id).join(',');
+        if (orderChanged && parts.length === originalParts.length) {
+            await patchJson(
+                `${API_BASE}/api/journeys/${id}/parts/reorder`,
+                { orderedPartIds: parts.map(part => part.id) },
+                'Failed to save the new part order.',
+            );
+        }
+
+        if (nextStatus === 'published') {
+            await request(`${API_BASE}/api/journeys/${id}/publish`, { method: 'PATCH' }, 'Failed to publish the journey.');
+        } else if (nextStatus === 'archived') {
+            await request(`${API_BASE}/api/journeys/${id}/archive`, { method: 'PATCH' }, 'Failed to archive the journey.');
+        }
+
+        return fetchJourneyDetail(id);
     },
 
-    deleteJourney: async (id: string): Promise<void> => {
-        writeAll(readAll().filter(item => item.id !== id));
-        return settle(undefined);
-    },
-
-    /** Persists a new Part order. Payload is `[{ partId, position }]`, 1-based; completion progress is untouched server-side. */
-    reorderParts: async (journeyId: string, payload: { partId: string; position: number }[]): Promise<Journey> => {
-        const all = readAll();
-        const index = all.findIndex(item => item.id === journeyId);
-        if (index === -1) throw new Error('Journey not found');
-
-        const positionById = new Map(payload.map(item => [item.partId, item.position]));
-        const parts = [...all[index].parts]
-            .map(part => ({ ...part, order: positionById.get(part.id) ?? part.order }))
-            .sort((a, b) => a.order - b.order);
-
-        const updated: Journey = { ...all[index], parts, updatedAt: new Date().toISOString() };
-        all[index] = updated;
-        writeAll(all);
-        return settle(updated);
-    },
-
-    /** Quick lifecycle transition used by the list view's Archive/Restore actions (does not touch metadata or parts). */
+    /**
+     * Quick lifecycle transition for the list view's Archive/Restore actions.
+     * Restoring an archived Journey can only go to published — the API has no
+     * transition back to draft — and publish still requires a published Part,
+     * so an empty archived Journey will refuse with the API's own message.
+     */
     setStatus: async (id: string, status: JourneyStatus): Promise<Journey> => {
-        const all = readAll();
-        const index = all.findIndex(item => item.id === id);
-        if (index === -1) throw new Error('Journey not found');
+        if (status === 'draft') {
+            throw new Error('A journey cannot be moved back to draft. Archive it instead.');
+        }
 
-        const updated: Journey = { ...all[index], status, updatedAt: new Date().toISOString() };
-        all[index] = updated;
-        writeAll(all);
-        return settle(updated);
+        const path = status === 'archived' ? 'archive' : 'publish';
+        await request(
+            `${API_BASE}/api/journeys/${id}/${path}`,
+            { method: 'PATCH' },
+            status === 'archived' ? 'Failed to archive the journey.' : 'Failed to publish the journey.',
+        );
+
+        return fetchJourneyDetail(id);
     },
 };
 

@@ -13,11 +13,8 @@ export const CONTENT_TYPE_OPTIONS: { value: JourneyContentType; label: string }[
 ];
 
 /** Fixed topical tags a Pastor can attach to a journey. Multi-select. */
-export const CATEGORY_OPTIONS = [
-    'Faith', 'Family', 'Youth', 'Marriage', 'Prayer', 'Discipleship',
-    'Grief & Healing', 'New Believers', 'Leadership', 'Worship',
-] as const;
-export type JourneyCategory = typeof CATEGORY_OPTIONS[number];
+// Categories are an admin-managed global catalog keyed on UUIDs, loaded at
+// runtime from GET /api/journeys/categories. A journey carries their names.
 
 /** Whether a Part carries a video link, a written passage, or both. */
 export type PartContentType = 'video' | 'text' | 'both';

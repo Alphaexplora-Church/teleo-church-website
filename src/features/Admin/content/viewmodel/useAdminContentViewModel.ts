@@ -29,14 +29,12 @@ export function useAdminContentViewModel() {
 
     const [isEditorOpen, setIsEditorOpen] = useState(false);
     const [editingJourney, setEditingJourney] = useState<Journey | null>(null);
-    const [deleteTarget, setDeleteTarget] = useState<Journey | null>(null);
     /** Journey pending confirmation before the (destructive-to-visibility) Archive action fires. Restore has no confirmation — it's non-destructive. */
     const [archiveTarget, setArchiveTarget] = useState<Journey | null>(null);
     const [toast, setToast] = useState<ToastMessage>(null);
 
     /** Id of the journey whose Archive/Restore action is in flight, so its row can show a spinner instead of doing nothing. */
     const [pendingStatusId, setPendingStatusId] = useState<string | null>(null);
-    const [isDeleting, setIsDeleting] = useState(false);
 
     const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
         setToast({ msg, type });
@@ -148,12 +146,12 @@ export function useAdminContentViewModel() {
             showToast(
                 status === 'archived'
                     ? `“${updated.title}” archived.`
-                    : `“${updated.title}” moved to ${status}.`,
+                    : `“${updated.title}” is live again.`,
             );
-        } catch {
+        } catch (err) {
             // Roll back the optimistic change.
             setJourneys(current => current.map(item => item.id === journey.id ? { ...item, status: previousStatus } : item));
-            showToast('Failed to update journey status.', 'error');
+            showToast(err instanceof Error ? err.message : 'Failed to update journey status.', 'error');
         } finally {
             setPendingStatusId(null);
         }
@@ -178,26 +176,11 @@ export function useAdminContentViewModel() {
         openEditEditor: (journey: Journey) => { setEditingJourney(journey); setIsEditorOpen(true); },
         closeEditor: () => { setIsEditorOpen(false); setEditingJourney(null); },
 
-        deleteTarget, openDeleteModal: setDeleteTarget, closeDeleteModal: () => { if (!isDeleting) setDeleteTarget(null); },
-        isDeleting,
-        handleDelete: async () => {
-            if (!deleteTarget) return;
-            setIsDeleting(true);
-            try {
-                await AdminContentService.deleteJourney(deleteTarget.id);
-                setJourneys(current => current.filter(item => item.id !== deleteTarget.id));
-                showToast(`“${deleteTarget.title}” deleted.`);
-                // Only dismiss on success — on failure the modal stays open
-                // (with the spinner cleared) so the user can just retry.
-                setDeleteTarget(null);
-            } catch {
-                showToast('Failed to delete journey.', 'error');
-            } finally {
-                setIsDeleting(false);
-            }
-        },
-
-        /** Quick list-view action: archive a journey (or restore an archived one back to draft). */
+        /**
+         * Quick list-view action: archive a journey, or bring an archived one
+         * back. Restore can only go to published — the API has no transition
+         * back to draft, and the lifecycle never hard-deletes.
+         */
         pendingStatusId,
         handleSetStatus: (journey: Journey, status: JourneyStatus) => applyStatus(journey, status),
 

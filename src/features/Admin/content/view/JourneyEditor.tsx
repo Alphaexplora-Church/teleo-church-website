@@ -1,14 +1,15 @@
 // ─── Admin Content — JourneyEditor (View) ───────────────────────────────────
-// Covers Phase 1 (Create Series) and Phase 1.1 (Edit and Update Series):
-// metadata + the Series builder for adding/editing Parts, with Publish
-// gated on at least one Published Part, and the edit-flow rule that saving
-// retains the journey's current status unless the Pastor explicitly Publishes.
+// Covers Phase 1.1 (Edit and Update Series): metadata + the Series builder,
+// with Publish gated on at least one Published Part, and the edit-flow rule
+// that saving retains the journey's current status unless the Pastor
+// explicitly Publishes or Archives. There is no unpublish and no delete —
+// the lifecycle is draft to published to archived, and nothing is removed.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Archive, ChevronDown, FileText, GripVertical, ImageOff, Loader2, Pencil, Plus, RotateCcw, Trash2, Video, X } from 'lucide-react';
+import { Archive, ChevronDown, FileText, GripVertical, ImageOff, Loader2, Pencil, Plus, RotateCcw, Video, X } from 'lucide-react';
 import type { Journey, JourneyFormData, JourneyPart, PartFormData } from '../model/adminContent.types';
-import { CATEGORY_OPTIONS, CONTENT_TYPE_OPTIONS, EMPTY_JOURNEY_FORM, canPublishJourney } from '../model/adminContent.types';
-import { AdminContentService, buildPart, type VideoPreview } from '../model/adminContent.service';
+import { CONTENT_TYPE_OPTIONS, EMPTY_JOURNEY_FORM, canPublishJourney } from '../model/adminContent.types';
+import { AdminContentService, buildPart, fetchCategoryCatalog, type JourneyCategoryOption, type VideoPreview } from '../model/adminContent.service';
 import { useModalTransition } from '../../../../shared/hooks/useModalTransition';
 import { PartModal } from './PartModal';
 import { ConfirmArchiveModal } from './ConfirmArchiveModal';
@@ -32,8 +33,44 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
         summary: journey.summary ?? '',
     } : EMPTY_JOURNEY_FORM);
     const [parts, setParts] = useState<JourneyPart[]>(journey?.parts ?? []);
+    const [isLoadingParts, setIsLoadingParts] = useState(Boolean(journey));
     const [isSaving, setIsSaving] = useState(false);
     const [partModal, setPartModal] = useState<{ mode: 'add' } | { mode: 'edit'; part: JourneyPart } | null>(null);
+
+    // The server's copy of the Parts as loaded. Saving diffs against this to
+    // work out which Part statuses changed and whether the order moved.
+    const originalParts = useRef<JourneyPart[]>([]);
+
+    const [categoryOptions, setCategoryOptions] = useState<JourneyCategoryOption[]>([]);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        fetchCategoryCatalog()
+            .then(options => { if (!cancelled) setCategoryOptions(options); })
+            .catch(() => { if (!cancelled) showToast('Could not load the category list.', 'error'); });
+
+        return () => { cancelled = true; };
+    }, [showToast]);
+
+    useEffect(() => {
+        if (!journey) return;
+
+        let cancelled = false;
+        setIsLoadingParts(true);
+
+        AdminContentService.fetchJourneyDetail(journey.id)
+            .then(detail => {
+                if (cancelled) return;
+                originalParts.current = detail.parts;
+                originalOrder.current = detail.parts.map(part => part.id);
+                setParts(detail.parts);
+            })
+            .catch(() => { if (!cancelled) showToast('Could not load parts for this journey.', 'error'); })
+            .finally(() => { if (!cancelled) setIsLoadingParts(false); });
+
+        return () => { cancelled = true; };
+    }, [journey, showToast]);
 
     // ── Drag-and-drop reordering ──────────────────────────────────────────
     // Order changes are applied to local state only — nothing is persisted
@@ -173,10 +210,6 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
         }));
     };
 
-    const removePart = (id: string) => {
-        setParts(prev => prev.filter(part => part.id !== id).map((part, i) => ({ ...part, order: i + 1 })));
-    };
-
     const handlePartSave = (data: PartFormData, preview: VideoPreview | null) => {
         if (partModal?.mode === 'edit') {
             const built = buildPart(data, partModal.part);
@@ -213,22 +246,22 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
             let saved: Journey;
             if (journey) {
                 // Rule: editing content retains its current status unless the
-                // Pastor explicitly Publishes/Unpublishes/Archives from this screen.
-                saved = await AdminContentService.saveJourney(journey.id, form, parts, nextStatus ?? journey.status);
+                // Pastor explicitly Publishes or Archives from this screen.
+                saved = await AdminContentService.saveJourney(journey.id, form, parts, nextStatus, originalParts.current);
                 const message = nextStatus === 'published' ? `“${saved.title}” published.`
-                    : nextStatus === 'draft' && journey.status !== 'draft' ? `“${saved.title}” unpublished — hidden from Members.`
                     : nextStatus === 'archived' ? `“${saved.title}” archived.`
                     : `“${saved.title}” updated.`;
                 showToast(message);
+                originalParts.current = saved.parts;
+                originalOrder.current = saved.parts.map(part => part.id);
             } else {
-                const created = await AdminContentService.createJourney(form);
-                saved = await AdminContentService.saveJourney(created.id, form, parts, nextStatus ?? 'draft');
-                showToast(nextStatus === 'published' ? `“${saved.title}” published.` : `“${saved.title}” saved as draft.`);
+                saved = await AdminContentService.createJourney(form);
+                showToast(`“${saved.title}” saved as draft.`);
             }
             onSaved(saved, isNew);
             if (options?.closeOnSave !== false) requestClose();
-        } catch {
-            showToast('Failed to save the journey.', 'error');
+        } catch (err) {
+            showToast(err instanceof Error ? err.message : 'Failed to save the journey.', 'error');
         } finally {
             setIsSaving(false);
         }
@@ -295,16 +328,20 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
 
                         <div>
                             <label className={labelClass}>Categories</label>
-                            <div className="flex flex-wrap gap-2">
-                                {CATEGORY_OPTIONS.map(category => {
-                                    const active = form.categories.includes(category);
-                                    return (
-                                        <button key={category} type="button" onClick={() => toggleCategory(category)} className={toggleChipClass(active)}>
-                                            {category}
-                                        </button>
-                                    );
-                                })}
-                            </div>
+                            {categoryOptions.length === 0 ? (
+                                <p className="text-xs text-gray-400">Loading categories…</p>
+                            ) : (
+                                <div className="flex flex-wrap gap-2">
+                                    {categoryOptions.map(option => {
+                                        const active = form.categories.includes(option.name);
+                                        return (
+                                            <button key={option.categoryId} type="button" onClick={() => toggleCategory(option.name)} className={toggleChipClass(active)}>
+                                                {option.name}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
                             {form.categories.length === 0 && <p className="mt-1.5 text-xs text-gray-400">Select at least one category.</p>}
                         </div>
                     </section>
@@ -321,7 +358,12 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
                             </button>
                         </div>
 
-                        {parts.length === 0 ? (
+                        {isLoadingParts ? (
+                            <div className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-midnight-teal/15 bg-white/60 p-8 text-center">
+                                <Loader2 className="h-4 w-4 animate-spin text-midnight-teal/50" />
+                                <p className="text-sm font-semibold text-midnight-teal/50">Loading parts…</p>
+                            </div>
+                        ) : parts.length === 0 ? (
                             <div className="rounded-2xl border border-dashed border-midnight-teal/15 bg-white/60 p-8 text-center">
                                 <p className="text-sm font-semibold text-midnight-teal/50">No parts yet. Add your first part to build the series.</p>
                             </div>
@@ -345,7 +387,6 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
                                                     part={part}
                                                     onGripPointerDown={e => handleGripPointerDown(e, part.id)}
                                                     onEdit={() => setPartModal({ mode: 'edit', part })}
-                                                    onRemove={() => removePart(part.id)}
                                                     onArchive={() => setArchivePartTarget(part)}
                                                     onRestore={() => setPartStatus(part.id, 'draft')}
                                                 />
@@ -370,7 +411,6 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
                                         isFloating
                                         onGripPointerDown={() => {}}
                                         onEdit={() => {}}
-                                        onRemove={() => {}}
                                         onArchive={() => {}}
                                         onRestore={() => {}}
                                     />
@@ -400,9 +440,11 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
                         </button>
                     )}
                     <button onClick={requestClose} disabled={isSaving} className="rounded-xl px-5 py-2.5 text-sm font-bold text-midnight-teal/55 transition-colors hover:bg-midnight-teal/5 hover:text-midnight-teal disabled:cursor-not-allowed disabled:opacity-50">Cancel</button>
-                    <button onClick={() => void persist('draft')} disabled={isSaving} className="flex items-center justify-center gap-2 rounded-xl border border-midnight-teal/15 bg-white px-5 py-2.5 text-sm font-bold text-midnight-teal transition-colors hover:bg-midnight-teal/5 disabled:opacity-50">
-                        {isSaving && <Loader2 size={14} className="animate-spin" />} {journey?.status === 'published' ? 'Unpublish' : 'Save as Draft'}
-                    </button>
+                    {journey?.status !== 'published' && (
+                        <button onClick={() => void persist(undefined)} disabled={isSaving} className="flex items-center justify-center gap-2 rounded-xl border border-midnight-teal/15 bg-white px-5 py-2.5 text-sm font-bold text-midnight-teal transition-colors hover:bg-midnight-teal/5 disabled:opacity-50">
+                            {isSaving && <Loader2 size={14} className="animate-spin" />} {journey ? 'Save Changes' : 'Save as Draft'}
+                        </button>
+                    )}
                     {journey?.status === 'published' ? (
                         <button onClick={() => void persist('published')} disabled={isSaving} className="flex items-center justify-center gap-2 rounded-xl bg-midnight-teal px-5 py-2.5 text-sm font-bold text-soft-linen shadow-lg shadow-midnight-teal/15 transition-all hover:-translate-y-0.5 hover:bg-deep-teal disabled:opacity-50 disabled:hover:translate-y-0">
                             {isSaving && <Loader2 size={14} className="animate-spin" />} Save Changes
@@ -449,10 +491,10 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
     );
 }
 
-function PartRow({ part, isFloating = false, onGripPointerDown, onEdit, onRemove, onArchive, onRestore }: {
+function PartRow({ part, isFloating = false, onGripPointerDown, onEdit, onArchive, onRestore }: {
     part: JourneyPart; isFloating?: boolean;
     onGripPointerDown: (e: React.PointerEvent) => void;
-    onEdit: () => void; onRemove: () => void;
+    onEdit: () => void;
     onArchive: () => void; onRestore: () => void;
 }) {
     const hasVideo = part.type === 'video' || part.type === 'both';
@@ -505,7 +547,6 @@ function PartRow({ part, isFloating = false, onGripPointerDown, onEdit, onRemove
                 ) : (
                     <IconButton title="Archive part" onClick={onArchive} variant="warn"><Archive size={14} /></IconButton>
                 )}
-                <IconButton title="Remove part" onClick={onRemove} variant="danger"><Trash2 size={14} /></IconButton>
             </div>
         </div>
     );
