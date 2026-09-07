@@ -261,6 +261,16 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
             onSaved(saved, isNew);
             if (options?.closeOnSave !== false) requestClose();
         } catch (err) {
+            // A failed save leaves the server on its old ordering, so put the
+            // rows back where they were rather than showing an order that was
+            // never persisted. Content and status edits are kept so the
+            // Pastor can fix the problem and retry without retyping.
+            if (orderChanged) {
+                const rank = new Map(originalOrder.current.map((partId, index) => [partId, index]));
+                setParts(prev => [...prev]
+                    .sort((a, b) => (rank.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (rank.get(b.id) ?? Number.MAX_SAFE_INTEGER))
+                    .map((part, index) => ({ ...part, order: index + 1 })));
+            }
             showToast(err instanceof Error ? err.message : 'Failed to save the journey.', 'error');
         } finally {
             setIsSaving(false);
