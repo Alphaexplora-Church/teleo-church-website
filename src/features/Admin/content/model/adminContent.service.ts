@@ -5,7 +5,13 @@
 // localStorage so the flow is fully usable end-to-end in the meantime; the
 // public async signatures mirror AdminEventsService so swapping the body of
 // each function for a real `authFetch` call later is a drop-in change.
-import type { Journey, JourneyFormData, JourneyPart, JourneyStatus, PartFormData } from './adminContent.types';
+import type { Journey, JourneyContentType, JourneyFormData, JourneyPart, JourneyStatus, PartFormData } from './adminContent.types';
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000';
+
+/** The session is authenticated via the HTTP-only access_token cookie sent with every request. */
+const authFetch = (url: string, init: RequestInit = {}): Promise<Response> =>
+    fetch(url, { ...init, credentials: 'include' });
 
 const STORAGE_KEY = 'teleo_admin_journeys';
 
@@ -71,10 +77,86 @@ export async function validateVideoLink(url: string): Promise<VideoPreview | nul
     }
 }
 
+// ─── API mapping (GET /api/journeys) ─────────────────────────────────────
+// The API's content_type values do not match the frontend's. Mapping is
+// provisional — confirm the intended pairing with the team.
+const CONTENT_TYPE_FROM_API: Record<string, JourneyContentType> = {
+    sunday_service: 'sermon-series',
+    bible_study: 'bible-study',
+    devotional: 'devotional',
+    general: 'discipleship-course',
+};
+
+interface ApiJourneyRow {
+    series_id: string;
+    title: string;
+    description: string | null;
+    summary: string | null;
+    content_type: string | null;
+    status: JourneyStatus;
+    categories: string[];
+    total_parts: number;
+    created_at: string;
+    updated_at: string;
+}
+
+/**
+ * Parts are not returned by GET /api/journeys — the API has no parts read
+ * endpoint yet. Everything that depends on `parts` still reads from
+ * localStorage until that lands.
+ */
+const toJourney = (row: ApiJourneyRow): Journey => ({
+    id: row.series_id,
+    title: row.title,
+    description: row.description ?? '',
+    contentType: CONTENT_TYPE_FROM_API[row.content_type ?? ''] ?? 'sermon-series',
+    categories: row.categories ?? [],
+    summary: row.summary ?? undefined,
+    parts: [],
+    status: row.status,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+});
+
+/** Reverse of CONTENT_TYPE_FROM_API, for sending the filter back to the API. */
+const CONTENT_TYPE_TO_API: Record<JourneyContentType, string> = {
+    'sermon-series': 'sunday_service',
+    'bible-study': 'bible_study',
+    'devotional': 'devotional',
+    'discipleship-course': 'general',
+};
+
+/**
+ * Server-side filters accepted by GET /api/journeys. Every field is optional;
+ * omitted fields mean "no restriction". Note the API takes a single `status`,
+ * so a multi-select status filter has to be narrowed client-side instead.
+ */
+export interface JourneyQuery {
+    search?: string;
+    status?: JourneyStatus;
+    contentType?: JourneyContentType;
+    category?: string;
+}
+
 // ─── Journey (Series) persistence ────────────────────────────────────────
 export const AdminContentService = {
-    fetchJourneys: async (): Promise<Journey[]> => {
-        return settle(readAll().sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
+    /** Reads live journeys from the API. Every other method below is still localStorage. */
+    fetchJourneys: async (query: JourneyQuery = {}): Promise<Journey[]> => {
+        const params = new URLSearchParams({ limit: '50' });
+
+        if (query.search) params.set('search', query.search);
+        if (query.status) params.set('status', query.status);
+        if (query.contentType) params.set('content_type', CONTENT_TYPE_TO_API[query.contentType]);
+        if (query.category) params.set('category', query.category);
+
+        const response = await authFetch(`${API_BASE}/api/journeys?${params.toString()}`);
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch journeys (${response.status})`);
+        }
+
+        const body = await response.json() as { data: ApiJourneyRow[] };
+        return (body.data ?? []).map(toJourney);
     },
 
     /** Phase 1: Initialization & Metadata — creates the shell of a new journey. */

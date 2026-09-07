@@ -8,6 +8,12 @@ const PAGE_SIZE = 8;
 
 export function useAdminContentViewModel() {
     const [journeys, setJourneys] = useState<Journey[]>([]);
+    /**
+     * Unfiltered copy of the catalog, loaded once. The stat cards and the
+     * category dropdown describe the whole catalog, so they must not read
+     * from `journeys` now that it holds a server-filtered subset.
+     */
+    const [allJourneys, setAllJourneys] = useState<Journey[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -37,11 +43,29 @@ export function useAdminContentViewModel() {
         window.setTimeout(() => setToast(null), 3000);
     };
 
+    /** Debounced copy of `search`, so typing does not fire a request per keystroke. */
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+
+    useEffect(() => {
+        const timer = window.setTimeout(() => setDebouncedSearch(search.trim()), 300);
+        return () => window.clearTimeout(timer);
+    }, [search]);
+
+    /**
+     * The API accepts a single `status`, so it is only sent when exactly one
+     * is selected. Zero or multiple means fetch unrestricted and narrow the
+     * result client-side below.
+     */
     const load = async () => {
         setIsLoading(true);
         setError(null);
         try {
-            const items = await AdminContentService.fetchJourneys();
+            const items = await AdminContentService.fetchJourneys({
+                search: debouncedSearch || undefined,
+                status: statusFilter.length === 1 ? statusFilter[0] : undefined,
+                contentType: contentTypeFilter === 'all' ? undefined : contentTypeFilter,
+                category: categoryFilter === 'all' ? undefined : categoryFilter,
+            });
             setJourneys(items);
         } catch {
             setError('Could not load journeys.');
@@ -50,38 +74,51 @@ export function useAdminContentViewModel() {
         }
     };
 
-    useEffect(() => { void load(); }, []);
+    /** Unfiltered catalog for the stat cards and the category dropdown. */
+    const loadAll = async () => {
+        try {
+            setAllJourneys(await AdminContentService.fetchJourneys());
+        } catch {
+            // Non-fatal: the list itself still renders, only the counters go stale.
+        }
+    };
+
+    useEffect(() => { void loadAll(); }, []);
+
+    useEffect(() => {
+        void load();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [debouncedSearch, statusFilter, contentTypeFilter, categoryFilter]);
 
     // Reset to page 1 whenever any filter/search input changes, so the user
     // never lands on a now-out-of-range page.
     useEffect(() => { setPage(1); }, [search, statusFilter, contentTypeFilter, categoryFilter]);
 
-    const query = search.trim().toLowerCase();
-
-    const filteredJourneys = useMemo(() => journeys
-        .filter(journey => statusFilter.length === 0 || statusFilter.includes(journey.status))
-        .filter(journey => contentTypeFilter === 'all' || journey.contentType === contentTypeFilter)
-        .filter(journey => categoryFilter === 'all' || journey.categories.includes(categoryFilter))
-        .filter(journey =>
-            query === '' ||
-            journey.title.toLowerCase().includes(query) ||
-            journey.categories.some(category => category.toLowerCase().includes(query)),
-        ), [journeys, statusFilter, contentTypeFilter, categoryFilter, query]);
+    /**
+     * Server-side filtering covers search, content type, category, and a
+     * single status. Only the multi-status case still needs narrowing here.
+     */
+    const filteredJourneys = useMemo(
+        () => statusFilter.length > 1
+            ? journeys.filter(journey => statusFilter.includes(journey.status))
+            : journeys,
+        [journeys, statusFilter],
+    );
 
     const totalPages = Math.max(1, Math.ceil(filteredJourneys.length / PAGE_SIZE));
     const safePage = Math.min(page, totalPages);
     const paginatedJourneys = filteredJourneys.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
-    /** All categories currently in use, for populating the Category filter dropdown. */
+    /** All categories in the catalog, for populating the Category filter dropdown. */
     const availableCategories = useMemo(
-        () => Array.from(new Set(journeys.flatMap(journey => journey.categories))).sort(),
-        [journeys],
+        () => Array.from(new Set(allJourneys.flatMap(journey => journey.categories))).sort(),
+        [allJourneys],
     );
 
     const stats = [
-        { label: 'Total journeys', value: journeys.length },
-        { label: 'Published', value: journeys.filter(j => j.status === 'published').length, accent: true },
-        { label: 'Drafts', value: journeys.filter(j => j.status === 'draft').length },
+        { label: 'Total journeys', value: allJourneys.length },
+        { label: 'Published', value: allJourneys.filter(j => j.status === 'published').length, accent: true },
+        { label: 'Drafts', value: allJourneys.filter(j => j.status === 'draft').length },
     ];
 
     const toggleStatusFilter = (status: JourneyStatus) => {
