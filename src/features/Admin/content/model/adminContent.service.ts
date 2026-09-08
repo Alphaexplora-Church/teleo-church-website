@@ -95,6 +95,7 @@ interface ApiJourneyRow {
     summary: string | null;
     contentType: string | null;
     status: JourneyStatus;
+    thumbnailUrl: string | null;
     categories: string[];
     totalPublishedParts: number;
     createdAt: string;
@@ -108,6 +109,7 @@ const toJourney = (row: ApiJourneyRow): Journey => ({
     description: row.description ?? '',
     contentType: CONTENT_TYPE_FROM_API[row.contentType ?? ''] ?? 'sermon-series',
     categories: row.categories ?? [],
+    thumbnailUrl: row.thumbnailUrl ?? null,
     summary: row.summary ?? undefined,
     parts: [],
     status: row.status,
@@ -330,6 +332,36 @@ const fetchJourneyDetail = async (journeyId: string): Promise<Journey> => {
     };
 };
 
+const journeyBody = (form: JourneyFormData, categoryIds: string[], file?: File | null) => {
+    const title = form.title.trim();
+    const description = form.description.trim();
+    const summary = form.summary.trim();
+    const contentType = CONTENT_TYPE_TO_API[form.contentType];
+
+    if (!file) {
+        return {
+            headers: { 'Content-Type': 'application/json' } as Record<string, string> | undefined,
+            body: JSON.stringify({
+                title,
+                description,
+                summary: summary || null,
+                content_type: contentType,
+                category_ids: categoryIds,
+            }) as BodyInit,
+        };
+    }
+
+    const data = new FormData();
+    data.append('title', title);
+    data.append('description', description);
+    data.append('summary', summary);
+    data.append('content_type', contentType);
+    data.append('category_ids', categoryIds.join(','));
+    data.append('image', file);
+
+    return { headers: undefined as Record<string, string> | undefined, body: data as BodyInit };
+};
+
 // ─── Journey (Series) persistence ────────────────────────────────────────
 export const AdminContentService = {
     /** Reads live journeys from the API. Every other method below is still localStorage. */
@@ -363,19 +395,15 @@ export const AdminContentService = {
         form: JourneyFormData,
         parts: JourneyPart[] = [],
         nextStatus?: JourneyStatus,
+        thumbnailFile?: File | null,
     ): Promise<Journey> => {
         const categoryIds = await toCategoryIds(form.categories);
+        const { headers, body } = journeyBody(form, categoryIds, thumbnailFile);
 
         const created = await request(`${API_BASE}/api/journeys`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                title: form.title.trim(),
-                description: form.description.trim(),
-                summary: form.summary.trim() || null,
-                content_type: CONTENT_TYPE_TO_API[form.contentType],
-                category_ids: categoryIds,
-            }),
+            headers,
+            body,
         }, 'Failed to create the journey.');
 
         const { journeyId } = await created.json() as { journeyId: string };
@@ -416,15 +444,15 @@ export const AdminContentService = {
         parts: JourneyPart[],
         nextStatus?: JourneyStatus,
         originalParts: JourneyPart[] = [],
+        thumbnailFile?: File | null,
     ): Promise<Journey> => {
         const categoryIds = await toCategoryIds(form.categories);
+        const { headers, body } = journeyBody(form, categoryIds, thumbnailFile);
 
-        await patchJson(`${API_BASE}/api/journeys/${id}`, {
-            title: form.title.trim(),
-            description: form.description.trim(),
-            summary: form.summary.trim() || null,
-            content_type: CONTENT_TYPE_TO_API[form.contentType],
-            category_ids: categoryIds,
+        await request(`${API_BASE}/api/journeys/${id}`, {
+            method: 'PATCH',
+            headers,
+            body,
         }, 'Failed to save the journey.');
 
         const orderedIds = await syncParts(id, parts, originalParts);

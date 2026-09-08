@@ -36,6 +36,8 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
     const [isLoadingParts, setIsLoadingParts] = useState(Boolean(journey));
     const [isSaving, setIsSaving] = useState(false);
     const [partModal, setPartModal] = useState<{ mode: 'add' } | { mode: 'edit'; part: JourneyPart } | null>(null);
+    const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+    const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(journey?.thumbnailUrl ?? null);
 
     // The server's copy of the Parts as loaded. Saving diffs against this to
     // work out which Part statuses changed and whether the order moved.
@@ -201,6 +203,16 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
         setParts(prev => prev.map(part => part.id === id ? { ...part, status } : part));
     };
 
+    const handleThumbnailChange = (file: File | null) => {
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) {
+            showToast('That image is larger than 5MB.', 'error');
+            return;
+        }
+        setThumbnailFile(file);
+        setThumbnailPreview(URL.createObjectURL(file));
+    };
+
     const toggleCategory = (category: string) => {
         setForm(prev => ({
             ...prev,
@@ -247,15 +259,16 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
             if (journey) {
                 // Rule: editing content retains its current status unless the
                 // Pastor explicitly Publishes or Archives from this screen.
-                saved = await AdminContentService.saveJourney(journey.id, form, parts, nextStatus, originalParts.current);
+                saved = await AdminContentService.saveJourney(journey.id, form, parts, nextStatus, originalParts.current, thumbnailFile);
                 const message = nextStatus === 'published' ? `“${saved.title}” published.`
                     : nextStatus === 'archived' ? `“${saved.title}” archived.`
                     : `“${saved.title}” updated.`;
                 showToast(message);
                 originalParts.current = saved.parts;
+                setThumbnailFile(null);
                 originalOrder.current = saved.parts.map(part => part.id);
             } else {
-                saved = await AdminContentService.createJourney(form, parts, nextStatus);
+                saved = await AdminContentService.createJourney(form, parts, nextStatus, thumbnailFile);
                 showToast(nextStatus === 'published' ? `“${saved.title}” published.` : `“${saved.title}” saved as draft.`);
             }
             onSaved(saved, isNew);
@@ -314,6 +327,26 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
                         <div>
                             <label className={labelClass}>Description</label>
                             <textarea value={form.description} onChange={e => setForm(prev => ({ ...prev, description: e.target.value }))} rows={3} placeholder="What is this series about?" className={`${fieldClass} resize-none`} />
+                        </div>
+
+                        <div>
+                            <label className={labelClass}>Thumbnail <span className="normal-case font-semibold text-midnight-teal/40">(optional)</span></label>
+                            <div className="flex items-center gap-4">
+                                {thumbnailPreview ? (
+                                    <img src={thumbnailPreview} alt="" className="h-20 w-32 shrink-0 rounded-xl object-cover" />
+                                ) : (
+                                    <div className="grid h-20 w-32 shrink-0 place-items-center rounded-xl bg-midnight-teal/5 text-midnight-teal/30">
+                                        <ImageOff size={20} />
+                                    </div>
+                                )}
+                                <input
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/webp,image/gif"
+                                    onChange={e => handleThumbnailChange(e.target.files?.[0] ?? null)}
+                                    className="text-sm text-midnight-teal/70 file:mr-3 file:rounded-lg file:border-0 file:bg-midnight-teal file:px-4 file:py-2 file:text-sm file:font-bold file:text-soft-linen hover:file:bg-deep-teal"
+                                />
+                            </div>
+                            <p className="mt-1.5 text-xs text-gray-400">JPEG, PNG, WebP or GIF. Up to 5MB.</p>
                         </div>
 
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

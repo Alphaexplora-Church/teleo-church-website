@@ -58,6 +58,7 @@ export interface Journey {
     categories: string[];
     /** Optional short teaser shown in listings; falls back to a trimmed description if omitted. */
     summary?: string;
+    thumbnailUrl?: string | null;
     parts: JourneyPart[];
     status: JourneyStatus;
     createdAt: string;
