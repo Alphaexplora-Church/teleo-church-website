@@ -33,13 +33,13 @@ export default function AdminSidebar({ className = '' }: AdminSidebarProps) {
                     Home
                 </NavLink>
 
-                {vm.showContentManagement && (
+                {vm.showEventsAnnouncement && (
                     <NavLink to="/admin/events" className={navClass}>
                         Events and Announcements
                     </NavLink>
                 )}
 
-                {vm.showEventsAnnouncement && (
+                {vm.showContentManagement && (
                     <NavLink to="/admin/content" className={navClass}>
                         Content Management
                     </NavLink>
