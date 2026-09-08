@@ -326,7 +326,7 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
 
                         <div>
                             <label className={labelClass}>Description</label>
-                            <textarea value={form.description} onChange={e => setForm(prev => ({ ...prev, description: e.target.value }))} rows={3} placeholder="What is this series about?" className={`${fieldClass} resize-none`} />
+                            <textarea value={form.description} onChange={e => setForm(prev => ({ ...prev, description: e.target.value }))} rows={5} placeholder="What is this series about?" className={`${fieldClass} resize-none`} />
                         </div>
 
                         <div>
@@ -346,7 +346,6 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
                                     className="text-sm text-midnight-teal/70 file:mr-3 file:rounded-lg file:border-0 file:bg-midnight-teal file:px-4 file:py-2 file:text-sm file:font-bold file:text-soft-linen hover:file:bg-deep-teal"
                                 />
                             </div>
-                            <p className="mt-1.5 text-xs text-gray-400">JPEG, PNG, WebP or GIF. Up to 5MB.</p>
                         </div>
 
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
