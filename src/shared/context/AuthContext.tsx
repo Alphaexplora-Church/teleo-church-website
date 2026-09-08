@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import type { AuthUser, ChurchFeatures } from '../models/globalTypes';
+import type { ChurchFeatures } from '../models/globalTypes';
+import type { AuthUser } from '../../features/Auth/login/model/login.model';
 import { AuthContext, type AuthContextValue } from './authContextInstance';
 import { LoginModel } from '../../features/Auth/login/model/login.model';
 import type { LoginCredentials } from '../../features/Auth/login/model/login.model';

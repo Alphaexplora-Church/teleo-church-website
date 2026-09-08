@@ -126,16 +126,6 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
         prevTops.current = nextTops;
     }, [parts, draggingId]);
 
-    const movePart = (from: number, to: number) => {
-        if (from === to || from < 0 || to < 0 || from >= parts.length || to >= parts.length) return;
-        setParts(prev => {
-            const next = [...prev];
-            const [moved] = next.splice(from, 1);
-            next.splice(to, 0, moved);
-            return next.map((part, i) => ({ ...part, order: i + 1 }));
-        });
-    };
-
     const handleGripPointerDown = (e: React.PointerEvent, id: string) => {
         if (e.button !== 0) return;
         const el = itemRefs.current[id];
