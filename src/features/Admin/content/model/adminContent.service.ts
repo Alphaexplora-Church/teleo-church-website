@@ -133,12 +133,32 @@ const toPart = (row: ApiPartRow): JourneyPart => {
         id: row.partId,
         order: row.partOrder,
         title: row.title,
-        type: hasVideo && hasText ? 'both' : hasText ? 'text' : 'video',
+        // An empty Draft placeholder has no media and no text. Calling it a
+        // video Part would flag it as a broken link it never had, so the
+        // video type is only claimed when there is actually a URL.
+        type: hasVideo && hasText ? 'both' : hasVideo ? 'video' : 'text',
         status: row.status,
         videoUrl: row.mediaUrl ?? undefined,
         textContent: row.readingText ?? undefined,
     };
 };
+
+/**
+ * The API stores the media URL but not its title or thumbnail, which come
+ * from the provider's oEmbed endpoint. Without this every saved video Part
+ * reloads looking unverified and has to be re-checked by hand before it can
+ * be published. Failures are left as-is so a genuinely broken link still
+ * reports itself.
+ */
+const withVideoPreviews = async (parts: JourneyPart[]): Promise<JourneyPart[]> =>
+    Promise.all(parts.map(async part => {
+        if (!part.videoUrl) return part;
+
+        const preview = await validateVideoLink(part.videoUrl);
+        if (!preview) return part;
+
+        return { ...part, videoTitle: preview.title, videoThumbnail: preview.thumbnail };
+    }));
 
 /** Reverse of CONTENT_TYPE_FROM_API, for sending the filter back to the API. */
 const CONTENT_TYPE_TO_API: Record<JourneyContentType, string> = {
@@ -302,9 +322,11 @@ const fetchJourneyDetail = async (journeyId: string): Promise<Journey> => {
     const response = await request(`${API_BASE}/api/journeys/${journeyId}`, {}, 'Failed to load the journey.');
     const body = await response.json() as { journey: ApiJourneyRow; parts: ApiPartRow[] };
 
+    const parts = (body.parts ?? []).map(toPart).sort((a, b) => a.order - b.order);
+
     return {
         ...toJourney(body.journey),
-        parts: (body.parts ?? []).map(toPart).sort((a, b) => a.order - b.order),
+        parts: await withVideoPreviews(parts),
     };
 };
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Journey, JourneyContentType, JourneyStatus } from '../model/adminContent.types';
 import { AdminContentService } from '../model/adminContent.service';
 
@@ -36,10 +36,13 @@ export function useAdminContentViewModel() {
     /** Id of the journey whose Archive/Restore action is in flight, so its row can show a spinner instead of doing nothing. */
     const [pendingStatusId, setPendingStatusId] = useState<string | null>(null);
 
-    const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
+    // Memoized because the editor's part-loading effect depends on it. A new
+    // identity on every render would re-run that effect and overwrite whatever
+    // the Pastor had staged but not yet saved.
+    const showToast = useCallback((msg: string, type: 'success' | 'error' = 'success') => {
         setToast({ msg, type });
         window.setTimeout(() => setToast(null), 3000);
-    };
+    }, []);
 
     /** Debounced copy of `search`, so typing does not fire a request per keystroke. */
     const [debouncedSearch, setDebouncedSearch] = useState('');
