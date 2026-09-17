@@ -206,7 +206,15 @@ export default function AdminPrayerWallView() {
                                             </div>
                                         </>
                                     ) : (
-                                        <div className="py-16 text-center text-gray-400">No prayer requests in this queue.</div>
+                                        <div className="py-16 text-center text-sm font-medium text-gray-400">
+                                            {vm.viewMode === 'INTERCESSION'
+                                                ? vm.statusFilter === 'NOT_PRAYED_YET'
+                                                    ? '✨ All intercessions are currently covered in prayer!'
+                                                    : vm.statusFilter === 'PRAYED'
+                                                        ? 'No prayed intercessions yet.'
+                                                        : 'No intercession requests found.'
+                                                : 'No public or home church prayer requests at this time.'}
+                                        </div>
                                     )}
                                 </div>
                             </section>
@@ -242,7 +250,13 @@ export default function AdminPrayerWallView() {
                                             />
                                         ))
                                     ) : (
-                                        <div className="p-8 text-center text-sm text-gray-400">No prayer requests found.</div>
+                                        <div className="p-8 text-center text-sm font-medium text-gray-400">
+                                            {vm.viewMode === 'INTERCESSION'
+                                                ? vm.statusFilter === 'NOT_PRAYED_YET'
+                                                    ? '✨ All intercessions are currently covered in prayer!'
+                                                    : 'No prayer requests found.'
+                                                : 'No prayer requests found.'}
+                                        </div>
                                     )}
                                 </div>
                                 {/* Pagination */}
@@ -293,7 +307,7 @@ export default function AdminPrayerWallView() {
                 comments={vm.drawerComments}
                 isLoadingComments={vm.isLoadingComments}
                 onTogglePrayed={vm.toggleMarkAsPrayed}
-                isActionLoading={Boolean(vm.isActionLoading)}
+                isActionLoading={vm.isActionLoading === vm.selectedDrawerPrayer?.id}
                 onAddComment={vm.addComment}
                 onUpdateComment={vm.updateComment}
                 onDeleteComment={vm.deleteComment}
@@ -419,15 +433,26 @@ function PrayerListRow({
             <div className="min-w-0">
                 <span className="mb-1 block text-[9px] font-bold uppercase tracking-[0.14em] text-midnight-teal/40 md:hidden">Title</span>
                 <p className="font-bold leading-6 text-midnight-teal/80">{prayer.title}</p>
-                <div className="mt-1 flex flex-wrap gap-1.5">
+                <div className="mt-1 flex flex-wrap items-center gap-1.5">
                     {prayer.is_urgent && (
                         <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-rose-700">
                             Urgent
                         </span>
                     )}
-                    <span className="rounded-full bg-soft-linen px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-midnight-teal/60">
-                        {prayer.audience.replace('_', ' ')}
-                    </span>
+                    {prayer.audience === 'CHURCH_INTERCESSION' ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-midnight-teal/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-midnight-teal">
+                            <Shield size={10} /> Intercession
+                        </span>
+                    ) : (
+                        <span className="rounded-full bg-soft-linen px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-midnight-teal/60">
+                            {prayer.audience.replace('_', ' ')}
+                        </span>
+                    )}
+                    {prayer.is_answered && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-700 border border-emerald-200">
+                            <CheckCircle2 size={10} /> Answered
+                        </span>
+                    )}
                     {prayer.prayer_tag && (
                         <span className="rounded-full bg-soft-linen px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-midnight-teal/60">
                             {prayer.prayer_tag}

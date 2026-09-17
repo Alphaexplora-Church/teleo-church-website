@@ -69,6 +69,24 @@ export default function AdminPrayerDrawer({
         return () => clearTimeout(timer);
     }, [feedback]);
 
+    // Handle Escape key to close drawer, exit edit mode, or dismiss delete modal
+    useEffect(() => {
+        if (!isOpen) return;
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                if (pendingDeleteCommentId) {
+                    if (!deletingId) setPendingDeleteCommentId(null);
+                } else if (editingCommentId) {
+                    setEditingCommentId(null);
+                } else {
+                    onClose();
+                }
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isOpen, pendingDeleteCommentId, deletingId, editingCommentId, onClose]);
+
     if (!prayer) return null;
 
     const author = prayer.author_name || 'Anonymous';
@@ -266,6 +284,25 @@ export default function AdminPrayerDrawer({
                                     {prayer.description}
                                 </p>
                             </div>
+
+                            {/* Answered Prayer Testimony Box */}
+                            {prayer.is_answered && (
+                                <div className="relative overflow-hidden rounded-2xl border border-emerald-500/25 bg-emerald-50/70 p-5 shadow-sm space-y-2">
+                                    <div className="flex items-center justify-between border-b border-emerald-500/15 pb-2">
+                                        <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-800">
+                                            <CheckCircle2 size={13} className="text-emerald-600" /> Answered Prayer / Praise Report
+                                        </span>
+                                        {prayer.answered_at_metadata?.relative_time && (
+                                            <span className="text-[10px] text-emerald-700/70 font-semibold">
+                                                {prayer.answered_at_metadata.relative_time}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p className="text-[13px] leading-relaxed text-emerald-950 whitespace-pre-wrap font-medium">
+                                        {prayer.answer_note || 'Praise God! This prayer request has been marked as answered.'}
+                                    </p>
+                                </div>
+                            )}
 
                             {/* Intercession Action Bar */}
                             <div className="flex items-center justify-between rounded-2xl border border-midnight-teal/10 bg-gradient-to-r from-white via-white to-midnight-teal/[0.02] p-4 shadow-sm">
