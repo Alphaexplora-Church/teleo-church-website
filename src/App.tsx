@@ -10,6 +10,7 @@ import AdminRegistrationsView from './features/Admin/registrations/view/AdminReg
 import AdminSettingsView from './features/Admin/settings/view/AdminSettingsView';
 import AdminUsersView from './features/Admin/users/view/AdminUsersView';
 import AdminPrayerWallView from './features/Admin/prayer-wall/view/AdminPrayerWallView';
+import AdminContentView from './features/Admin/content/view/AdminContentView';
 
 export default function App() {
   const location = useLocation();
@@ -29,7 +30,8 @@ export default function App() {
           <Route path="/admin/registrations" element={<ProtectedRoute requiredFeature="registrations"><AdminRegistrationsView /></ProtectedRoute>} />
 
           {/* Feature-gated routes — redirect to dashboard if church lacks the feature */}
-          <Route path="/admin/events" element={<ProtectedRoute requiredFeature="content_management"><AdminEventsView /></ProtectedRoute>} />
+          <Route path="/admin/events" element={<ProtectedRoute requiredFeature="events_announcement"><AdminEventsView /></ProtectedRoute>} />
+          <Route path="/admin/content" element={<ProtectedRoute requiredFeature="content_management"><AdminContentView /></ProtectedRoute>} />
           <Route path="/admin/prayer-wall" element={<ProtectedRoute requiredFeature="prayer_wall"><AdminPrayerWallView /></ProtectedRoute>} />
         </Routes>
       </AnimatePresence>
