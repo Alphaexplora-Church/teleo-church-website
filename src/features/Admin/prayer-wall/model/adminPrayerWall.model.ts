@@ -106,7 +106,8 @@ export const AdminPrayerWallModel = {
 
         if (!response.ok) {
             const err = await response.json().catch(() => ({}));
-            throw new Error(err.message || err.error || 'Failed to update prayer reaction');
+            const msg = err?.error?.message || err?.message || (typeof err?.error === 'string' ? err.error : null) || 'Failed to update prayer reaction';
+            throw new Error(msg);
         }
 
         return await response.json() as { action: 'added' | 'removed' };
@@ -125,7 +126,8 @@ export const AdminPrayerWallModel = {
 
         if (!response.ok) {
             const err = await response.json().catch(() => ({}));
-            throw new Error(err.message || err.error || 'Failed to post comment');
+            const msg = err?.error?.message || err?.message || (typeof err?.error === 'string' ? err.error : null) || 'Failed to post comment';
+            throw new Error(msg);
         }
 
         return await response.json() as AdminPrayerComment;
@@ -144,7 +146,8 @@ export const AdminPrayerWallModel = {
 
         if (!response.ok) {
             const err = await response.json().catch(() => ({}));
-            throw new Error(err.message || err.error || 'Failed to update comment');
+            const msg = err?.error?.message || err?.message || (typeof err?.error === 'string' ? err.error : null) || 'Failed to update comment';
+            throw new Error(msg);
         }
 
         return await response.json() as AdminPrayerComment;
@@ -161,7 +164,8 @@ export const AdminPrayerWallModel = {
 
         if (!response.ok) {
             const err = await response.json().catch(() => ({}));
-            throw new Error(err.message || err.error || 'Failed to delete comment');
+            const msg = err?.error?.message || err?.message || (typeof err?.error === 'string' ? err.error : null) || 'Failed to delete comment';
+            throw new Error(msg);
         }
 
         return await response.json() as { message: string };
