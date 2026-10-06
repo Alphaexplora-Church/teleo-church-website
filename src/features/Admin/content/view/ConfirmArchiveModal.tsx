@@ -6,7 +6,8 @@
 // reflecting downstream effects on Member completion totals/visibility" spec.
 import { Archive, Loader2 } from 'lucide-react';
 import { useControlledModalTransition } from '../../../../shared/hooks/useModalTransition';
-import { modalOverlayClass, modalPanelClass } from './contentStyles';
+import { ContentDialog } from './ContentDialog';
+import { modalPanelClass } from './contentStyles';
 
 interface ConfirmArchiveModalProps {
     open: boolean;
@@ -25,12 +26,11 @@ export function ConfirmArchiveModal({ open, itemKind, itemTitle, isArchiving = f
     const isJourney = itemKind === 'Journey';
 
     return (
-        <div className={`z-[70] ${modalOverlayClass(visible)}`}>
-            <div className={`mx-4 w-full max-w-sm rounded-2xl bg-white admin-solid-surface p-8 text-center shadow-2xl ${modalPanelClass(visible)}`}>
+        <ContentDialog labelledBy={`archive-${itemKind}-title`} onClose={onCancel} busy={isArchiving} active={open} panelClass={`!max-w-sm p-8 text-center ${modalPanelClass(visible)}`}>
                 <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-50">
                     <Archive className="h-7 w-7 text-amber-600" />
                 </div>
-                <h3 className="mb-2 font-serif text-xl text-midnight-teal">Archive this {itemKind}?</h3>
+                <h3 id={`archive-${itemKind}-title`} className="mb-2 font-serif text-xl text-midnight-teal">Archive this {itemKind}?</h3>
                 <p className="mb-3 text-sm text-gray-500">
                     “<span className="font-semibold text-gray-700">{itemTitle}</span>” will be hidden from Members{isJourney ? ', including every Part in it,' : ''} but not deleted.
                 </p>
@@ -40,7 +40,7 @@ export function ConfirmArchiveModal({ open, itemKind, itemTitle, isArchiving = f
                         : 'Members who already completed this part keep that record on their completion totals — it just disappears from the series until restored.'}
                 </p>
                 <div className="flex justify-center gap-3">
-                    <button onClick={onCancel} disabled={isArchiving} className="rounded-lg px-5 py-2 text-sm font-bold text-gray-500 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50">Cancel</button>
+                    <button data-dialog-autofocus onClick={onCancel} disabled={isArchiving} className="rounded-lg px-5 py-2 text-sm font-bold text-gray-500 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50">Cancel</button>
                     <button
                         onClick={onConfirm}
                         disabled={isArchiving}
@@ -49,7 +49,6 @@ export function ConfirmArchiveModal({ open, itemKind, itemTitle, isArchiving = f
                         {isArchiving ? <Loader2 size={16} className="animate-spin" /> : 'Archive'}
                     </button>
                 </div>
-            </div>
-        </div>
+        </ContentDialog>
     );
 }

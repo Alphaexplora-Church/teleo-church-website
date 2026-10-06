@@ -1,4 +1,4 @@
-// ─── Admin Content — JourneyEditor (View) ───────────────────────────────────
+// ─── Admin Content — New Journey (original layout) ───────────────────────────────────
 // Covers Phase 1.1 (Edit and Update Series): metadata + the Series builder,
 // with Publish gated on at least one Published Part, and the edit-flow rule
 // that saving retains the journey's current status unless the Pastor
@@ -6,15 +6,14 @@
 // the lifecycle is draft to published to archived, and nothing is removed.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Archive, ArrowDown, ArrowUp, ChevronDown, FileText, GripVertical, ImageOff, Loader2, Pencil, Plus, RotateCcw, Video, X } from 'lucide-react';
+import { Archive, ChevronDown, FileText, GripVertical, ImageOff, Loader2, Pencil, Plus, RotateCcw, Video, X } from 'lucide-react';
 import type { Journey, JourneyFormData, JourneyPart, PartFormData } from '../model/adminContent.types';
 import { CONTENT_TYPE_OPTIONS, EMPTY_JOURNEY_FORM, canPublishJourney } from '../model/adminContent.types';
 import { AdminContentService, buildPart, fetchCategoryCatalog, type JourneyCategoryOption, type VideoPreview, type SaveProgress } from '../model/adminContent.service';
 import { useModalTransition } from '../../../../shared/hooks/useModalTransition';
-import { ContentDialog } from './ContentDialog';
-import { PartModal } from './PartModal';
+import { NewJourneyPartModal } from './NewJourneyPartModal';
 import { ConfirmArchiveModal } from './ConfirmArchiveModal';
-import { fieldClass, iconButtonClass, labelClass, modalPanelClass, statusBadgeClass, type IconButtonVariant } from './contentStyles';
+import { fieldClass, iconButtonClass, labelClass, modalOverlayClass, modalPanelClass, statusBadgeClass, type IconButtonVariant } from './contentStyles';
 
 interface JourneyEditorProps {
     journey: Journey | null;
@@ -25,18 +24,10 @@ interface JourneyEditorProps {
 
 const MAX_JOURNEY_CATEGORIES = 5;
 
-export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyEditorProps) {
+export function NewJourneyEditor({ journey, onClose, onSaved, showToast }: JourneyEditorProps) {
     const { visible, requestClose } = useModalTransition(onClose);
     const isNew = !journey;
-    const [tab, setTab] = useState<'details' | 'builder'>('details');
-    const [discardOpen, setDiscardOpen] = useState(false);
-    const [saveError, setSaveError] = useState<string | null>(null);
-    const [partsError, setPartsError] = useState<string | null>(null);
-    const [partsRevision, setPartsRevision] = useState(0);
-    const [recoveryBlocked, setRecoveryBlocked] = useState(false);
-    const [showValidation, setShowValidation] = useState(false);
-    const saveProgress = useRef<SaveProgress>({ journeyId: journey?.id, partIds: {} });
-    const baseline = useRef<string | null>(null);
+    const saveProgress = useRef<SaveProgress>({ partIds: {} });
     const [form, setForm] = useState<JourneyFormData>(journey ? {
         title: journey.title,
         description: journey.description,
@@ -51,15 +42,10 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
     const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
     const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(journey?.thumbnailUrl ?? null);
 
-    useEffect(() => () => { if (thumbnailPreview?.startsWith('blob:')) URL.revokeObjectURL(thumbnailPreview); }, [thumbnailPreview]);
-
     // The server's copy of the Parts as loaded. Saving diffs against this to
     // work out which Part statuses changed and whether the order moved.
     const originalParts = useRef<JourneyPart[]>([]);
 
-    const [categoryLoading, setCategoryLoading] = useState(true);
-    const [categoryError, setCategoryError] = useState<string | null>(null);
-    const [categoryRevision, setCategoryRevision] = useState(0);
     const [categoryOptions, setCategoryOptions] = useState<JourneyCategoryOption[]>([]);
     const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
     const categoryMenuRef = useRef<HTMLDivElement | null>(null);
@@ -67,32 +53,26 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
     useEffect(() => {
         let cancelled = false;
 
-        const load = async () => {
-            setCategoryLoading(true);
-            setCategoryError(null);
-            try { const options = await fetchCategoryCatalog(); if (!cancelled) setCategoryOptions(options); }
-            catch { if (!cancelled) setCategoryError('Could not load categories.'); }
-            finally { if (!cancelled) setCategoryLoading(false); }
-        };
-        void load();
+        fetchCategoryCatalog()
+            .then(options => { if (!cancelled) setCategoryOptions(options); })
+            .catch(() => { if (!cancelled) showToast('Could not load the category list.', 'error'); });
+
         return () => { cancelled = true; };
-    }, [categoryRevision]);
+    }, [showToast]);
 
     useEffect(() => {
         if (!isCategoryMenuOpen) return;
-
         const closeWhenLeavingMenu = (event: MouseEvent) => {
             if (!categoryMenuRef.current?.contains(event.target as Node)) setIsCategoryMenuOpen(false);
         };
         const closeOnEscape = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); setIsCategoryMenuOpen(false); }
+            if (event.key === 'Escape') setIsCategoryMenuOpen(false);
         };
-
         window.addEventListener('mousedown', closeWhenLeavingMenu);
-        document.addEventListener('keydown', closeOnEscape, true);
+        window.addEventListener('keydown', closeOnEscape);
         return () => {
             window.removeEventListener('mousedown', closeWhenLeavingMenu);
-            document.removeEventListener('keydown', closeOnEscape, true);
+            window.removeEventListener('keydown', closeOnEscape);
         };
     }, [isCategoryMenuOpen]);
 
@@ -101,7 +81,6 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
 
         let cancelled = false;
         setIsLoadingParts(true);
-        setPartsError(null);
 
         AdminContentService.fetchJourneyDetail(journey.id)
             .then(detail => {
@@ -109,13 +88,12 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
                 originalParts.current = detail.parts;
                 originalOrder.current = detail.parts.map(part => part.id);
                 setParts(detail.parts);
-                baseline.current = JSON.stringify({ form: { title: journey.title, description: journey.description, contentType: journey.contentType, categories: journey.categories, summary: journey.summary ?? '' }, parts: detail.parts });
             })
-            .catch(() => { if (!cancelled) setPartsError('Could not load Parts. Retry before saving this Journey.'); })
+            .catch(() => { if (!cancelled) showToast('Could not load parts for this journey.', 'error'); })
             .finally(() => { if (!cancelled) setIsLoadingParts(false); });
 
         return () => { cancelled = true; };
-    }, [journey, partsRevision]);
+    }, [journey, showToast]);
 
     // ── Drag-and-drop reordering ──────────────────────────────────────────
     // Order changes are applied to local state only — nothing is persisted
@@ -170,7 +148,6 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
     }, [parts, draggingId]);
 
     const handleGripPointerDown = (e: React.PointerEvent, id: string) => {
-        if (isSaving) return;
         if (e.button !== 0) return;
         const el = itemRefs.current[id];
         if (!el) return;
@@ -232,18 +209,6 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
     // it hides a Part from Members while leaving any completion already
     // recorded against it untouched.
     const [archivePartTarget, setArchivePartTarget] = useState<JourneyPart | null>(null);
-    const movePart = (id: string, direction: number) => {
-        setParts(current => {
-            const index = current.findIndex(part => part.id === id);
-            const target = index + direction;
-            if (target < 0 || target >= current.length) return current;
-            const next = [...current];
-            const [moved] = next.splice(index, 1);
-            next.splice(target, 0, moved);
-            return next.map((part, order) => ({ ...part, order: order + 1 }));
-        });
-    };
-
 
     const setPartStatus = (id: string, status: JourneyPart['status']) => {
         setParts(prev => prev.map(part => part.id === id ? { ...part, status } : part));
@@ -251,7 +216,6 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
 
     const handleThumbnailChange = (file: File | null) => {
         if (!file) return;
-        if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)) { showToast('Choose a JPEG, PNG, WebP or GIF image.', 'error'); return; }
         if (file.size > 5 * 1024 * 1024) {
             showToast('That image is larger than 5MB.', 'error');
             return;
@@ -284,23 +248,13 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
         setPartModal(null);
     };
 
-    const initialForm = journey ? { title: journey.title, description: journey.description, contentType: journey.contentType, categories: journey.categories, summary: journey.summary ?? '' } : EMPTY_JOURNEY_FORM;
-    const dirty = Boolean(thumbnailFile) || JSON.stringify({ form, parts }) !== (baseline.current ?? JSON.stringify({ form: initialForm, parts: journey?.parts ?? [] }));
-    const attemptClose = () => {
-        if (isSaving) return;
-        if (dirty) setDiscardOpen(true); else requestClose();
-    };
     const isMetadataValid = form.title.trim().length > 0 && form.description.trim().length > 0 && form.categories.length > 0;
     const isPublishable = canPublishJourney(parts);
     const [archiveJourneyOpen, setArchiveJourneyOpen] = useState(false);
     const [isArchivingJourney, setIsArchivingJourney] = useState(false);
 
     const persist = async (nextStatus?: Journey['status'], options?: { closeOnSave?: boolean }) => {
-        if (isSaving || isLoadingParts || partsError || recoveryBlocked) return;
-        setSaveError(null);
-        setShowValidation(true);
         if (!isMetadataValid) {
-            setTab('details');
             showToast('Title, description, and at least one category are required.', 'error');
             return;
         }
@@ -318,7 +272,7 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
             if (journey) {
                 // Rule: editing content retains its current status unless the
                 // Pastor explicitly Publishes or Archives from this screen.
-                saved = await AdminContentService.saveJourney(journey.id, form, parts, nextStatus, originalParts.current, thumbnailFile, saveProgress.current);
+                saved = await AdminContentService.saveJourney(journey.id, form, parts, nextStatus, originalParts.current, thumbnailFile);
                 const message = nextStatus === 'published' ? `“${saved.title}” published.`
                     : nextStatus === 'archived' ? `“${saved.title}” archived.`
                     : `“${saved.title}” updated.`;
@@ -333,36 +287,17 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
             onSaved(saved, isNew);
             if (options?.closeOnSave !== false) requestClose();
         } catch (err) {
-            const message = err instanceof Error ? err.message : 'Failed to save the Journey.';
-            setSaveError(message);
-            showToast(message, 'error');
-            const progress = saveProgress.current;
-            if (progress.uncertainJourney) {
-                setRecoveryBlocked(true);
-                setSaveError(`${message} The server may have created the Journey. Close this editor and check the collection before creating it again.`);
-            } else if (progress.journeyId) {
-                try {
-                    const current = await AdminContentService.fetchJourneyDetail(progress.journeyId, { previews: false });
-                    if (progress.uncertainPart) {
-                        const uncertain = progress.uncertainPart;
-                        const candidates = current.parts.filter(part => !uncertain.knownIds.includes(part.id) && part.title === uncertain.title);
-                        if (candidates.length === 1) progress.partIds[uncertain.localId] = candidates[0].id;
-                        else if (candidates.length > 1) throw new Error('Several saved Parts match the interrupted request. Review the saved Journey before retrying.');
-                        delete progress.uncertainPart;
-                    }
-                    originalParts.current = current.parts;
-                    originalOrder.current = current.parts.map(part => part.id);
-                    setParts(staged => {
-                        const recovered = staged.map(part => ({ ...part, id: progress.partIds[part.id] ?? part.id }));
-                        const ids = new Set(recovered.map(part => part.id));
-                        return [...recovered, ...current.parts.filter(part => !ids.has(part.id))].map((part, index) => ({ ...part, order: index + 1 }));
-                    });
-                    setRecoveryBlocked(false);
-                } catch (recoveryError) {
-                    setRecoveryBlocked(true);
-                    setSaveError(`${message} ${recoveryError instanceof Error ? recoveryError.message : 'Could not check the saved state.'} Close and reopen the saved Journey before retrying.`);
-                }
+            // A failed save leaves the server on its old ordering, so put the
+            // rows back where they were rather than showing an order that was
+            // never persisted. Content and status edits are kept so the
+            // Pastor can fix the problem and retry without retyping.
+            if (orderChanged) {
+                const rank = new Map(originalOrder.current.map((partId, index) => [partId, index]));
+                setParts(prev => [...prev]
+                    .sort((a, b) => (rank.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (rank.get(b.id) ?? Number.MAX_SAFE_INTEGER))
+                    .map((part, index) => ({ ...part, order: index + 1 })));
             }
+            showToast(err instanceof Error ? err.message : 'Failed to save the journey.', 'error');
         } finally {
             setIsSaving(false);
         }
@@ -382,42 +317,60 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
     };
 
     return (
-        <>
-            <ContentDialog labelledBy="journey-editor-title" onClose={attemptClose} busy={isSaving} panelClass={modalPanelClass(visible)}>
-                <fieldset disabled={isSaving || isLoadingParts || Boolean(partsError) || recoveryBlocked} className="contents">
+        <div className={`z-50 ${modalOverlayClass(visible, !archiveJourneyOpen && !archivePartTarget)}`}>
+            <div className={`max-h-[94vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/70 bg-[#f7faf8] shadow-2xl shadow-midnight-teal/30 ${modalPanelClass(visible)}`}>
                 <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-midnight-teal/95 px-6 py-5 backdrop-blur-xl">
                     <div>
-                        <h2 id="journey-editor-title" className="font-serif text-2xl text-soft-linen">{journey ? 'Edit Journey' : 'New Journey'}</h2>
+                        <h2 className="font-serif text-2xl text-soft-linen">{journey ? 'Edit Journey' : 'New Journey'}</h2>
                         {journey && <p className="text-xs font-semibold uppercase tracking-widest text-soft-linen/50">Currently {journey.status}</p>}
                     </div>
-                    <button onClick={attemptClose} aria-label="Close" className="flex h-9 w-9 items-center justify-center rounded-full text-soft-linen/60 transition-colors hover:bg-white/10 hover:text-soft-linen"><X size={18} /></button>
+                    <button onClick={requestClose} aria-label="Close" className="flex h-9 w-9 items-center justify-center rounded-full text-soft-linen/60 transition-colors hover:bg-white/10 hover:text-soft-linen"><X size={18} /></button>
                 </div>
 
-                <div role="tablist" aria-label="Journey editor sections" className="flex shrink-0 border-b border-midnight-teal/10">
-                    {(['details', 'builder'] as const).map((value, index) => <button key={value} id={`journey-tab-${value}`} role="tab" aria-selected={tab === value} aria-controls={`journey-panel-${value}`} tabIndex={tab === value ? 0 : -1} className="content-tab" onClick={() => setTab(value)} onKeyDown={event => { if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) { event.preventDefault(); const next = event.key === 'Home' ? 'details' : event.key === 'End' ? 'builder' : index === 0 ? 'builder' : 'details'; setTab(next); document.getElementById(`journey-tab-${next}`)?.focus(); } }}>{value === 'details' ? 'Journey Details' : `Series Builder (${parts.length})`}</button>)}
-                </div>
-                <div className="content-dialog-body space-y-5">
-                    {saveError && <div role="alert" className="rounded-xl bg-red-50 p-4 text-sm text-red-700">{saveError}</div>}
-                    {showValidation && !isMetadataValid && <p id="journey-validation" role="alert" className="text-sm text-red-700">Enter a title, description and at least one category in Journey Details.</p>}
+                <div className="space-y-8 bg-[#f7faf8]/95 p-6 sm:p-7">
                     {/* ── Metadata ─────────────────────────────────────── */}
-                    <section id="journey-panel-details" role="tabpanel" aria-labelledby="journey-tab-details" hidden={tab !== 'details'} className="space-y-5">
+                    <section className="space-y-5">
                         <h3 className="font-serif text-lg text-midnight-teal">Journey Details</h3>
 
                         <div>
-                            <label htmlFor="journey-title" className={labelClass}>Title <span aria-hidden="true">*</span></label>
-                            <input id="journey-title" required aria-invalid={showValidation && !form.title.trim()} aria-describedby={showValidation ? "journey-validation" : undefined} value={form.title} onChange={e => setForm(prev => ({ ...prev, title: e.target.value }))} placeholder="e.g. Rooted: A Journey Through Colossians" className={fieldClass} />
+                            <label className={labelClass}>Title</label>
+                            <input value={form.title} onChange={e => setForm(prev => ({ ...prev, title: e.target.value }))} placeholder="e.g. Rooted: A Journey Through Colossians" className={fieldClass} />
                         </div>
 
                         <div>
-                            <label htmlFor="journey-description" className={labelClass}>Description <span aria-hidden="true">*</span></label>
-                            <textarea id="journey-description" required aria-invalid={showValidation && !form.description.trim()} aria-describedby={showValidation ? "journey-validation" : undefined} value={form.description} onChange={e => setForm(prev => ({ ...prev, description: e.target.value }))} rows={5} placeholder="What is this series about?" className={`${fieldClass} resize-none`} />
+                            <label className={labelClass}>Description</label>
+                            <textarea value={form.description} onChange={e => setForm(prev => ({ ...prev, description: e.target.value }))} rows={5} placeholder="What is this series about?" className={`${fieldClass} resize-none`} />
+                        </div>
+
+                        <div>
+                            <label className={labelClass}>Summary <span className="normal-case font-semibold text-midnight-teal/40">(optional)</span></label>
+                            <textarea value={form.summary} onChange={e => setForm(prev => ({ ...prev, summary: e.target.value }))} rows={5} placeholder="Short teaser for listings" className={`${fieldClass} resize-none`} />
+                        </div>
+
+                        <div>
+                            <label className={labelClass}>Thumbnail <span className="normal-case font-semibold text-midnight-teal/40">(optional)</span></label>
+                            <div className="flex items-center gap-4">
+                                {thumbnailPreview ? (
+                                    <img src={thumbnailPreview} alt="" className="h-20 w-32 shrink-0 rounded-xl object-cover" />
+                                ) : (
+                                    <div className="grid h-20 w-32 shrink-0 place-items-center rounded-xl bg-midnight-teal/5 text-midnight-teal/30">
+                                        <ImageOff size={20} />
+                                    </div>
+                                )}
+                                <input
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/webp,image/gif"
+                                    onChange={e => handleThumbnailChange(e.target.files?.[0] ?? null)}
+                                    className="text-sm text-midnight-teal/70 file:mr-3 file:rounded-lg file:border-0 file:bg-midnight-teal file:px-4 file:py-2 file:text-sm file:font-bold file:text-soft-linen hover:file:bg-deep-teal"
+                                />
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div>
-                                <label htmlFor="journey-type" className={labelClass}>Content Type</label>
+                                <label className={labelClass}>Content Type</label>
                                 <div className="relative">
-                                    <select id="journey-type"
+                                    <select
                                         value={form.contentType}
                                         onChange={e => setForm(prev => ({ ...prev, contentType: e.target.value as JourneyFormData['contentType'] }))}
                                         className={`${fieldClass} appearance-none pr-10`}
@@ -428,8 +381,10 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
                                 </div>
                             </div>
                             <div>
-                                <label id="journey-categories-label" className={labelClass}>Categories <span aria-hidden="true">*</span></label>
-                                {categoryLoading ? <p role="status" className="content-muted pt-3 text-xs">Loading categories…</p> : categoryError ? <p role="alert" className="text-xs text-red-700">{categoryError}<button className="content-button underline" onClick={() => setCategoryRevision(value => value + 1)}>Retry categories</button></p> : categoryOptions.length === 0 ? <p className="content-muted pt-3 text-xs">No categories are available. Ask an administrator to configure the category catalog.</p> : (
+                                <label id="journey-categories-label" className={labelClass}>Categories</label>
+                                {categoryOptions.length === 0 ? (
+                                    <p className="pt-3 text-xs text-gray-400">Loading categories…</p>
+                                ) : (
                                     <div ref={categoryMenuRef} className="relative">
                                         <button
                                             type="button"
@@ -479,48 +434,21 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
                                 </p>
                             </div>
                         </div>
-                        <div className="space-y-5 border-t border-midnight-teal/10 pt-5"><h4 className="text-sm font-semibold">Optional details</h4>
-                        <div>
-                            <label htmlFor="journey-summary" className={labelClass}>Summary <span className="normal-case font-semibold text-midnight-teal/40">(optional)</span></label>
-                            <textarea id="journey-summary" value={form.summary} onChange={e => setForm(prev => ({ ...prev, summary: e.target.value }))} rows={3} placeholder="Short teaser for listings" className={`${fieldClass} resize-none`} />
-                        </div>
-
-                        <div>
-                            <label htmlFor="journey-thumbnail" className={labelClass}>Thumbnail <span className="normal-case font-semibold text-midnight-teal/40">(optional)</span></label>
-                            <div className="flex items-center gap-4">
-                                {thumbnailPreview ? (
-                                    <img src={thumbnailPreview} alt="" className="h-20 w-32 shrink-0 rounded-xl object-cover" />
-                                ) : (
-                                    <div className="grid h-20 w-32 shrink-0 place-items-center rounded-xl bg-midnight-teal/5 text-midnight-teal/30">
-                                        <ImageOff size={20} />
-                                    </div>
-                                )}
-                                <input
-                                    id="journey-thumbnail"
-                                    type="file"
-                                    accept="image/jpeg,image/png,image/webp,image/gif"
-                                    onChange={e => handleThumbnailChange(e.target.files?.[0] ?? null)}
-                                    className="text-sm text-midnight-teal/70 file:mr-3 file:rounded-lg file:border-0 file:bg-midnight-teal file:px-4 file:py-2 file:text-sm file:font-bold file:text-soft-linen hover:file:bg-deep-teal"
-                                />
-                            </div>
-                        </div>
-
-                        </div>
                     </section>
 
                     {/* ── Series builder ───────────────────────────────── */}
-                    <section id="journey-panel-builder" role="tabpanel" aria-labelledby="journey-tab-builder" hidden={tab !== 'builder'} className="space-y-4">
-                        <div className="flex flex-wrap items-center justify-between gap-3">
+                    <section className="space-y-4 border-t border-midnight-teal/10 pt-6">
+                        <div className="flex items-center justify-between">
                             <div>
                                 <h3 className="font-serif text-lg text-midnight-teal">Series Builder</h3>
                                 <p className="text-xs text-gray-400">Add each part in order. A part may include a video, a written passage, or both.</p>
                             </div>
-                            <button disabled={isLoadingParts || Boolean(partsError)} onClick={() => setPartModal({ mode: 'add' })} className="flex shrink-0 items-center gap-1.5 rounded-xl bg-midnight-teal px-4 py-2 text-sm font-bold text-soft-linen shadow transition-colors hover:bg-deep-teal">
+                            <button onClick={() => setPartModal({ mode: 'add' })} className="flex shrink-0 items-center gap-1.5 rounded-xl bg-midnight-teal px-4 py-2 text-sm font-bold text-soft-linen shadow transition-colors hover:bg-deep-teal">
                                 <Plus size={15} /> Add Part
                             </button>
                         </div>
 
-                        {partsError ? <div role="alert" className="rounded-xl bg-red-50 p-4 text-sm text-red-700">{partsError}<button className="content-button underline" onClick={() => setPartsRevision(value => value + 1)}>Retry Parts</button></div> : isLoadingParts ? (
+                        {isLoadingParts ? (
                             <div className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-midnight-teal/15 bg-white/60 p-8 text-center">
                                 <Loader2 className="h-4 w-4 animate-spin text-midnight-teal/50" />
                                 <p className="text-sm font-semibold text-midnight-teal/50">Loading parts…</p>
@@ -548,10 +476,6 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
                                                 <PartRow
                                                     part={part}
                                                     onGripPointerDown={e => handleGripPointerDown(e, part.id)}
-                                                    onMoveUp={() => movePart(part.id, -1)}
-                                                    onMoveDown={() => movePart(part.id, 1)}
-                                                    isFirst={part.order === 1}
-                                                    isLast={part.order === parts.length}
                                                     onEdit={() => setPartModal({ mode: 'edit', part })}
                                                     onArchive={() => setArchivePartTarget(part)}
                                                     onRestore={() => setPartStatus(part.id, 'draft')}
@@ -595,32 +519,30 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
                     </section>
                 </div>
 
-                {!isPublishable && <p id="publish-help" className="shrink-0 bg-amber-50 px-6 py-2 text-xs text-amber-800">Publish is locked until at least one Part is Published.</p>}
-                <div className="content-dialog-footer flex flex-col-reverse flex-wrap gap-3 sm:flex-row sm:items-center sm:justify-end">
+                <div className="sticky bottom-0 flex flex-col-reverse flex-wrap gap-3 border-t border-midnight-teal/10 bg-white/85 px-6 py-4 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-end">
                     {journey && journey.status !== 'archived' && (
                         <button
                             onClick={() => setArchiveJourneyOpen(true)}
-                            disabled={isSaving || isLoadingParts || Boolean(partsError) || recoveryBlocked}
+                            disabled={isSaving}
                             className="flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-bold text-amber-700 transition-colors hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50 sm:mr-auto"
                         >
                             <Archive size={14} /> Archive Journey
                         </button>
                     )}
-                    <button onClick={attemptClose} disabled={isSaving} className="rounded-xl px-5 py-2.5 text-sm font-bold text-midnight-teal/55 transition-colors hover:bg-midnight-teal/5 hover:text-midnight-teal disabled:cursor-not-allowed disabled:opacity-50">Cancel</button>
+                    <button onClick={requestClose} disabled={isSaving} className="rounded-xl px-5 py-2.5 text-sm font-bold text-midnight-teal/55 transition-colors hover:bg-midnight-teal/5 hover:text-midnight-teal disabled:cursor-not-allowed disabled:opacity-50">Cancel</button>
                     {journey?.status !== 'published' && (
-                        <button onClick={() => void persist(undefined)} disabled={isSaving || isLoadingParts || Boolean(partsError) || recoveryBlocked} className="flex items-center justify-center gap-2 rounded-xl border border-midnight-teal/15 bg-white px-5 py-2.5 text-sm font-bold text-midnight-teal transition-colors hover:bg-midnight-teal/5 disabled:opacity-50">
+                        <button onClick={() => void persist(undefined)} disabled={isSaving} className="flex items-center justify-center gap-2 rounded-xl border border-midnight-teal/15 bg-white px-5 py-2.5 text-sm font-bold text-midnight-teal transition-colors hover:bg-midnight-teal/5 disabled:opacity-50">
                             {isSaving && <Loader2 size={14} className="animate-spin" />} {journey ? 'Save Changes' : 'Save as Draft'}
                         </button>
                     )}
                     {journey?.status === 'published' ? (
-                        <button onClick={() => void persist('published')} disabled={isSaving || isLoadingParts || Boolean(partsError) || recoveryBlocked} className="flex items-center justify-center gap-2 rounded-xl bg-midnight-teal px-5 py-2.5 text-sm font-bold text-soft-linen shadow-lg shadow-midnight-teal/15 transition-all hover:-translate-y-0.5 hover:bg-deep-teal disabled:opacity-50 disabled:hover:translate-y-0">
+                        <button onClick={() => void persist('published')} disabled={isSaving} className="flex items-center justify-center gap-2 rounded-xl bg-midnight-teal px-5 py-2.5 text-sm font-bold text-soft-linen shadow-lg shadow-midnight-teal/15 transition-all hover:-translate-y-0.5 hover:bg-deep-teal disabled:opacity-50 disabled:hover:translate-y-0">
                             {isSaving && <Loader2 size={14} className="animate-spin" />} Save Changes
                         </button>
                     ) : (
                         <button
                             onClick={() => void persist('published')}
-                            disabled={isSaving || isLoadingParts || Boolean(partsError) || recoveryBlocked || !isPublishable}
-                            aria-describedby={!isPublishable ? 'publish-help' : undefined}
+                            disabled={isSaving || !isPublishable}
                             title={!isPublishable ? 'Add at least one Published Part first' : undefined}
                             className="flex items-center justify-center gap-2 rounded-xl bg-harvest-orange px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-harvest-orange/25 transition-all hover:-translate-y-0.5 hover:bg-harvest-orange/90 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500 disabled:shadow-none disabled:hover:translate-y-0"
                         >
@@ -628,16 +550,10 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
                         </button>
                     )}
                 </div>
-                </fieldset>
-            </ContentDialog>
-
-            {discardOpen && <ContentDialog labelledBy="discard-journey-title" onClose={() => setDiscardOpen(false)} panelClass="!max-w-sm">
-                <div className="content-dialog-body"><h2 id="discard-journey-title" className="font-serif text-xl">Discard unsaved changes?</h2><p className="content-muted mt-3 text-sm">Changes in this editor will be lost. Any changes already saved by the server are kept.</p></div>
-                <div className="content-dialog-footer flex justify-end gap-2"><button className="content-button" data-dialog-autofocus onClick={() => setDiscardOpen(false)}>Keep editing</button><button className="content-button content-button-primary" onClick={() => { setDiscardOpen(false); requestClose(); }}>Discard changes</button></div>
-            </ContentDialog>}
+            </div>
 
             {partModal && (
-                <PartModal
+                <NewJourneyPartModal
                     title={partModal.mode === 'edit' ? 'Edit Part' : 'Add Part'}
                     initial={partModal.mode === 'edit' ? partModal.part : undefined}
                     onClose={() => setPartModal(null)}
@@ -661,16 +577,15 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
                 onCancel={() => setArchivePartTarget(null)}
                 onConfirm={handleArchivePart}
             />
-        </>
+        </div>
     );
 }
 
-function PartRow({ part, isFloating = false, onGripPointerDown, onEdit, onArchive, onRestore, onMoveUp, onMoveDown, isFirst, isLast }: {
+function PartRow({ part, isFloating = false, onGripPointerDown, onEdit, onArchive, onRestore }: {
     part: JourneyPart; isFloating?: boolean;
     onGripPointerDown: (e: React.PointerEvent) => void;
     onEdit: () => void;
     onArchive: () => void; onRestore: () => void;
-    onMoveUp?: () => void; onMoveDown?: () => void; isFirst?: boolean; isLast?: boolean;
 }) {
     const hasVideo = part.type === 'video' || part.type === 'both';
     const hasText = part.type === 'text' || part.type === 'both';
@@ -680,7 +595,7 @@ function PartRow({ part, isFloating = false, onGripPointerDown, onEdit, onArchiv
     return (
         <div
             style={isFloating ? { transform: 'scale(1.03) rotate(-1deg)' } : undefined}
-            className={`content-part-row relative flex items-center gap-2 rounded-2xl border bg-white p-3 transition-[box-shadow,border-color] duration-150 ${
+            className={`relative flex items-center gap-2 rounded-2xl border bg-white p-3 transition-[box-shadow,border-color] duration-150 ${
                 isFloating ? 'border-harvest-orange bg-white shadow-2xl shadow-midnight-teal/25 ring-2 ring-harvest-orange/40' : 'border-gray-100 shadow-sm hover:shadow-md'
             } ${isArchived ? 'opacity-60' : ''}`}
         >
@@ -715,9 +630,7 @@ function PartRow({ part, isFloating = false, onGripPointerDown, onEdit, onArchiv
                 </div>
             </div>
 
-            <div className="content-part-actions flex shrink-0 items-center gap-1">
-                {onMoveUp && <IconButton title={`Move ${part.title} up`} disabled={isFirst} onClick={onMoveUp}><ArrowUp size={14} /></IconButton>}
-                {onMoveDown && <IconButton title={`Move ${part.title} down`} disabled={isLast} onClick={onMoveDown}><ArrowDown size={14} /></IconButton>}
+            <div className="flex shrink-0 items-center gap-1">
                 <IconButton title="Edit part" onClick={onEdit}><Pencil size={14} /></IconButton>
                 {isArchived ? (
                     <IconButton title="Restore part" onClick={onRestore} variant="warn"><RotateCcw size={14} /></IconButton>

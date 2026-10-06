@@ -60,10 +60,14 @@ export interface Journey {
     summary?: string;
     thumbnailUrl?: string | null;
     parts: JourneyPart[];
+    /** Discovery carries this count without loading the full Part collection. */
+    totalPublishedParts?: number;
     status: JourneyStatus;
     createdAt: string;
     updatedAt: string;
 }
+
+export type JourneySort = 'created' | 'updated' | 'title';
 
 /** Metadata-only form shape used by the Journey creation/edit form. */
 export interface JourneyFormData {
