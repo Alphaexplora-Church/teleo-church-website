@@ -5,12 +5,14 @@ import { EMPTY_FORM } from '../model/adminEvents.types';
 
 interface EventModalProps {
     title: string;
+    /** Announcements have only a title, content and image (no dates or location). */
+    isEvent: boolean;
     initial?: EventFormData;
     onClose: () => void;
     onSave: (data: EventFormData) => void;
 }
 
-export function EventModal({ title, initial, onClose, onSave }: EventModalProps) {
+export function EventModal({ title, isEvent, initial, onClose, onSave }: EventModalProps) {
     const [form, setForm] = useState<EventFormData>(initial ?? EMPTY_FORM);
     const labelClass = 'mb-2 block text-[11px] font-bold uppercase tracking-[0.14em] text-midnight-teal/75';
     const fieldClass = 'w-full rounded-xl border border-midnight-teal/10 bg-white/90 px-4 py-3 text-sm text-midnight-teal shadow-sm outline-none transition-all placeholder:text-midnight-teal/30 focus:border-harvest-orange/50 focus:ring-4 focus:ring-harvest-orange/10';
@@ -55,6 +57,7 @@ export function EventModal({ title, initial, onClose, onSave }: EventModalProps)
                         />
                     </div>
 
+                    {isEvent && (<>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
                             <label className={labelClass}>Start Date</label>
@@ -111,26 +114,16 @@ export function EventModal({ title, initial, onClose, onSave }: EventModalProps)
                             className={fieldClass}
                         />
                     </div>
+                    </>)}
 
                     <div>
-                        <label className={labelClass}>Category</label>
-                        <input
-                            name="category_content"
-                            value={form.category_content}
-                            onChange={handleChange}
-                            placeholder="e.g. Worship, Youth, Prayer"
-                            className={fieldClass}
-                        />
-                    </div>
-
-                    <div>
-                        <label className={labelClass}>Description</label>
+                        <label className={labelClass}>{isEvent ? 'Description' : 'Content'}</label>
                         <textarea
                             name="description"
                             value={form.description}
                             onChange={handleChange}
-                            rows={3}
-                            placeholder="Brief description of the event..."
+                            rows={isEvent ? 3 : 5}
+                            placeholder={isEvent ? 'Brief description of the event...' : 'What members should know...'}
                             className={`${fieldClass} resize-none`}
                         />
                     </div>
@@ -158,7 +151,7 @@ export function EventModal({ title, initial, onClose, onSave }: EventModalProps)
                         onClick={() => onSave(form)}
                         className="rounded-xl bg-midnight-teal px-5 py-2.5 text-sm font-bold text-soft-linen shadow-lg shadow-midnight-teal/15 transition-all hover:-translate-y-0.5 hover:bg-deep-teal"
                     >
-                        {initial ? 'Save Changes' : 'Create Event'}
+                        {initial ? 'Save Changes' : isEvent ? 'Create Event' : 'Create Announcement'}
                     </button>
                 </div>
             </div>

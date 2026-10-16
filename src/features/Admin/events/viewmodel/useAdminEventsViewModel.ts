@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { isChurchEvent } from '../model/content.types';
 import type { Announcement, AdminContentStats, ChurchEvent, ContentItem } from '../model/content.types';
 import type { ContentSort, ContentStatusFilter, ContentTab, EventFormData } from '../model/adminEvents.types';
 import { AdminEventsService } from '../model/adminEvents.service';
@@ -16,11 +17,8 @@ export interface AdminEventsViewModel {
     setSearch: (value: string) => void;
     statusFilter: ContentStatusFilter;
     setStatusFilter: (value: ContentStatusFilter) => void;
-    categoryFilter: string;
-    setCategoryFilter: (value: string) => void;
     sort: ContentSort;
     setSort: (value: ContentSort) => void;
-    categories: string[];
     stats: Array<{ label: string; value: number; accent?: boolean }>;
     showModal: boolean;
     editTarget: ContentItem | null;
@@ -43,9 +41,10 @@ export interface AdminEventsViewModel {
     hasMore: boolean;
 }
 
+// Events sort by their start; announcements have no dates, so by creation.
 const itemDateValue = (item: ContentItem, preferCreatedAt = false) => {
-    if (preferCreatedAt && item.created_at) return new Date(item.created_at).getTime() || 0;
-    if (!item.start_date) return 0;
+    if ((preferCreatedAt || !isChurchEvent(item)) && item.created_at) return new Date(item.created_at).getTime() || 0;
+    if (!isChurchEvent(item) || !item.start_date) return 0;
     return new Date(`${item.start_date.date} ${item.start_date.time}`).getTime() || 0;
 };
 
@@ -60,7 +59,6 @@ export function useAdminEventsViewModel(): AdminEventsViewModel {
     const [error, setError] = useState<string | null>(null);
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState<ContentStatusFilter>('all');
-    const [categoryFilter, setCategoryFilter] = useState('all');
     const [sort, setSort] = useState<ContentSort>('date-asc');
     const [page, setPage] = useState(1);
     const [showModal, setShowModal] = useState(false);
@@ -98,7 +96,6 @@ export function useAdminEventsViewModel(): AdminEventsViewModel {
     useEffect(() => {
         setSearch('');
         setStatusFilter('all');
-        setCategoryFilter('all');
         setSort(activeTab === 'event' ? 'date-asc' : 'newest');
         setPage(1);
     }, [activeTab]);
@@ -113,7 +110,6 @@ export function useAdminEventsViewModel(): AdminEventsViewModel {
         items
             .filter(matchesSearch)
             .filter(item => statusFilter === 'all' || (item.status || 'active') === statusFilter)
-            .filter(item => categoryFilter === 'all' || item.category_content === categoryFilter)
             .sort((a, b) => {
                 if (sort === 'title') return a.title.localeCompare(b.title);
                 if (sort === 'newest') return itemDateValue(b, true) - itemDateValue(a, true);
@@ -124,18 +120,13 @@ export function useAdminEventsViewModel(): AdminEventsViewModel {
     const filteredEvents = filterAndSort(events, event =>
         event.title.toLowerCase().includes(query) ||
         (event.location ?? '').toLowerCase().includes(query) ||
-        (event.category_content ?? '').toLowerCase().includes(query),
+        (event.description ?? '').toLowerCase().includes(query),
     );
     const filteredAnnouncements = filterAndSort(announcements, announcement =>
         announcement.title.toLowerCase().includes(query) ||
-        (announcement.category_content ?? '').toLowerCase().includes(query) ||
-        (announcement.description ?? '').toLowerCase().includes(query),
+        (announcement.content ?? '').toLowerCase().includes(query),
     );
 
-    const activeItems = activeTab === 'event' ? events : announcements;
-    const categories = [...new Set(
-        activeItems.map(item => item.category_content).filter((value): value is string => Boolean(value)),
-    )].sort();
     const stats = activeTab === 'event'
         ? [
             { label: 'Upcoming this month', value: apiStats?.events.upcomingMonth ?? events.filter(item => item.status === 'active').length },
@@ -145,7 +136,7 @@ export function useAdminEventsViewModel(): AdminEventsViewModel {
         : [
             { label: 'Currently active', value: apiStats?.announcements.activeLive ?? announcementsTotal },
             { label: 'Posted this month', value: apiStats?.announcements.postedThisMonth ?? 0, accent: true },
-            { label: 'Active categories', value: apiStats?.announcements.activeCategories ?? categories.length },
+            { label: 'Total announcements', value: announcementsTotal },
         ];
 
     const closeModal = () => { setShowModal(false); setEditTarget(null); };
@@ -181,8 +172,8 @@ export function useAdminEventsViewModel(): AdminEventsViewModel {
 
     return {
         activeTab, setActiveTab, events, announcements, filteredEvents, filteredAnnouncements,
-        isLoading, error, search, setSearch, statusFilter, setStatusFilter, categoryFilter,
-        setCategoryFilter, sort, setSort, categories, stats, showModal, editTarget, deleteTarget,
+        isLoading, error, search, setSearch, statusFilter, setStatusFilter,
+        sort, setSort, stats, showModal, editTarget, deleteTarget,
         previewTarget, toast,
         openCreateModal: () => { setEditTarget(null); setShowModal(true); },
         openEditModal: item => { setEditTarget(item); setShowModal(true); },
