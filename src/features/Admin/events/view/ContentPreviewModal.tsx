@@ -1,3 +1,4 @@
+import { isChurchEvent } from '../model/content.types';
 import type { ContentItem } from '../model/content.types';
 
 interface ContentPreviewModalProps {
@@ -14,13 +15,15 @@ const formatTimestamp = (value?: string | null) => {
         : new Intl.DateTimeFormat('en-PH', { dateStyle: 'medium', timeStyle: 'short' }).format(date);
 };
 
-export function ContentPreviewModal({ item, type, onClose }: ContentPreviewModalProps) {
+export function ContentPreviewModal({ item, onClose }: ContentPreviewModalProps) {
     if (!item) return null;
 
-    const isEvent = type === 'event';
-    const location = 'location' in item ? item.location : null;
-    const endDate = 'end_date' in item ? item.end_date : null;
-    const image = item.media?.[0]?.file_url;
+    // Announcements have no dates or location; their text is content.
+    const event = isChurchEvent(item) ? item : null;
+    const startDate = event?.start_date ?? null;
+    const endDate = event?.end_date ?? null;
+    const text = isChurchEvent(item) ? item.description : item.content;
+    const image = item.media?.[0]?.url;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm" onMouseDown={onClose}>
@@ -31,7 +34,6 @@ export function ContentPreviewModal({ item, type, onClose }: ContentPreviewModal
                         <div>
                             <div className="mb-2 flex flex-wrap items-center gap-2">
                                 <StatusBadge status={item.status} />
-                                {item.category_content && <span className="rounded-full border border-harvest-orange/30 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-harvest-orange">{item.category_content}</span>}
                             </div>
                             <h2 className="font-serif text-3xl text-midnight-teal">{item.title}</h2>
                         </div>
@@ -39,17 +41,17 @@ export function ContentPreviewModal({ item, type, onClose }: ContentPreviewModal
                     </div>
 
                     <div className="grid gap-4 rounded-2xl bg-soft-linen/70 p-5 text-sm sm:grid-cols-2">
-                        <PreviewField label={isEvent ? 'Starts' : 'Publish date'} value={item.start_date ? `${item.start_date.date} · ${item.start_date.time}` : 'Not set'} />
-                        {isEvent && <PreviewField label="Ends" value={endDate ? `${endDate.date} · ${endDate.time}` : 'Not set'} />}
-                        {isEvent && <PreviewField label="Location" value={location || 'Not set'} />}
+                        {event && <PreviewField label="Starts" value={startDate ? `${startDate.date} · ${startDate.time}` : 'Not set'} />}
+                        {event && <PreviewField label="Ends" value={endDate ? `${endDate.date} · ${endDate.time}` : 'Not set'} />}
+                        {event && <PreviewField label="Location" value={event.location || 'Not set'} />}
                         <PreviewField label="Created by" value={item.author?.username || 'Admin'} />
                         <PreviewField label="Created" value={formatTimestamp(item.created_at)} />
                         <PreviewField label="Last updated" value={formatTimestamp(item.updated_at)} />
                     </div>
 
                     <div className="mt-6">
-                        <p className="mb-2 text-xs font-bold uppercase tracking-widest text-gray-400">Description</p>
-                        <p className="whitespace-pre-wrap text-sm leading-7 text-gray-600">{item.description || 'No description provided.'}</p>
+                        <p className="mb-2 text-xs font-bold uppercase tracking-widest text-gray-400">{event ? 'Description' : 'Content'}</p>
+                        <p className="whitespace-pre-wrap text-sm leading-7 text-gray-600">{text || 'No description provided.'}</p>
                     </div>
                 </div>
             </article>
