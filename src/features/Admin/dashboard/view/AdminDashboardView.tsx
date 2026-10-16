@@ -124,7 +124,7 @@ function UpcomingEvent({ event }: { event: ChurchEvent }) {
 // }
 
 function AnnouncementRow({ item }: { item: Announcement }) {
-    return <div className="py-4"><div className="flex items-start justify-between gap-3"><p className="font-semibold text-midnight-teal">{item.title}</p><span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-bold uppercase text-emerald-700">{item.status || 'active'}</span></div><div className="mt-1 flex items-center gap-2 text-xs text-gray-400">{item.category_content && <span>{item.category_content}</span>}{item.created_at && <span>• {formatDate(item.created_at)}</span>}</div></div>;
+    return <div className="py-4"><div className="flex items-start justify-between gap-3"><p className="font-semibold text-midnight-teal">{item.title}</p><span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-bold uppercase text-emerald-700">{item.status || 'active'}</span></div><div className="mt-1 flex items-center gap-2 text-xs text-gray-400">{item.created_at && <span>{formatDate(item.created_at)}</span>}</div></div>;
 }
 
 // function QuickAction({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
