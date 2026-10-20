@@ -1,6 +1,4 @@
 import { Pencil } from 'lucide-react';
-import AdminHeader from '../../../../shared/components/AdminHeader';
-import AdminSidebar from '../../../../shared/components/AdminSidebar';
 import { useAdminUsersViewModel } from '../viewmodel/useAdminUsersViewModel';
 import { UpdateUserModal } from './UpdateUserModal';
 
@@ -8,11 +6,7 @@ export default function AdminUsersView() {
     const vm = useAdminUsersViewModel();
 
     return (
-        <div className="admin-shell flex flex-col lg:flex-row">
-            <AdminSidebar />
-            <div className="relative z-10 flex flex-1 flex-col">
-                <AdminHeader />
-                <main className="admin-main mx-auto w-full max-w-7xl flex-1 space-y-6 px-6 py-8 lg:px-10">
+        <div className="mx-auto w-full max-w-7xl space-y-6">
                     <header>
                         <h1 className="font-serif text-2xl text-midnight-teal">User Account Management</h1>
                         <p className="mt-1 text-sm text-gray-500">View and update user account information.</p>
@@ -42,8 +36,6 @@ export default function AdminUsersView() {
                             </table>
                         </div>
                     </section>
-                </main>
-            </div>
 
             {vm.toast && <div className="fixed bottom-6 right-6 z-50 rounded-xl bg-midnight-teal px-5 py-3 text-sm font-semibold text-soft-linen shadow-xl">{vm.toast}</div>}
             <UpdateUserModal user={vm.updateTarget} onClose={vm.closeUpdate} onSave={vm.updateUser} />

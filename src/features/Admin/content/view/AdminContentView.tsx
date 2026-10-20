@@ -5,8 +5,6 @@
 // multi-select Status filter (Draft / Published / Archived).
 import { useEffect, useState } from 'react';
 import { Archive, BookOpen, ChevronLeft, ChevronRight, Layers, Loader2, Pencil, Plus, RotateCcw, Search, X } from 'lucide-react';
-import AdminHeader from '../../../../shared/components/AdminHeader';
-import AdminSidebar from '../../../../shared/components/AdminSidebar';
 import { CONTENT_TYPE_OPTIONS, STATUS_OPTIONS } from '../model/adminContent.types';
 import type { Journey } from '../model/adminContent.types';
 import type { ToastMessage } from '../viewmodel/useAdminContentViewModel';
@@ -23,11 +21,7 @@ export default function AdminContentView() {
     const vm = useAdminContentViewModel();
 
     return (
-        <div className="admin-shell flex flex-col lg:flex-row">
-            <AdminSidebar />
-            <div className="relative z-10 flex flex-1 flex-col">
-                <AdminHeader />
-                <main className="admin-main mx-auto w-full max-w-7xl flex-1 space-y-6 px-6 py-8 lg:px-10">
+        <div className="mx-auto w-full max-w-7xl space-y-6">
                     <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                         <div>
                             <h1 className="font-serif text-2xl text-midnight-teal">Journeys</h1>
@@ -83,8 +77,6 @@ export default function AdminContentView() {
                             />
                         </>
                     )}
-                </main>
-            </div>
 
             <Toast toast={vm.toast} />
 

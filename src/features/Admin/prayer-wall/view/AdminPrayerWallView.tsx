@@ -1,7 +1,5 @@
 import { CheckCircle2, ChevronLeft, ChevronRight, Flame, Heart, HeartHandshake, MessageSquare, Shield, Sparkles } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import AdminHeader from '../../../../shared/components/AdminHeader';
-import AdminSidebar from '../../../../shared/components/AdminSidebar';
 import AdminPrayerDrawer from '../components/AdminPrayerDrawer';
 import type { AdminPrayer } from '../model/adminPrayerWall.types';
 import { useAdminPrayerWallViewModel } from '../viewmodel/useAdminPrayerWallViewModel';
@@ -11,11 +9,7 @@ export default function AdminPrayerWallView() {
     const theme = CARD_THEMES[vm.featuredIndex % CARD_THEMES.length];
 
     return (
-        <div className="admin-shell flex flex-col lg:flex-row">
-            <AdminSidebar />
-            <div className="relative flex flex-1 flex-col">
-                <AdminHeader />
-                <main className="admin-main mx-auto w-full max-w-7xl flex-1 space-y-6 px-6 py-8 lg:px-10">
+        <div className="mx-auto w-full max-w-7xl space-y-6">
                     {/* Header with Title & View Mode Switcher */}
                     <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <div>
@@ -298,8 +292,6 @@ export default function AdminPrayerWallView() {
                             </section>
                         </>
                     )}
-                </main>
-            </div>
             <AdminPrayerDrawer
                 isOpen={Boolean(vm.selectedDrawerPrayer)}
                 onClose={vm.closeDrawer}

@@ -1,8 +1,6 @@
 import { ArrowRight, CalendarCheck, CalendarClock, MapPin, Megaphone
         // Plus, UserCog, UserPlus, UsersRound 
     } from 'lucide-react';
-import AdminHeader from '../../../../shared/components/AdminHeader';
-import AdminSidebar from '../../../../shared/components/AdminSidebar';
 import type { Announcement, ChurchEvent } from '../../events/model/content.types';
 // import type { DashboardRegistration } from '../model/adminDashboard.types';
 import { useAdminDashboardViewModel } from '../viewmodel/useAdminDashboardViewModel';
@@ -13,15 +11,11 @@ export default function AdminDashboardView() {
     // const firstTimePercent = visitorTotal ? Math.round(((vm.data?.visitors.firstTime ?? 0) / visitorTotal) * 100) : 0;
 
     return (
-        <div className="admin-shell flex flex-col lg:flex-row">
-            <AdminSidebar />
-            <div className="relative z-10 flex flex-1 flex-col">
-                <AdminHeader />
-                <main className="admin-main mx-auto w-full max-w-7xl flex-1 space-y-6 px-6 pb-5 pt-8 lg:px-10">
-                    <header>
-                        <h1 className="font-serif text-2xl text-midnight-teal">Home Dashboard</h1>
-                        <p className="mt-1 text-sm text-gray-500">A quick overview of church content and registrations.</p>
-                    </header>
+        <div className="mx-auto w-full max-w-7xl space-y-6">
+            <header>
+                <h1 className="font-serif text-2xl text-midnight-teal">Home Dashboard</h1>
+                <p className="mt-1 text-sm text-gray-500">A quick overview of church content and registrations.</p>
+            </header>
 
                     {vm.isLoading ? <DashboardSkeleton /> : vm.error ? (
                         <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center"><p className="text-sm font-semibold text-red-500">{vm.error}</p><button onClick={vm.retry} className="mt-3 text-xs font-bold text-midnight-teal underline">Retry</button></div>
@@ -93,8 +87,6 @@ export default function AdminDashboardView() {
                             </DashboardPanel> */}
                         </>
                     )}
-                </main>
-            </div>
         </div>
     );
 }
