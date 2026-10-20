@@ -12,23 +12,31 @@ const getAuthHeaders = (isFormData: boolean = false): HeadersInit =>
 const authFetch = (url: string, init: RequestInit = {}): Promise<Response> =>
     fetch(url, { ...init, credentials: 'include' });
 
+/**
+ * The request body, in the events_announcements schema's terms: an event has
+ * a description, location and dates; an announcement has content (the
+ * form's description field) and nothing else.
+ */
 const buildFormData = (data: EventFormData, type: string): FormData => {
     const formData = new FormData();
-    formData.append('type_content', type);
+    formData.append('post_type', type);
     formData.append('title', data.title);
 
-    if (data.description) formData.append('description', data.description);
-    if (data.location) formData.append('location', data.location);
-    if (data.category_content) formData.append('category_content', data.category_content);
+    if (type === 'announcement') {
+        if (data.description) formData.append('content', data.description);
+    } else {
+        if (data.description) formData.append('description', data.description);
+        if (data.location) formData.append('location', data.location);
 
-    if (data.start_date_date) {
-        const time = data.start_date_time || '00:00';
-        formData.append('start_date', `${data.start_date_date}T${time}:00`);
-    }
+        if (data.start_date_date) {
+            const time = data.start_date_time || '00:00';
+            formData.append('start_date', `${data.start_date_date}T${time}:00`);
+        }
 
-    if (data.end_date_date) {
-        const time = data.end_date_time || '00:00';
-        formData.append('end_date', `${data.end_date_date}T${time}:00`);
+        if (data.end_date_date) {
+            const time = data.end_date_time || '00:00';
+            formData.append('end_date', `${data.end_date_date}T${time}:00`);
+        }
     }
 
     if (data.image) {
@@ -108,7 +116,7 @@ export const AdminEventsService = {
     /**
      * Updates an existing event by ID (requires authentication).
      */
-    updateEvent: async (id: number, data: EventFormData, type: string = 'event'): Promise<void> => {
+    updateEvent: async (id: string, data: EventFormData, type: string = 'event'): Promise<void> => {
         const formData = buildFormData(data, type);
         const response = await authFetch(`${API_BASE}/api/contents/admin/${id}`, {
             method: 'PATCH',
@@ -124,7 +132,7 @@ export const AdminEventsService = {
     /**
      * Deletes an event by ID (requires authentication).
      */
-    archiveContent: async (id: number): Promise<void> => {
+    archiveContent: async (id: string): Promise<void> => {
         const response = await authFetch(`${API_BASE}/api/contents/admin/${id}`, {
             method: 'DELETE',
             headers: getAuthHeaders(),
