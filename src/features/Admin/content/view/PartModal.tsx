@@ -7,7 +7,7 @@ import { AlertCircle, CheckCircle2, Loader2, X } from 'lucide-react';
 import type { JourneyPart, PartContentType, PartFormData, PartStatus } from '../model/adminContent.types';
 import { EMPTY_PART_FORM } from '../model/adminContent.types';
 import { validateVideoLink, type VideoPreview } from '../model/adminContent.service';
-import { useModalTransition } from '../../../../shared/hooks/useModalTransition';
+import { useModalTransition } from '../../../../shared/viewmodels/useModalTransition';
 import { fieldClass, labelClass, modalOverlayClass, modalPanelClass, segmentedButtonClass } from './contentStyles';
 
 interface PartModalProps {

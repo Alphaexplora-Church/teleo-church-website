@@ -1,91 +1,186 @@
-# WLCM Frontend
+# Teleo Church — Frontend Admin & Web Portal
 
-This is the frontend application for the WLCM project. It is built using modern web development tools and best practices to ensure a fast, responsive, and engaging user experience.
+The frontend application for **Teleo Church**, built using modern web development standards, scalable architectural patterns, and a robust fail-closed security model.
 
-## Technology Stack
+---
 
-The application is built with the following core technologies:
-- **React 19**: UI library
-- **TypeScript**: Static typing for robust code
-- **Vite**: Fast frontend tooling and bundler
-- **Tailwind CSS**: Utility-first CSS framework for styling
-- **React Router DOM**: Client-side routing
-- **Framer Motion**: Animation library for smooth UI transitions
-- **Lenis**: Smooth scrolling library for a premium scrolling experience
-- **Lucide React**: Iconography suite
+## 🏛️ Architectural Overview: Feature-Based MVVM
 
-## Folder Structure
+The project follows a **Feature-Based MVVM (Model-View-ViewModel)** architecture. This pattern separates business data logic from presentation components, keeping features modular, testable, and maintainable.
 
-The application follows a feature-based modular folder structure inside the `src/` directory to keep related code modular, readable, and easy to maintain.
-
-```text
-frontend/
-├── public/               # Public static assets (favicon, etc.)
-├── src/                  # Application source code
-│   ├── assets/           # Images, fonts, and other static files
-│   ├── components/       # Shared/reusable UI components (buttons, layout wrappers, etc.)
-│   ├── features/         # Feature-specific modules
-│   │   ├── About/        # Components specific to the About section
-│   │   ├── Engage/       # Components specific to user engagement/donations
-│   │   ├── Experience/   # Components specific to ministries and experiences
-│   │   └── Home/         # Components specific to the landing page
-│   ├── pages/            # Top-level page components matching routes
-│   │   ├── AboutUs.tsx
-│   │   ├── Engage.tsx
-│   │   ├── Experience.tsx
-│   │   ├── Home.tsx
-│   │   └── Watch.tsx
-│   ├── App.tsx           # Main application component & routing setup
-│   ├── main.tsx          # Application entry point
-│   └── index.css         # Global CSS and Tailwind directives
-├── package.json          # Project metadata and dependencies
-├── tailwind.config.js    # Tailwind CSS configuration
-├── eslint.config.js      # ESLint linting configuration
-├── tsconfig.json         # TypeScript configurations
-└── vite.config.ts        # Vite configuration
+```
+┌────────────────────────────────────────────────────────┐
+│                        VIEW                            │
+│   Pure React TSX components (rendering, styles)        │
+│   Consumes ViewModels via clean, declarative hooks     │
+└───────────────────────────▲────────────────────────────┘
+                            │
+┌───────────────────────────┴────────────────────────────┐
+│                      VIEWMODEL                         │
+│   Custom hooks (`use*ViewModel.ts`)                    │
+│   Handles UI state, async actions, event handlers      │
+└───────────────────────────▲────────────────────────────┘
+                            │
+┌───────────────────────────┴────────────────────────────┐
+│                        MODEL                           │
+│   Pure API services, data contracts, and DTO types     │
+│   Centralized Axios client (`withCredentials: true`)   │
+└────────────────────────────────────────────────────────┘
 ```
 
-## Getting Started
+- **Model (`model/`, `shared/models/`):**
+  Defines TypeScript data contracts, domain interfaces, and pure API communication services. Completely isolated from React rendering lifecycle and hooks.
+- **ViewModel (`viewmodel/`, `shared/viewmodels/`):**
+  Custom React hooks (`use...ViewModel`) that encapsulate component state, user interactions, validation, and lifecycle management. Exposes a clean, typed interface to the View.
+- **View (`view/`, `shared/components/`):**
+  Pure presentation components (`.tsx`) focused exclusively on rendering JSX and user styling. Zero inline data fetching or direct API mutations.
+- **Decoupled Shell Layout (`AdminLayoutView.tsx`):**
+  Centralized admin navigation shell hosting the persistent sidebar, header, and a scrollable `<Outlet />` viewport for domain views.
 
-### Prerequisites
+---
 
-Ensure you have Node.js and npm installed on your machine.
+## ⚡ Scanned Tech Stack
 
-### Installation
+Verified and extracted from [`package.json`](./package.json):
 
-1. Navigate to the frontend directory:
+| Category             | Technology                 | Version    | Notes                                                          |
+| :------------------- | :------------------------- | :--------- | :------------------------------------------------------------- |
+| **Framework & Core** | React                      | `^19.2.0`  | React 19 modern hooks & concurrent rendering                   |
+| **Language**         | TypeScript                 | `~5.9.3`   | Strict type checking with project references (`tsc -b`)        |
+| **Build Tooling**    | Vite                       | `^7.2.4`   | Ultra-fast HMR and production asset bundler                    |
+| **Styling**          | Tailwind CSS v4            | `^4.3.3`   | Native `@tailwindcss/vite` bundling (`@import "tailwindcss";`) |
+| **Routing**          | React Router DOM           | `^7.13.0`  | Centralized route configuration with nested `<Outlet />`       |
+| **HTTP Client**      | Axios                      | `^1.20.0`  | Centralized instance with HTTP-only cookies & 401 eviction     |
+| **Icons**            | Lucide React               | `^0.564.0` | Consistent, lightweight SVG iconography                        |
+| **Motion**           | Framer Motion              | `^12.34.3` | Fluid UI transitions and micro-animations                      |
+| **Code Quality**     | ESLint & TypeScript ESLint | `^9.39.1`  | Flat config (`eslint.config.js`)                               |
+
+---
+
+## 📁 Actual Directory Structure
+
+Actual layout scanned from the repository workspace:
+
+```text
+teleo-church-website/
+├── .env.example                          # Canonical environment configuration template
+├── .env.local                            # Local development overrides (git-ignored)
+├── eslint.config.js                      # ESLint 9 flat configuration
+├── index.html                            # HTML entry point with web font imports
+├── package.json                          # Dependencies and npm scripts
+├── tsconfig.json                         # Project reference root configuration
+├── tsconfig.app.json                     # Application TypeScript compiler options
+├── tsconfig.node.json                    # Tooling & Vite configuration compiler options
+├── vite.config.ts                        # Vite configuration with React & Tailwind plugins
+│
+└── src/
+    ├── main.tsx                          # App bootstrapping with AuthProvider & StrictMode
+    ├── App.tsx                           # Root component hosting AppRouter
+    ├── index.css                         # Tailwind CSS v4 entrypoint & custom design tokens
+    ├── vite-env.d.ts                     # Environment variable type declarations (ImportMetaEnv)
+    │
+    ├── assets/                           # Static branding assets and custom web fonts
+    │   ├── teleo-logo.png
+    │   ├── admin-bg.jpg
+    │   └── fonts/
+    │       └── Vogun-Medium.ttf
+    │
+    ├── router/                           # Centralized Routing Layer
+    │   ├── AppRouter.tsx                 # BrowserRouter provider and scroll restoration
+    │   ├── ProtectedRoute.tsx            # Fail-closed guard & #auth-loading-barrier
+    │   └── routes.config.tsx             # Declarative route catalog & feature RBAC metadata
+    │
+    ├── features/                         # Feature Modules (MVVM Pattern)
+    │   ├── Auth/                         # Authentication & Credentials
+    │   │   └── login/
+    │   │       ├── model/                # LoginModel & API authentication services
+    │   │       ├── view/                 # LoginView JSX screen
+    │   │       └── viewmodel/            # useLoginViewModel hook
+    │   │
+    │   └── Admin/                        # Admin Portal Modules
+    │       ├── views/
+    │       │   └── AdminLayoutView.tsx   # Persistent shell layout wrapper (<Outlet />)
+    │       ├── dashboard/                # Admin Dashboard overview & statistics
+    │       ├── events/                   # Events & announcements management
+    │       ├── content/                  # Media, Journeys, and categories editor
+    │       ├── prayer-wall/              # Moderation, comments, and prayer requests
+    │       ├── registrations/            # Church program registrations & records
+    │       ├── users/                    # System users and church assignments
+    │       └── settings/                 # Account profile and session management
+    │
+    └── shared/                           # Shared Global Infrastructure
+        ├── components/                   # Shared UI components (AdminSidebar, AdminHeader)
+        ├── context/                      # Global context providers (AuthProvider, useAuth)
+        ├── viewmodels/                   # Shared view models (sidebar flags, modals)
+        └── models/
+            ├── api/
+            │   └── axiosClient.ts        # Configured Axios instance with 401 interceptor
+            └── types/
+                ├── auth.ts               # AuthUser, UserProfile, FeaturesConfig interfaces
+                └── globalTypes.ts        # ChurchFeatures and domain entities
+```
+
+---
+
+## ⚙️ Environment Configuration
+
+Configuration variables are managed via Vite's `import.meta.env` system:
+
+| Variable             | Description                         | Default                 | Allowed Values                                 |
+| :------------------- | :---------------------------------- | :---------------------- | :--------------------------------------------- |
+| `VITE_API_BASE_URL`  | Base URL of the backend API server  | `http://localhost:4000` | Any valid HTTP/HTTPS URL                       |
+| `VITE_USE_MOCK_AUTH` | Toggle for mock authentication mode | `false`                 | `'true'` (offline dev) \| `'false'` (live API) |
+
+### Setup Instructions:
+
+1. Create a `.env.local` file by copying the example:
    ```bash
-   cd frontend
+   cp .env.example .env.local
    ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+2. **For Offline Prototyping / Wireframing:**
+   Set `VITE_USE_MOCK_AUTH=true` in `.env.local` to bypass backend session verification and access all admin screens instantly with design-mode permissions.
+3. **For Live Backend Testing:**
+   Set `VITE_USE_MOCK_AUTH=false` and configure `VITE_API_BASE_URL` to point to your running backend server (e.g. `http://localhost:4000`).
 
-### Running the Development Server
+---
 
-Start the development server with Hot Module Replacement (HMR). The server is currently running in your terminal locally using this command.
+## 🚀 Development & Verification Commands
+
+### 1. Installation
+
+Install project dependencies:
+
+```bash
+npm install
+```
+
+### 2. Development Server
+
+Start the local Vite development server with Hot Module Replacement (HMR):
 
 ```bash
 npm run dev
 ```
 
-The application will typically be available at `http://localhost:5173/`.
+Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-### Building for Production
+### 3. Quality & Verification Suite
 
-To create a production-ready build:
+Run the health checks before committing or opening a Pull Request:
 
-```bash
-npm run build
-```
-
-The built assets will be generated in the `dist/` folder.
-
-### Linting
-
-To run ESLint to check for code quality and style issues:
-
-```bash
-npm run lint
-```
+- **TypeScript Compilation:**
+  ```bash
+  npx tsc -b
+  ```
+- **Linting:**
+  ```bash
+  npm run lint
+  ```
+- **Production Build:**
+  ```bash
+  npm run build
+  ```
+- **Production Bundle Preview:**
+  ```bash
+  npm run preview
+  ```

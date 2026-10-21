@@ -1,104 +1,78 @@
-import type { ChurchFeatures } from '../../../../shared/models/globalTypes';
+import axios from 'axios';
+import { axiosClient, getApiErrorMessage } from '../../../../shared/models/api/axiosClient';
+import type {
+  AuthUser,
+  LoginCredentials,
+  LoginApiResponse,
+  MeApiResponse,
+  LogoutApiResponse,
+  FeaturesConfig,
+} from '../../../../shared/models/types/auth';
 
-export interface LoginCredentials {
-    email: string;
-    password: string;
-}
-
-export interface AuthUser {
-    uid?: string;
-    email: string;
-    username?: string | null;
-    roles?: string[];
-    home_church_id?: number | string | null;
-    profile_picture_url?: string | null;
-    /** Feature flags from church_profile.features_config — null means not loaded yet */
-    features_config?: ChurchFeatures | null;
-}
-
-interface LoginApiResponse {
-    data?: { userProfile?: AuthUser };
-    message?: string;
-    errorCode?: string;
-    details?: Array<{ field: string; message: string }>;
-}
-
-interface MeApiResponse {
-    data?: {
-        id?: string;
-        email?: string;
-        username?: string | null;
-        profile_picture_url?: string | null;
-        roles?: string[];
-        home_church_id?: number | null;
-        features_config?: ChurchFeatures | null;
-    };
-    message?: string;
-}
-
-interface LogoutApiResponse {
-    message?: string;
-}
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000';
-
-const getErrorMessage = (data: { message?: string; details?: Array<{ message: string }> }): string =>
-    data.details?.[0]?.message || data.message || 'Something went wrong';
+export type { AuthUser, LoginCredentials, FeaturesConfig };
 
 export const LoginModel = {
-    /**
-     * Authenticates against the admin-only endpoint. The backend sets the
-     * session as HTTP-only cookies (access_token / refresh_token) on the
-     * response — no token is ever returned in the JSON body or stored client-side.
-     */
-    authenticate: async ({ email, password }: LoginCredentials): Promise<AuthUser> => {
-        const response = await fetch(`${API_BASE}/api/auth/login/admin`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ email, password }),
-        });
+  /**
+   * Authenticates against the admin-only endpoint. The backend sets the
+   * session as HTTP-only cookies (access_token / refresh_token) on the
+   * response — no token is ever returned in the JSON body or stored client-side.
+   */
+  authenticate: async ({ email, password }: LoginCredentials): Promise<AuthUser> => {
+    try {
+      const response = await axiosClient.post<LoginApiResponse>('/api/auth/login/admin', {
+        email,
+        password,
+      });
 
-        const data = await response.json() as LoginApiResponse;
+      const userProfile = response.data?.data?.userProfile;
+      if (!userProfile) {
+        throw new Error('Malformed login response: missing userProfile in payload.');
+      }
 
-        if (!response.ok) throw new Error(getErrorMessage(data));
-        if (!data.data?.userProfile) throw new Error('Malformed login response from the server');
+      return {
+        uid: userProfile.uid || userProfile.id || '',
+        email: userProfile.email,
+        username: userProfile.username ?? null,
+        profile_picture_url: userProfile.profile_picture_url ?? null,
+        roles: userProfile.roles ?? [],
+        home_church_id: userProfile.home_church_id ?? null,
+        features_config: userProfile.features_config ?? null,
+      };
+    } catch (error) {
+      throw new Error(getApiErrorMessage(error));
+    }
+  },
 
-        return data.data.userProfile;
-    },
+  /** Verifies the current HTTP-only session cookie against the backend. */
+  getCurrentUser: async (): Promise<AuthUser | null> => {
+    try {
+      const response = await axiosClient.get<MeApiResponse>('/api/auth/me');
+      const profile = response.data?.data;
+      if (!profile?.email) return null;
 
-    /** Verifies the current HTTP-only session cookie against the backend. */
-    getCurrentUser: async (): Promise<AuthUser | null> => {
-        const response = await fetch(`${API_BASE}/api/auth/me`, {
-            method: 'GET',
-            credentials: 'include',
-        });
+      return {
+        uid: profile.uid || profile.id || '',
+        email: profile.email,
+        username: profile.username ?? null,
+        profile_picture_url: profile.profile_picture_url ?? null,
+        roles: profile.roles ?? [],
+        home_church_id: profile.home_church_id ?? null,
+        features_config: profile.features_config ?? null,
+      };
+    } catch {
+      return null;
+    }
+  },
 
-        if (!response.ok) return null;
-
-        const data = await response.json() as MeApiResponse;
-        if (!data.data?.email) return null;
-
-        return {
-            uid: data.data.id,
-            email: data.data.email ?? '',
-            username: data.data.username ?? null,
-            profile_picture_url: data.data.profile_picture_url ?? null,
-            roles: data.data.roles ?? [],
-            home_church_id: data.data.home_church_id ?? null,
-            features_config: data.data.features_config ?? null,
-        };
-    },
-
-    logout: async (): Promise<void> => {
-        const response = await fetch(`${API_BASE}/api/auth/logout`, {
-            method: 'POST',
-            credentials: 'include',
-        });
-
-        if (!response.ok && response.status !== 401) {
-            const data = await response.json() as LogoutApiResponse;
-            throw new Error(data.message ?? 'Logout failed');
-        }
-    },
+  logout: async (): Promise<void> => {
+    try {
+      await axiosClient.post<LogoutApiResponse>('/api/auth/logout');
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        // Session already expired on backend; treat as logged out
+        return;
+      }
+      throw new Error(getApiErrorMessage(error));
+    }
+  },
 };
