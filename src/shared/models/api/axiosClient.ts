@@ -32,18 +32,12 @@ axiosClient.interceptors.response.use(
   (error: AxiosError) => {
     if (error.response?.status === 401) {
       const requestUrl = error.config?.url || '';
+      const isLoginRequest = requestUrl.includes('/api/auth/login');
 
-      // Notify auth listeners to clear user session
-      if (typeof window !== 'undefined') {
+      // Notify AuthContext to evict session state reactively.
+      // ProtectedRoute will smoothly navigate to /login without a full page reload.
+      if (typeof window !== 'undefined' && !isLoginRequest) {
         window.dispatchEvent(new CustomEvent('auth:unauthorized'));
-
-        // If unauthorized while accessing an admin route, evict to /login
-        const isAdminRoute = window.location.pathname.startsWith('/admin');
-        const isLoginRequest = requestUrl.includes('/api/auth/login');
-
-        if (isAdminRoute && !isLoginRequest) {
-          window.location.replace('/login');
-        }
       }
     }
 
