@@ -1,11 +1,11 @@
 name: CI Verification
 
-# Trigger checks on pull requests and merges to primary branches
+# Trigger checks on pull requests and pushes strictly targeting the develop branch
 on:
   pull_request:
-    branches: [develop, main]
+    branches: [develop]
   push:
-    branches: [develop, main]
+    branches: [develop]
 
 # Cancel in-flight PR checks on new pushes to save build minutes; preserve direct branch pushes
 concurrency:
