@@ -1,7 +1,7 @@
 import axios, { type AxiosError } from 'axios';
 import type { ApiErrorResponse } from '../types/auth';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
 
 export const axiosClient = axios.create({
   baseURL: API_BASE,
@@ -17,8 +17,14 @@ export const axiosClient = axios.create({
  */
 export function getApiErrorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
-    const data = error.response?.data as ApiErrorResponse | undefined;
-    return data?.details?.[0]?.message || data?.message || error.message || 'An unexpected server error occurred.';
+    const data = error.response?.data as (ApiErrorResponse & { error?: { message?: string } }) | undefined;
+    return (
+      data?.error?.message ||
+      data?.details?.[0]?.message ||
+      data?.message ||
+      error.message ||
+      'An unexpected server error occurred.'
+    );
   }
   if (error instanceof Error) {
     return error.message;

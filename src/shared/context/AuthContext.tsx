@@ -13,56 +13,45 @@ import type {
 import { AuthContext, type AuthContextValue } from "./authContextInstance";
 import { LoginModel } from "../../features/Auth/login/model/login.model";
 
-const MOCK_USER: AuthUser = {
-  uid: "design-mode",
-  email: "admin@teleo.church",
-  username: "Admin",
-  roles: ["admin"],
-  home_church_id: 1,
-  profile_picture_url: null,
-  features_config: {
-    prayer_wall: true,
-    content_management: true,
-    services: true,
-    community: true,
-    giving: true,
-    events_announcement: true,
-    registrations: true,
-  },
-};
+const SESSION_ACTIVE_KEY = "teleo_admin_session_active";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // Opt-in mock auth ONLY when explicitly set to 'true' in env
-  const isMockAuth =
-    import.meta.env.DEV && import.meta.env.VITE_USE_MOCK_AUTH === "true";
+  // Fail-closed initial state: strictly unauthenticated until session is verified
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Fail-closed initial state when connecting to live backend
-  const [user, setUser] = useState<AuthUser | null>(
-    isMockAuth ? MOCK_USER : null,
-  );
-  const [isLoading, setIsLoading] = useState<boolean>(!isMockAuth);
-
-  // ─── Fail-Closed Session Rehydration ────────────────────────────────────────
+  // ─── Session-Only Active Guard & Rehydration ────────────────────────────────
   useEffect(() => {
-    if (isMockAuth) {
-      setUser(MOCK_USER);
-      setIsLoading(false);
+    let isMounted = true;
+    const hasActiveSession =
+      typeof window !== "undefined" &&
+      sessionStorage.getItem(SESSION_ACTIVE_KEY) === "1";
+
+    // If browser/tab was closed, sessionStorage is empty: force login
+    if (!hasActiveSession) {
+      if (isMounted) {
+        setUser(null);
+        setIsLoading(false);
+      }
       return;
     }
 
-    let isMounted = true;
+    // Active session found in current tab: rehydrate from live backend
     setIsLoading(true);
-
     LoginModel.getCurrentUser()
       .then((currentUser) => {
-        if (isMounted) {
+        if (!isMounted) return;
+        if (currentUser) {
           setUser(currentUser);
+        } else {
+          sessionStorage.removeItem(SESSION_ACTIVE_KEY);
+          setUser(null);
         }
       })
       .catch(() => {
-        if (isMounted) {
-          setUser(null);
-        }
+        if (!isMounted) return;
+        sessionStorage.removeItem(SESSION_ACTIVE_KEY);
+        setUser(null);
       })
       .finally(() => {
         if (isMounted) {
@@ -73,13 +62,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       isMounted = false;
     };
-  }, [isMockAuth]);
+  }, []);
 
   // ─── Listen for 401 Unauthorized Eviction from Axios Interceptor ────────────
   useEffect(() => {
-    if (isMockAuth) return;
-
     const handleUnauthorized = () => {
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem(SESSION_ACTIVE_KEY);
+      }
       setUser(null);
     };
 
@@ -87,31 +77,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       window.removeEventListener("auth:unauthorized", handleUnauthorized);
     };
-  }, [isMockAuth]);
+  }, []);
 
   // ─── Login handler ─────────────────────────────────────────────────────────
-  const login = useCallback(
-    async (credentials: LoginCredentials) => {
-      if (isMockAuth) {
-        setUser(MOCK_USER);
-        return;
-      }
-      const authUser = await LoginModel.authenticate(credentials);
-      setUser(authUser);
-    },
-    [isMockAuth],
-  );
+  const login = useCallback(async (credentials: LoginCredentials) => {
+    const authUser = await LoginModel.authenticate(credentials);
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(SESSION_ACTIVE_KEY, "1");
+    }
+    setUser(authUser);
+  }, []);
 
   // ─── Logout handler ────────────────────────────────────────────────────────
   const logout = useCallback(async () => {
     try {
-      if (!isMockAuth) {
-        await LoginModel.logout();
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem(SESSION_ACTIVE_KEY);
       }
+      await LoginModel.logout();
     } finally {
       setUser(null);
     }
-  }, [isMockAuth]);
+  }, []);
 
   const features: FeaturesConfig | null = user?.features_config ?? null;
 

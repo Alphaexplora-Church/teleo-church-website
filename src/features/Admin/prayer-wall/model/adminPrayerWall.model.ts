@@ -6,17 +6,11 @@ import type {
     FetchIntercessionParams
 } from './adminPrayerWall.types';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000';
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
 
 /** Wraps fetch to always send the HTTP-only auth cookies to the API. */
-const authFetch = (url: string, init: RequestInit = {}): Promise<Response> => {
-    const token = localStorage.getItem('access_token');
-    const headers = new Headers(init.headers || {});
-    if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
-    }
-    return fetch(url, { ...init, headers, credentials: 'include' });
-};
+const authFetch = (url: string, init: RequestInit = {}): Promise<Response> =>
+    fetch(url, { ...init, credentials: 'include' });
 
 interface AdminPrayersApiResponse {
     data?: (AdminPrayer & { prayer_id?: string })[];

@@ -126,10 +126,9 @@ teleo-church-website/
 
 Configuration variables are managed via Vite's `import.meta.env` system:
 
-| Variable             | Description                         | Default                 | Allowed Values                                 |
-| :------------------- | :---------------------------------- | :---------------------- | :--------------------------------------------- |
-| `VITE_API_BASE_URL`  | Base URL of the backend API server  | `http://localhost:4000` | Any valid HTTP/HTTPS URL                       |
-| `VITE_USE_MOCK_AUTH` | Toggle for mock authentication mode | `false`                 | `'true'` (offline dev) \| `'false'` (live API) |
+| Variable            | Description                        | Default | Allowed Values           |
+| :------------------ | :--------------------------------- | :------ | :----------------------- |
+| `VITE_API_BASE_URL` | Base URL of the backend API server | `""`    | Any valid HTTP/HTTPS URL |
 
 ### Setup Instructions:
 
@@ -137,10 +136,10 @@ Configuration variables are managed via Vite's `import.meta.env` system:
    ```bash
    cp .env.example .env.local
    ```
-2. **For Offline Prototyping / Wireframing:**
-   Set `VITE_USE_MOCK_AUTH=true` in `.env.local` to bypass backend session verification and access all admin screens instantly with design-mode permissions.
-3. **For Live Backend Testing:**
-   Set `VITE_USE_MOCK_AUTH=false` and configure `VITE_API_BASE_URL` to point to your running backend server (e.g. `http://localhost:4000`).
+2. **Local Development:**
+   Leave `VITE_API_BASE_URL=` empty to route `/api/*` through the local Vite proxy to the live Render backend (`https://teleo-backend.onrender.com`).
+3. **Custom Backend Server:**
+   Configure `VITE_API_BASE_URL` to point to a custom running backend server (e.g. `http://localhost:4000`).
 
 ---
 
