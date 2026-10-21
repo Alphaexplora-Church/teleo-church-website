@@ -1,4 +1,4 @@
-import { useAdminHeaderViewModel } from '../viewModels/useAdminHeaderViewModel';
+import { useAdminHeaderViewModel } from '../viewmodels/useAdminHeaderViewModel';
 
 export default function AdminHeader() {
     const vm = useAdminHeaderViewModel();

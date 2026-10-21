@@ -2,7 +2,7 @@
 import type { ChurchEvent, Announcement, AdminContentStats } from './content.types';
 import type { EventFormData } from './adminEvents.types';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000';
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
 
 /** The session is authenticated via the HTTP-only access_token cookie sent with every request. */
 const getAuthHeaders = (isFormData: boolean = false): HeadersInit =>

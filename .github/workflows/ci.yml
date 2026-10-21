@@ -1,0 +1,48 @@
+name: CI Verification
+
+# Trigger checks on pull requests and pushes strictly targeting the develop branch
+on:
+  pull_request:
+    branches: [develop]
+  push:
+    branches: [develop]
+
+# Cancel in-flight PR checks on new pushes to save build minutes; preserve direct branch pushes
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# Enforce least-privilege security by granting read-only access to repository contents
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Lint & Build
+    runs-on: ubuntu-latest
+    # Prevent hanging workflows from consuming unnecessary CI minutes
+    timeout-minutes: 15
+
+    steps:
+      # Check out repository source code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Install Node.js 20 and cache ~/.npm dependencies
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # Perform clean, deterministic dependency installation matching package-lock.json
+      - name: Install Dependencies
+        run: npm ci
+
+      # Enforce code style and disallow all warnings
+      - name: Lint
+        run: npm run lint -- --max-warnings 0
+
+      # Validate TypeScript types (tsc -b) and generate production bundles (vite build)
+      - name: Type-Check & Build
+        run: npm run build

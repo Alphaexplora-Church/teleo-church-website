@@ -5,7 +5,7 @@
 // action through, per the "archiving ... with confirmation prompts,
 // reflecting downstream effects on Member completion totals/visibility" spec.
 import { Archive, Loader2 } from 'lucide-react';
-import { useControlledModalTransition } from '../../../../shared/hooks/useModalTransition';
+import { useControlledModalTransition } from '../../../../shared/viewmodels/useModalTransition';
 import { modalOverlayClass, modalPanelClass } from './contentStyles';
 
 interface ConfirmArchiveModalProps {

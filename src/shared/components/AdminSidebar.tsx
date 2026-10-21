@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import teleoLogo from '../../assets/teleo-logo.png';
-import { useAdminSidebarViewModel } from '../viewModels/useAdminSidebarViewModel';
+import { useAdminSidebarViewModel } from '../viewmodels/useAdminSidebarViewModel';
 
 interface AdminSidebarProps {
     className?: string;

@@ -10,7 +10,7 @@ import { Archive, ChevronDown, FileText, GripVertical, ImageOff, Loader2, Pencil
 import type { Journey, JourneyFormData, JourneyPart, PartFormData } from '../model/adminContent.types';
 import { CONTENT_TYPE_OPTIONS, EMPTY_JOURNEY_FORM, canPublishJourney } from '../model/adminContent.types';
 import { AdminContentService, buildPart, fetchCategoryCatalog, type JourneyCategoryOption, type VideoPreview } from '../model/adminContent.service';
-import { useModalTransition } from '../../../../shared/hooks/useModalTransition';
+import { useModalTransition } from '../../../../shared/viewmodels/useModalTransition';
 import { PartModal } from './PartModal';
 import { ConfirmArchiveModal } from './ConfirmArchiveModal';
 import { fieldClass, iconButtonClass, labelClass, modalOverlayClass, modalPanelClass, statusBadgeClass, toggleChipClass, type IconButtonVariant } from './contentStyles';
@@ -252,7 +252,7 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
                 saved = await AdminContentService.saveJourney(journey.id, form, parts, nextStatus, originalParts.current, thumbnailFile);
                 const message = nextStatus === 'published' ? `“${saved.title}” published.`
                     : nextStatus === 'archived' ? `“${saved.title}” archived.`
-                    : `“${saved.title}” updated.`;
+                        : `“${saved.title}” updated.`;
                 showToast(message);
                 originalParts.current = saved.parts;
                 setThumbnailFile(null);
@@ -441,10 +441,10 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
                                     <PartRow
                                         part={draggedPart}
                                         isFloating
-                                        onGripPointerDown={() => {}}
-                                        onEdit={() => {}}
-                                        onArchive={() => {}}
-                                        onRestore={() => {}}
+                                        onGripPointerDown={() => { }}
+                                        onEdit={() => { }}
+                                        onArchive={() => { }}
+                                        onRestore={() => { }}
                                     />
                                 </div>,
                                 document.body,
@@ -537,9 +537,8 @@ function PartRow({ part, isFloating = false, onGripPointerDown, onEdit, onArchiv
     return (
         <div
             style={isFloating ? { transform: 'scale(1.03) rotate(-1deg)' } : undefined}
-            className={`relative flex items-center gap-2 rounded-2xl border bg-white p-3 transition-[box-shadow,border-color] duration-150 ${
-                isFloating ? 'border-harvest-orange bg-white shadow-2xl shadow-midnight-teal/25 ring-2 ring-harvest-orange/40' : 'border-gray-100 shadow-sm hover:shadow-md'
-            } ${isArchived ? 'opacity-60' : ''}`}
+            className={`relative flex items-center gap-2 rounded-2xl border bg-white p-3 transition-[box-shadow,border-color] duration-150 ${isFloating ? 'border-harvest-orange bg-white shadow-2xl shadow-midnight-teal/25 ring-2 ring-harvest-orange/40' : 'border-gray-100 shadow-sm hover:shadow-md'
+                } ${isArchived ? 'opacity-60' : ''}`}
         >
             <span
                 title="Drag to reorder"

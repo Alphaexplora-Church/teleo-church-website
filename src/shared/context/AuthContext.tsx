@@ -1,64 +1,120 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import type { ChurchFeatures } from '../models/globalTypes';
-import type { AuthUser } from '../../features/Auth/login/model/login.model';
-import { AuthContext, type AuthContextValue } from './authContextInstance';
-import { LoginModel } from '../../features/Auth/login/model/login.model';
-import type { LoginCredentials } from '../../features/Auth/login/model/login.model';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import type {
+  AuthUser,
+  LoginCredentials,
+  FeaturesConfig,
+} from "../models/types/auth";
+import { AuthContext, type AuthContextValue } from "./authContextInstance";
+import { LoginModel } from "../../features/Auth/login/model/login.model";
 
-const MOCK_USER: AuthUser = {
-    uid: 'design-mode',
-    email: 'admin@teleo.church',
-    username: 'Admin',
-    roles: ['admin'],
-    home_church_id: 1,
-    profile_picture_url: null,
-    features_config: {
-        prayer_wall: true,
-        content_management: true,
-        services: true,
-        community: true,
-        giving: true,
-        events_announcement: true,
-        registrations: true,
-    },
-};
+const SESSION_ACTIVE_KEY = "teleo_admin_session_active";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const isDev = import.meta.env.DEV && import.meta.env.VITE_USE_MOCK_AUTH !== 'false';
+  // Fail-closed initial state: strictly unauthenticated until session is verified
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-    const [user, setUser] = useState<AuthUser | null>(isDev ? MOCK_USER : null);
-    const [isLoading, setIsLoading] = useState(!isDev);
+  // ─── Session-Only Active Guard & Rehydration ────────────────────────────────
+  useEffect(() => {
+    let isMounted = true;
+    const hasActiveSession =
+      typeof window !== "undefined" &&
+      sessionStorage.getItem(SESSION_ACTIVE_KEY) === "1";
 
-    useEffect(() => {
-        if (isDev) return;
-        let cancelled = false;
-        LoginModel.getCurrentUser()
-            .then((u) => { if (!cancelled) setUser(u); })
-            .finally(() => { if (!cancelled) setIsLoading(false); });
-        return () => { cancelled = true; };
-    }, [isDev]);
-
-    const login = useCallback(async (credentials: LoginCredentials) => {
-      const authUser = await LoginModel.authenticate(credentials);
-      setUser(authUser);
-    }, []);
-
-    const logout = useCallback(async () => {
-        if (isDev) return;
-        await LoginModel.logout();
+    // If browser/tab was closed, sessionStorage is empty: force login
+    if (!hasActiveSession) {
+      if (isMounted) {
         setUser(null);
-    }, [isDev]);
+        setIsLoading(false);
+      }
+      return;
+    }
 
-    const features: ChurchFeatures | null = user?.features_config ?? null;
+    // Active session found in current tab: rehydrate from live backend
+    setIsLoading(true);
+    LoginModel.getCurrentUser()
+      .then((currentUser) => {
+        if (!isMounted) return;
+        if (currentUser) {
+          setUser(currentUser);
+        } else {
+          sessionStorage.removeItem(SESSION_ACTIVE_KEY);
+          setUser(null);
+        }
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        sessionStorage.removeItem(SESSION_ACTIVE_KEY);
+        setUser(null);
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      });
 
-    const value = useMemo<AuthContextValue>(() => ({
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // ─── Listen for 401 Unauthorized Eviction from Axios Interceptor ────────────
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem(SESSION_ACTIVE_KEY);
+      }
+      setUser(null);
+    };
+
+    window.addEventListener("auth:unauthorized", handleUnauthorized);
+    return () => {
+      window.removeEventListener("auth:unauthorized", handleUnauthorized);
+    };
+  }, []);
+
+  // ─── Login handler ─────────────────────────────────────────────────────────
+  const login = useCallback(async (credentials: LoginCredentials) => {
+    const authUser = await LoginModel.authenticate(credentials);
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(SESSION_ACTIVE_KEY, "1");
+    }
+    setUser(authUser);
+  }, []);
+
+  // ─── Logout handler ────────────────────────────────────────────────────────
+  const logout = useCallback(async () => {
+    try {
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem(SESSION_ACTIVE_KEY);
+      }
+      await LoginModel.logout();
+    } finally {
+      setUser(null);
+    }
+  }, []);
+
+  const features: FeaturesConfig | null = user?.features_config ?? null;
+
+  const value = useMemo<AuthContextValue>(
+    () => ({
       user,
       isAuthenticated: !!user,
       isLoading,
       features,
       login,
       logout,
-    }), [user, isLoading, features, login, logout]);
+    }),
+    [user, isLoading, features, login, logout],
+  );
 
-    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
+
+export default AuthProvider;
