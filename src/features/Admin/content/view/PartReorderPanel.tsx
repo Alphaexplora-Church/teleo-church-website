@@ -24,7 +24,7 @@ const DUMMY_PARTS: JourneyPart[] = [
 ];
 
 /** Sample payload shape sent on save: `[{ partId, position }]`, 1-based. */
-const mockSave = (_payload: PartReorderPayloadItem[]) =>
+const mockSave = () =>
     new Promise<void>((resolve, reject) => {
         window.setTimeout(() => (Math.random() < 0.9 ? resolve() : reject(new Error('network'))), 600);
     });
