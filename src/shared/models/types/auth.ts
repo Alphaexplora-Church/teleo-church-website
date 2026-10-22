@@ -10,6 +10,7 @@ export interface FeaturesConfig {
   community: boolean;
   giving: boolean;
   events_announcement: boolean;
+  events_announcements?: boolean;
   registrations: boolean;
   [key: string]: boolean | undefined;
 }
