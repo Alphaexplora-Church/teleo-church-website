@@ -1,16 +1,7 @@
 // ─── Admin Events: Service (Model) ──────────────────────────────────────────
 import type { ChurchEvent, Announcement, AdminContentStats } from './content.types';
 import type { EventFormData } from './adminEvents.types';
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
-
-/** The session is authenticated via the HTTP-only access_token cookie sent with every request. */
-const getAuthHeaders = (isFormData: boolean = false): HeadersInit =>
-    isFormData ? {} : { 'Content-Type': 'application/json' };
-
-/** Wraps fetch to always send the HTTP-only auth cookies to the API. */
-const authFetch = (url: string, init: RequestInit = {}): Promise<Response> =>
-    fetch(url, { ...init, credentials: 'include' });
+import { axiosClient } from '../../../../shared/models/api/axiosClient';
 
 /**
  * The request body, in the events_announcements schema's terms: an event has
@@ -66,35 +57,28 @@ const parseTotalFromResponse = <T>(json: unknown): { items: T[]; total: number }
 
 export const AdminEventsService = {
     fetchStats: async (): Promise<AdminContentStats> => {
-        const response = await authFetch(`${API_BASE}/api/contents/admin/stats`, {
-            headers: getAuthHeaders(),
-        });
-        if (!response.ok) throw new Error('Failed to fetch content statistics');
-        const json = await response.json() as { data: AdminContentStats };
-        return json.data;
+        const response = await axiosClient.get<{ data: AdminContentStats }>('/api/contents/admin/stats');
+        return response.data.data;
     },
+
     /**
      * Fetches all events from the admin endpoint (requires authentication).
      */
     fetchEvents: async (page: number = 1, limit: number = 10): Promise<{ items: ChurchEvent[]; total: number }> => {
-        const response = await authFetch(`${API_BASE}/api/contents/admin/events?page=${page}&limit=${limit}`, {
-            headers: getAuthHeaders(),
+        const response = await axiosClient.get<CollectionResponse<ChurchEvent>>('/api/contents/admin/events', {
+            params: { page, limit },
         });
-        if (!response.ok) throw new Error('Failed to fetch events');
-        const json = await response.json();
-        return parseTotalFromResponse<ChurchEvent>(json);
+        return parseTotalFromResponse<ChurchEvent>(response.data);
     },
 
     /**
      * Fetches all announcements from the admin endpoint (requires authentication).
      */
     fetchAnnouncements: async (page: number = 1, limit: number = 10): Promise<{ items: Announcement[]; total: number }> => {
-        const response = await authFetch(`${API_BASE}/api/contents/admin/announcements?page=${page}&limit=${limit}`, {
-            headers: getAuthHeaders(),
+        const response = await axiosClient.get<CollectionResponse<Announcement>>('/api/contents/admin/announcements', {
+            params: { page, limit },
         });
-        if (!response.ok) throw new Error('Failed to fetch announcements');
-        const json = await response.json();
-        return parseTotalFromResponse<Announcement>(json);
+        return parseTotalFromResponse<Announcement>(response.data);
     },
 
     /**
@@ -102,15 +86,9 @@ export const AdminEventsService = {
      */
     createEvent: async (data: EventFormData, type: string = 'event'): Promise<void> => {
         const formData = buildFormData(data, type);
-        const response = await authFetch(`${API_BASE}/api/contents/admin`, {
-            method: 'POST',
-            headers: getAuthHeaders(true),
-            body: formData,
+        await axiosClient.post('/api/contents/admin', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
         });
-        if (!response.ok) {
-            const errorBody = await response.text();
-            throw new Error(`Failed to create event: ${errorBody}`);
-        }
     },
 
     /**
@@ -118,25 +96,15 @@ export const AdminEventsService = {
      */
     updateEvent: async (id: string, data: EventFormData, type: string = 'event'): Promise<void> => {
         const formData = buildFormData(data, type);
-        const response = await authFetch(`${API_BASE}/api/contents/admin/${id}`, {
-            method: 'PATCH',
-            headers: getAuthHeaders(true),
-            body: formData,
+        await axiosClient.patch(`/api/contents/admin/${id}`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
         });
-        if (!response.ok) {
-            const errorBody = await response.text();
-            throw new Error(`Failed to update event: ${errorBody}`);
-        }
     },
 
     /**
      * Deletes an event by ID (requires authentication).
      */
     archiveContent: async (id: string): Promise<void> => {
-        const response = await authFetch(`${API_BASE}/api/contents/admin/${id}`, {
-            method: 'DELETE',
-            headers: getAuthHeaders(),
-        });
-        if (!response.ok) throw new Error('Failed to archive content');
+        await axiosClient.delete(`/api/contents/admin/${id}`);
     },
 };
