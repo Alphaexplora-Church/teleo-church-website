@@ -2,7 +2,7 @@
 import type { Registration } from './adminRegistrations.types';
 import type { EncounterRegistration } from './adminEncounterRegistrations.types';
 import type { DiscipleshipRegistration } from './adminDiscipleshipRegistrations.types';
-import { axiosClient } from '../../../../shared/models/api/axiosClient';
+import { axiosClient } from '../../../../shared/models/api/axiosClient.api';
 
 interface CollectionResponse<T> {
     data?: T[];

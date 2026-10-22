@@ -1,5 +1,5 @@
 import { useAuth } from '../context/useAuth';
-import type { FeaturesConfig } from '../models/types/auth';
+import type { FeaturesConfig } from '../models/types/auth.types';
 
 /**
  * useAdminSidebarViewModel

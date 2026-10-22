@@ -1,5 +1,5 @@
 import { createContext } from 'react';
-import type { AuthUser, LoginCredentials, FeaturesConfig } from '../models/types/auth';
+import type { AuthUser, LoginCredentials, FeaturesConfig } from '../models/types/auth.types';
 
 export interface AuthContextValue {
   user: AuthUser | null;

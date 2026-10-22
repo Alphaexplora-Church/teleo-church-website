@@ -5,7 +5,7 @@ import type {
     FetchAdminPrayersParams,
     FetchIntercessionParams
 } from './adminPrayerWall.types';
-import { axiosClient, getApiErrorMessage } from '../../../../shared/models/api/axiosClient';
+import { axiosClient, getApiErrorMessage } from '../../../../shared/models/api/axiosClient.api';
 
 interface AdminPrayersApiResponse {
     data?: (AdminPrayer & { prayer_id?: string })[];

@@ -1,5 +1,5 @@
 import axios, { type AxiosError } from 'axios';
-import type { ApiErrorResponse } from '../types/auth';
+import type { ApiErrorResponse } from '../types/auth.types';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
 

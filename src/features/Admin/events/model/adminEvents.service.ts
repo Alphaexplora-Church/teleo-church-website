@@ -1,7 +1,7 @@
 // ─── Admin Events: Service (Model) ──────────────────────────────────────────
 import type { ChurchEvent, Announcement, AdminContentStats } from './content.types';
 import type { EventFormData } from './adminEvents.types';
-import { axiosClient } from '../../../../shared/models/api/axiosClient';
+import { axiosClient } from '../../../../shared/models/api/axiosClient.api';
 
 /**
  * The request body, in the events_announcements schema's terms: an event has

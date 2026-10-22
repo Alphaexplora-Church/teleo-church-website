@@ -5,7 +5,7 @@
 // omissions, the API deliberately does not expose them.
 import type { Journey, JourneyContentType, JourneyFormData, JourneyPart, JourneyStatus, PartFormData, PartStatus } from './adminContent.types';
 import axios from 'axios';
-import { axiosClient, getApiErrorMessage } from '../../../../shared/models/api/axiosClient';
+import { axiosClient, getApiErrorMessage } from '../../../../shared/models/api/axiosClient.api';
 
 const API_BASE = '';
 

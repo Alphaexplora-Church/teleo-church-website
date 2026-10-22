@@ -9,7 +9,7 @@ import type {
   AuthUser,
   LoginCredentials,
   FeaturesConfig,
-} from "../models/types/auth";
+} from "../models/types/auth.types";
 import { AuthContext, type AuthContextValue } from "./authContextInstance";
 import { LoginModel } from "../../features/Auth/login/model/login.model";
 
