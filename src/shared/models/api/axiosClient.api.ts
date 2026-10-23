@@ -1,12 +1,12 @@
 import axios, { type AxiosError } from 'axios';
-import type { ApiErrorResponse } from '../types/auth';
+import type { ApiErrorResponse } from '../types/auth.types';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
 
 export const axiosClient = axios.create({
   baseURL: API_BASE,
   withCredentials: true,
-  timeout: 15000,
+  timeout: 60000,
   headers: {
     'Content-Type': 'application/json',
   },

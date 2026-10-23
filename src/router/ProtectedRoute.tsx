@@ -1,6 +1,6 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../shared/context/useAuth";
-import type { FeaturesConfig } from "../shared/models/types/auth";
+import type { FeaturesConfig } from "../shared/models/types/auth.types";
 
 export interface ProtectedRouteProps {
   redirectTo?: string;

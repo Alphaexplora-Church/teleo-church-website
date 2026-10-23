@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../../shared/context/useAuth';
-import type { AuthUser } from '../../../../shared/models/types/auth';
+import type { AuthUser } from '../../../../shared/models/types/auth.types';
 
 const DEFAULT_USER: AuthUser = {
   uid: '',

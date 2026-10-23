@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { axiosClient, getApiErrorMessage } from '../../../../shared/models/api/axiosClient';
+import { axiosClient, getApiErrorMessage } from '../../../../shared/models/api/axiosClient.api';
 import type {
   AuthUser,
   LoginCredentials,
@@ -7,7 +7,7 @@ import type {
   MeApiResponse,
   LogoutApiResponse,
   FeaturesConfig,
-} from '../../../../shared/models/types/auth';
+} from '../../../../shared/models/types/auth.types';
 
 export type { AuthUser, LoginCredentials, FeaturesConfig };
 

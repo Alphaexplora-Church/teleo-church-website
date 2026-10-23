@@ -4,35 +4,64 @@
 // delete call here and no path from published back to draft — those are not
 // omissions, the API deliberately does not expose them.
 import type { Journey, JourneyContentType, JourneyFormData, JourneyPart, JourneyStatus, PartFormData, PartStatus } from './adminContent.types';
+import axios from 'axios';
+import { axiosClient, getApiErrorMessage } from '../../../../shared/models/api/axiosClient.api';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
-
-/** The session is authenticated via the HTTP-only access_token cookie sent with every request. */
-const authFetch = (url: string, init: RequestInit = {}): Promise<Response> =>
-    fetch(url, { ...init, credentials: 'include' });
+const API_BASE = '';
 
 const uid = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
-/** Errors come back as `{ status: 'failed', error }`; surface the API's own wording when it has one. */
-const request = async (url: string, init: RequestInit, fallback: string): Promise<Response> => {
-    const response = await authFetch(url, init);
-    if (response.ok) return response;
+interface RequestOptions {
+    method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+    headers?: Record<string, string>;
+    body?: unknown;
+}
 
-    let message = fallback;
+interface ApiResponse<T> {
+    data: T;
+    json: () => Promise<T>;
+}
+
+/** Errors come back as `{ status: 'failed', error }`; surface the API's own wording when it has one. */
+const request = async <T = unknown>(url: string, init: RequestOptions = {}, fallback: string = 'Request failed'): Promise<ApiResponse<T>> => {
     try {
-        const body = await response.json() as { error?: string };
-        if (body.error) message = body.error;
-    } catch {
-        // Non-JSON body (gateway error page, empty 500) — keep the fallback.
+        const method = init.method ?? 'GET';
+        let data = init.body;
+        if (typeof data === 'string') {
+            try {
+                data = JSON.parse(data);
+            } catch {
+                // Keep as is
+            }
+        }
+
+        const cleanUrl = url.replace(/^https?:\/\/[^/]+/, '');
+        const response = await axiosClient.request<T>({
+            method,
+            url: cleanUrl,
+            data,
+            headers: init.headers,
+        });
+
+        return {
+            data: response.data,
+            json: async () => response.data,
+        };
+    } catch (error) {
+        if (axios.isAxiosError(error) && error.response?.data) {
+            const body = error.response.data as { error?: string; message?: string };
+            if (body.error) throw new Error(body.error);
+            if (body.message) throw new Error(body.message);
+        }
+        throw new Error(fallback || getApiErrorMessage(error));
     }
-    throw new Error(message);
 };
 
-const patchJson = (url: string, body: unknown, fallback: string): Promise<Response> =>
-    request(url, {
+const patchJson = <T = unknown>(url: string, body: unknown, fallback: string): Promise<ApiResponse<T>> =>
+    request<T>(url, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body,
     }, fallback);
 
 // ─── Video link validation ───────────────────────────────────────────────
@@ -366,21 +395,18 @@ const journeyBody = (form: JourneyFormData, categoryIds: string[], file?: File |
 export const AdminContentService = {
     /** Reads live journeys from the API. Every other method below is still localStorage. */
     fetchJourneys: async (query: JourneyQuery = {}): Promise<Journey[]> => {
-        const params = new URLSearchParams({ limit: '50' });
+        const params: Record<string, string> = { limit: '50' };
 
-        if (query.search) params.set('search', query.search);
-        if (query.status) params.set('status', query.status);
-        if (query.contentType) params.set('content_type', CONTENT_TYPE_TO_API[query.contentType]);
-        if (query.category) params.set('category', query.category);
+        if (query.search) params.search = query.search;
+        if (query.status) params.status = query.status;
+        if (query.contentType) params.content_type = CONTENT_TYPE_TO_API[query.contentType];
+        if (query.category) params.category = query.category;
 
-        const response = await authFetch(`${API_BASE}/api/journeys/discover?${params.toString()}`);
+        const response = await axiosClient.get<{ journeys: ApiJourneyRow[] }>('/api/journeys/discover', {
+            params,
+        });
 
-        if (!response.ok) {
-            throw new Error(`Failed to fetch journeys (${response.status})`);
-        }
-
-        const body = await response.json() as { journeys: ApiJourneyRow[] };
-        return (body.journeys ?? []).map(toJourney);
+        return (response.data.journeys ?? []).map(toJourney);
     },
 
     fetchJourneyDetail,

@@ -1,5 +1,5 @@
 import { useAuth } from '../context/useAuth';
-import type { ChurchFeatures } from '../models/types/globalTypes';
+import type { FeaturesConfig } from '../models/types/auth.types';
 
 /**
  * useAdminSidebarViewModel
@@ -19,7 +19,7 @@ export function useAdminSidebarViewModel() {
      * This prevents the sidebar from showing locked features if the
      * features_config was not returned by the backend.
      */
-    const can = (feature: Extract<keyof ChurchFeatures, string>): boolean => features?.[feature] ?? false;
+    const can = (feature: Extract<keyof FeaturesConfig, string>): boolean => features?.[feature] ?? false;
 
     return {
         /** Show the Prayer Wall management link */

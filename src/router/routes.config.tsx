@@ -1,6 +1,7 @@
 import { type ComponentType, lazy } from "react";
 import { Navigate, type RouteObject } from "react-router-dom";
 import { ProtectedRoute } from "./ProtectedRoute";
+import { FeatureGuard } from "./FeatureGuard";
 import AdminLayoutView from "../features/Admin/views/AdminLayoutView";
 
 function safeLazy<T extends ComponentType<unknown>>(
@@ -64,21 +65,21 @@ export const adminRoutes: RouteObject[] = [
           { path: "users", element: <AdminUsersView /> },
           { path: "settings", element: <AdminSettingsView /> },
           {
-            element: <ProtectedRoute requiredFeature="registrations" />,
+            element: <FeatureGuard requiredFeature="registrations" />,
             children: [
               { path: "registrations", element: <AdminRegistrationsView /> },
             ],
           },
           {
-            element: <ProtectedRoute requiredFeature="events_announcement" />,
+            element: <FeatureGuard requiredFeature="events_announcements" />,
             children: [{ path: "events", element: <AdminEventsView /> }],
           },
           {
-            element: <ProtectedRoute requiredFeature="content_management" />,
+            element: <FeatureGuard requiredFeature="content_management" />,
             children: [{ path: "content", element: <AdminContentView /> }],
           },
           {
-            element: <ProtectedRoute requiredFeature="prayer_wall" />,
+            element: <FeatureGuard requiredFeature="prayer_wall" />,
             children: [
               { path: "prayer-wall", element: <AdminPrayerWallView /> },
             ],
