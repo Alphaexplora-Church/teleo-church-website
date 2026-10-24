@@ -4,6 +4,7 @@
 // a real-time title search, a Content Type filter, a Category filter, and a
 // multi-select Status filter (Draft / Published / Archived).
 import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import { Archive, BookOpen, ChevronLeft, ChevronRight, Layers, Loader2, Pencil, Plus, RotateCcw, Search, X } from 'lucide-react';
 import { CONTENT_TYPE_OPTIONS, STATUS_OPTIONS } from '../model/adminContent.types';
 import type { Journey } from '../model/adminContent.types';
@@ -44,9 +45,9 @@ export default function AdminContentView() {
                     <FilterBar vm={vm} />
 
                     {vm.isLoading ? (
-                        <div className="flex flex-col gap-3 animate-fade-in">{Array.from({ length: 3 }, (_, index) => <div key={index} className="h-24 animate-pulse rounded-2xl border border-gray-100 bg-white" />)}</div>
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="flex flex-col gap-3">{Array.from({ length: 3 }, (_, index) => <div key={index} className="h-24 animate-pulse rounded-2xl border border-gray-100 bg-white" />)}</motion.div>
                     ) : vm.error ? (
-                        <div className="animate-fade-in rounded-2xl border border-red-200 bg-red-50 p-6 text-center"><p className="text-sm font-semibold text-red-500">{vm.error}</p><button onClick={vm.retry} className="mt-3 text-xs font-bold text-midnight-teal underline">Retry</button></div>
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center"><p className="text-sm font-semibold text-red-500">{vm.error}</p><button onClick={vm.retry} className="mt-3 text-xs font-bold text-midnight-teal underline">Retry</button></motion.div>
                     ) : vm.filteredJourneys.length === 0 ? (
                         <EmptyState hasActiveFilters={vm.hasActiveFilters} onClearFilters={vm.clearFilters} />
                     ) : (
@@ -57,7 +58,12 @@ export default function AdminContentView() {
                                 instant swap. */}
                             <div key={`${vm.page}-${vm.search}-${vm.contentTypeFilter}-${vm.categoryFilter}-${vm.statusFilter.join(',')}`} className="flex flex-col gap-3">
                                 {vm.paginatedJourneys.map((journey, index) => (
-                                    <div key={journey.id} className="animate-fade-in-up" style={{ animationDelay: `${Math.min(index * 35, 210)}ms` }}>
+                                    <motion.div
+                                        key={journey.id}
+                                        initial={{ opacity: 0, y: 6 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.32, delay: Math.min(index * 0.035, 0.21) }}
+                                    >
                                         <JourneyCard
                                             journey={journey}
                                             isPending={vm.pendingStatusId === journey.id}
@@ -65,7 +71,7 @@ export default function AdminContentView() {
                                             onArchive={() => vm.openArchiveModal(journey)}
                                             onRestore={() => void vm.handleSetStatus(journey, 'published')}
                                         />
-                                    </div>
+                                    </motion.div>
                                 ))}
                             </div>
                             <Pagination

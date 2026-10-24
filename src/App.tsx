@@ -3,8 +3,10 @@ import AppRouter from "./router/AppRouter";
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppRouter />
-    </AuthProvider>
+    <div className="min-h-screen bg-midnight-teal text-soft-linen font-sans antialiased">
+      <AuthProvider>
+        <AppRouter />
+      </AuthProvider>
+    </div>
   );
 }
