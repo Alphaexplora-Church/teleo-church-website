@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../../../shared/context/useAuth";
 import { useAbortController, isAbortError } from "../../../../shared/viewmodels/useAbortController";
 import { getApiErrorMessage } from "../../../../shared/models/api/axiosClient.api";
-import { DiscipleshipService } from "../models/api/discipleshipGroupList.api";
+import { DiscipleshipGroupListApi } from "../models/api/discipleshipGroupList.api";
+import { DiscipleshipModuleApi } from "../models/api/discipleshipModule.api";
 import {
   extractLeaderFilterOptions,
   mapApiGroupToItem,
@@ -51,7 +52,7 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
     const signal = getSignal();
 
     try {
-      const data = await DiscipleshipService.getDiscipleshipDashboard(
+      const data = await DiscipleshipGroupListApi.getDiscipleshipDashboard(
         churchId,
         signal,
       );
@@ -102,12 +103,13 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
    */
   const handleToggleModule = useCallback(
     async (nextValue: boolean) => {
+      if (isTogglingModule) return;
       const previousValue = isModuleEnabled;
       setIsModuleEnabled(nextValue);
       setIsTogglingModule(true);
 
       try {
-        await DiscipleshipService.toggleDiscipleshipModule(churchId, {
+        await DiscipleshipModuleApi.toggleDiscipleshipModule(churchId, {
           discipleship_enabled: nextValue,
         });
       } catch (err) {
@@ -119,7 +121,7 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
         setIsTogglingModule(false);
       }
     },
-    [churchId, isModuleEnabled],
+    [churchId, isModuleEnabled, isTogglingModule],
   );
 
   const handleLeaderToggle = useCallback((name: string) => {

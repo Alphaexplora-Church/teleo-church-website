@@ -1,48 +1,26 @@
 import { axiosClient as apiClient } from "../../../../../shared/models/api/axiosClient.api";
-import type {
-  DiscipleshipDashboardResponse,
-  ToggleDiscipleshipModulePayload,
-  ToggleDiscipleshipModuleResponse,
-} from "../types/groupsScheduleDirectory.types";
+import type { DiscipleshipDashboardResponse } from "../types/groupsScheduleDirectory.types";
 
 /**
- * Service layer for church-wide discipleship management.
+ * API layer for church-wide discipleship groups directory and dashboard.
  * Wired directly to Node.js Express API backend according to documentation:
- * - Admin Journey 13a: GET /churches/:churchId/discipleship-dashboard
- * - Admin Journey 9a:  PATCH /churches/:churchId/modules
+ * - Admin Journey 13a: GET /api/churches/:churchId/discipleship-dashboard
  */
-export const DiscipleshipService = {
+export const DiscipleshipGroupListApi = {
   /**
    * Fetches church-wide groups directory, headcount vs. capacity, and per-discipler load.
-   * Admin Journey 13a: GET /churches/:churchId/discipleship-dashboard
+   * Admin Journey 13a: GET /api/churches/:churchId/discipleship-dashboard
    */
   getDiscipleshipDashboard: async (
     churchId: string | number,
     signal?: AbortSignal,
   ): Promise<DiscipleshipDashboardResponse> => {
     const response = await apiClient.get<DiscipleshipDashboardResponse>(
-      `/churches/${churchId}/discipleship-dashboard`,
-      { signal },
-    );
-    return response.data;
-  },
-
-  /**
-   * Toggles the Discipleship module state for the specified church.
-   * Admin Journey 9a: PATCH /churches/:churchId/modules
-   */
-  toggleDiscipleshipModule: async (
-    churchId: string | number,
-    payload: ToggleDiscipleshipModulePayload,
-    signal?: AbortSignal,
-  ): Promise<ToggleDiscipleshipModuleResponse> => {
-    const response = await apiClient.patch<ToggleDiscipleshipModuleResponse>(
-      `/churches/${churchId}/modules`,
-      payload,
+      `/api/churches/${churchId}/discipleship-dashboard`,
       { signal },
     );
     return response.data;
   },
 };
 
-export default DiscipleshipService;
+export default DiscipleshipGroupListApi;

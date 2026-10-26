@@ -3,7 +3,7 @@ import type { LeaderFilterOption } from "../../components/DirectoriesFilter/Dire
 import type { DiscipleshipTab } from "../../components/DiscipleshipTabSwitch/DiscipleshipTabSwitch";
 
 /**
- * Raw discipleship group contract returned by GET /churches/:churchId/discipleship-dashboard
+ * Raw discipleship group contract returned by GET /api/churches/:churchId/discipleship-dashboard
  * Aligned with v_discipleship_group_directory view and API schema
  */
 export interface ApiDiscipleshipGroup {
@@ -31,7 +31,7 @@ export interface ApiDiscipleshipGroup {
 }
 
 /**
- * Discipler load contract from GET /churches/:churchId/discipleship-dashboard
+ * Discipler load contract from GET /api/churches/:churchId/discipleship-dashboard
  * Aligned with v_discipler_load view
  */
 export interface ApiDisciplerLoad {
@@ -44,7 +44,7 @@ export interface ApiDisciplerLoad {
 }
 
 /**
- * Full response structure for GET /churches/:churchId/discipleship-dashboard (Journey 13a)
+ * Full response structure for GET /api/churches/:churchId/discipleship-dashboard (Journey 13a)
  */
 export interface DiscipleshipDashboardResponse {
   groups: ApiDiscipleshipGroup[];
@@ -53,14 +53,14 @@ export interface DiscipleshipDashboardResponse {
 }
 
 /**
- * Payload for PATCH /churches/:churchId/modules (Journey 9a)
+ * Payload for PATCH /api/churches/:churchId/modules (Journey 9a)
  */
 export interface ToggleDiscipleshipModulePayload {
   discipleship_enabled: boolean;
 }
 
 /**
- * Response for PATCH /churches/:churchId/modules (Journey 9a)
+ * Response for PATCH /api/churches/:churchId/modules (Journey 9a)
  */
 export interface ToggleDiscipleshipModuleResponse {
   discipleship_enabled: boolean;
