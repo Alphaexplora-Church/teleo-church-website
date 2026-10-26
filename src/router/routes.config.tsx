@@ -2,7 +2,7 @@ import { type ComponentType, lazy } from "react";
 import { Navigate, type RouteObject } from "react-router-dom";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { FeatureGuard } from "./FeatureGuard";
-import AdminLayoutView from "../features/Admin/views/AdminLayoutView";
+import AdminLayoutView from "../features/Admin/layout/views/AdminLayoutView";
 
 function safeLazy<T extends ComponentType<unknown>>(
   factory: () => Promise<{ default: T }>,
@@ -52,6 +52,18 @@ const AdminUsersView = safeLazy(
 const AdminSettingsView = safeLazy(
   () => import("../features/Admin/settings/view/AdminSettingsView"),
 );
+const DiscipleshipGroupsScheduleViews = safeLazy(
+  () =>
+    import(
+      "../features/Admin/discipleship/views/DiscipleshipGroupsSchedule/DiscipleshipGroupsScheduleViews"
+    ),
+);
+const DiscipleshipApplicationsViews = safeLazy(
+  () =>
+    import(
+      "../features/Admin/discipleship/views/DiscipleshipApplications/DiscipleshipApplicationsViews"
+    ),
+);
 
 export const adminRoutes: RouteObject[] = [
   {
@@ -64,6 +76,11 @@ export const adminRoutes: RouteObject[] = [
           { path: "dashboard", element: <AdminDashboardView /> },
           { path: "users", element: <AdminUsersView /> },
           { path: "settings", element: <AdminSettingsView /> },
+          { path: "discipleship", element: <DiscipleshipGroupsScheduleViews /> },
+          {
+            path: "discipleship/application",
+            element: <DiscipleshipApplicationsViews />,
+          },
           {
             element: <FeatureGuard requiredFeature="registrations" />,
             children: [

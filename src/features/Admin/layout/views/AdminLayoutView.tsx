@@ -1,9 +1,13 @@
 import { Outlet } from "react-router-dom";
-import AdminSidebar from "../../../shared/components/Navmenu/AdminSidebar";
-import AdminHeader from "../../../shared/components/Header/AdminHeader";
-import adminBg from "../../../assets/admin-bg.jpg";
+import AdminHeader from "../components/AdminHeader/AdminHeader";
+import adminBg from "../../../../assets/admin-bg.jpg";
+import { AdminSidebar } from "../components/AdminSidebar/AdminSidebar";
+import { ADMIN_BRAND } from "../models/constants/adminLayoutView.constants";
+import { useAdminSidebarViewModel } from "../viewmodels/useAdminSidebarViewModel";
 
 export default function AdminLayoutView() {
+  const vm = useAdminSidebarViewModel();
+
   return (
     <div className="fixed inset-0 overflow-hidden bg-[#d9dfdd] flex items-center justify-center p-0 lg:p-4">
       {/* Background Decor Layer */}
@@ -23,7 +27,7 @@ export default function AdminLayoutView() {
           boxShadow: "0 2rem 6rem rgba(0, 46, 56, 0.18)",
         }}
       >
-        <AdminSidebar />
+        <AdminSidebar brand={ADMIN_BRAND} items={vm.navLinks} />
 
         {/* Main Container Shell */}
         <div className="relative flex flex-1 flex-col overflow-hidden min-w-0">

@@ -31,3 +31,7 @@
   --font-serif: "Vogun", serif;
   --font-sans: "Outfit", sans-serif;
 }
+
+html {
+  @apply scroll-smooth
+}
