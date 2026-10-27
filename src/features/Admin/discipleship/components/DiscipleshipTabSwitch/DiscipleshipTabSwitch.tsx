@@ -3,8 +3,10 @@ import {
   TabSwitch,
   type TabOption,
 } from "../../../../../shared/components/TabSwitch/TabSwitch";
+import type { DiscipleshipTab } from "../../models/types/groupsScheduleDirectory.types";
 
-export type DiscipleshipTab = "directory" | "calendar";
+export type { DiscipleshipTab };
+
 
 export interface DiscipleshipTabSwitchProps {
   activeTab: DiscipleshipTab;

@@ -21,25 +21,17 @@ export interface DiscipleshipModalNewGroupProps {
   isLoading?: boolean;
 }
 
-const DEFAULT_DISCIPLERS: LeaderFilterOption[] = [
-  { id: "mark", name: "Mark Reyes" },
-  { id: "ana", name: "Ana Villar" },
-  { id: "sam", name: "Sam Ortiz" },
-  { id: "daniel", name: "Daniel Santos" },
-  { id: "esther", name: "Esther Lim" },
-  { id: "marcus", name: "Marcus Tan" },
-];
-
 function DiscipleshipNewGroupModalContent({
   onClose,
   onSubmit,
-  availableLeaders = DEFAULT_DISCIPLERS,
+  availableLeaders = [],
   initialData,
   isLoading = false,
 }: Omit<DiscipleshipModalNewGroupProps, "isOpen">) {
-  const leaders = availableLeaders.length > 0 ? availableLeaders : DEFAULT_DISCIPLERS;
+  const leaders = availableLeaders;
 
   // Form State initialized fresh on mount
+
   const [name, setName] = useState(initialData?.name ?? "");
   const [maxCapacity, setMaxCapacity] = useState<number>(initialData?.maxCapacity ?? 0);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);

@@ -5,13 +5,15 @@ import { getApiErrorMessage } from "../../../../shared/models/api/axiosClient.ap
 import { DiscipleshipGroupListApi } from "../models/api/discipleshipGroupList.api";
 import { DiscipleshipModuleApi } from "../models/api/discipleshipModule.api";
 import {
-  extractLeaderFilterOptions,
   mapApiGroupToItem,
-  type ApiDisciplerLoad,
-  type ApiDiscipleshipGroup,
-  type DiscipleshipGroupItem,
-  type LeaderFilterOption,
-  type DiscipleshipTab,
+  extractLeaderFilterOptions,
+} from "../models/utils/groupsSchedule.mappers";
+import type {
+  ApiDisciplerLoad,
+  ApiDiscipleshipGroup,
+  DiscipleshipGroupItem,
+  LeaderFilterOption,
+  DiscipleshipTab,
 } from "../models/types/groupsScheduleDirectory.types";
 import { filterDiscipleshipGroups } from "../components/DirectoriesFilter/directoriesFilter.utils";
 
@@ -135,36 +137,43 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
   }, []);
 
   return {
-    // Church context
     churchId,
 
     // Tab state
-    activeTab,
-    setActiveTab,
+    tab: {
+      active: activeTab,
+      onChange: setActiveTab,
+    },
 
     // Module toggle
-    isModuleEnabled,
-    isTogglingModule,
-    handleToggleModule,
+    module: {
+      isEnabled: isModuleEnabled,
+      isToggling: isTogglingModule,
+      onToggle: handleToggleModule,
+    },
 
-    // Groups & filter data
+    // Groups data
     groups,
     filteredGroups,
-    availableLeaders,
-    disciplerLoad,
 
-    // Search & Filter controls
-    searchQuery,
-    setSearchQuery,
-    selectedLeaders,
-    handleLeaderToggle,
-    handleClearLeaders,
+    // Filter controls
+    filter: {
+      searchQuery,
+      onSearchChange: setSearchQuery,
+      leaders: availableLeaders,
+      selectedLeaders,
+      onLeaderToggle: handleLeaderToggle,
+      onClearLeaders: handleClearLeaders,
+    },
 
     // Network status
-    isLoading,
-    error,
-    refetch: fetchDashboard,
+    status: {
+      isLoading,
+      error,
+      onRetry: fetchDashboard,
+    },
   };
 }
 
 export default useDiscipleshipViewModel;
+

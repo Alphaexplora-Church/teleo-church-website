@@ -4,16 +4,9 @@ import {
   DiscipleshipGroupCard,
   type DiscipleshipGroupCardProps,
 } from "./DiscipleshipGroupCard";
+import type { DiscipleshipGroupItem } from "../../models/types/groupsScheduleDirectory.types";
 
-export interface DiscipleshipGroupItem {
-  id: string | number;
-  title: string;
-  leaderName: string;
-  leaderImageUrl?: string;
-  currentSeats: number;
-  maxSeats: number;
-  isFull?: boolean;
-}
+export type { DiscipleshipGroupItem };
 
 export interface DiscipleshipGroupCardListProps {
   /** Array of discipleship groups to display */

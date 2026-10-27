@@ -7,12 +7,9 @@ import {
   DropdownHeader,
 } from "../../../../../shared/components/Dropdown/Dropdown";
 import { dropdownItemVariants } from "../../../../../shared/components/Dropdown/dropdown.animations";
+import type { LeaderFilterOption } from "../../models/types/groupsScheduleDirectory.types";
 
-export interface LeaderFilterOption {
-  id: string;
-  name: string;
-  imageUrl?: string;
-}
+export type { LeaderFilterOption };
 
 export interface DirectoriesFilterProps {
   /** Search query string */
@@ -33,20 +30,12 @@ export interface DirectoriesFilterProps {
   className?: string;
 }
 
-const DEFAULT_LEADERS: LeaderFilterOption[] = [
-  { id: "mark", name: "Mark Reyes" },
-  { id: "ana", name: "Ana Villar" },
-  { id: "sam", name: "Sam Ortiz" },
-  { id: "daniel", name: "Daniel Santos" },
-  { id: "esther", name: "Esther Lim" },
-  { id: "marcus", name: "Marcus Tan" },
-];
-
 export function DirectoriesFilter({
   searchQuery: controlledSearch,
   onSearchChange,
-  leaders = DEFAULT_LEADERS,
+  leaders = [],
   selectedLeaders: controlledSelectedLeaders,
+
   onLeaderToggle,
   onClearLeaders,
   searchPlaceholder = "Search by group title...",

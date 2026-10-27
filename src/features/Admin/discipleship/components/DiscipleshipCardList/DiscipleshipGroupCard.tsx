@@ -25,16 +25,17 @@ export interface DiscipleshipGroupCardProps {
 }
 
 export function DiscipleshipGroupCard({
-  title = "The Fig Tree Group",
-  leaderName = "Mark Reyes",
+  title = "",
+  leaderName = "",
   disciplerName,
   leaderImageUrl,
-  currentSeats = 7,
-  maxSeats = 10,
+  currentSeats = 0,
+  maxSeats = 0,
   isFull: isFullProp,
   action,
   onActionClick,
   className = "",
+
 }: DiscipleshipGroupCardProps) {
   const displayLeaderName = disciplerName ?? leaderName;
 

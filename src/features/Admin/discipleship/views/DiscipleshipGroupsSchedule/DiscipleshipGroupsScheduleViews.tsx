@@ -8,7 +8,7 @@ import {
   DiscipleshipModalDiscussionPrompt,
   type ActiveDiscussionPrompt,
 } from "../../components/DiscipleshipModal/DiscipleshipModalDiscussionPrompt";
-import { DiscipleshipGroupsScheduleDirectory } from "./DiscipleshipGropsScheduleDirectory";
+import { DiscipleshipGroupsScheduleDirectory } from "./DiscipleshipGroupsScheduleDirectory";
 import { DiscipleshipGroupsScheduleCalendar } from "./DiscipleshipGroupsScheduleCalendar";
 import { GROUPS_SCHEDULE_UI } from "../../models/constants/groupsScheduleViews.constants";
 import { useDiscipleshipViewModel } from "../../viewmodels/useDiscipleshipViewModel";
@@ -18,24 +18,8 @@ export function DiscipleshipGroupsScheduleViews() {
   const [isDiscussionPromptModalOpen, setIsDiscussionPromptModalOpen] = useState(false);
   const [activeDiscussionPrompt, setActiveDiscussionPrompt] =
     useState<ActiveDiscussionPrompt | null>(null);
-  const {
-    activeTab,
-    setActiveTab,
-    isModuleEnabled,
-    isTogglingModule,
-    handleToggleModule,
-    groups,
-    filteredGroups,
-    availableLeaders,
-    searchQuery,
-    setSearchQuery,
-    selectedLeaders,
-    handleLeaderToggle,
-    handleClearLeaders,
-    isLoading,
-    error,
-    refetch,
-  } = useDiscipleshipViewModel();
+
+  const vm = useDiscipleshipViewModel();
 
   return (
     <div className="space-y-6">
@@ -54,14 +38,14 @@ export function DiscipleshipGroupsScheduleViews() {
         {/* Module Toggle Card: Full-width on mobile (< md), Inline on desktop (md+) */}
         <div className="flex w-full items-center rounded-2xl border border-midnight-teal/10 bg-white/90 px-4 py-2.5 shadow-xs backdrop-blur-md md:w-fit md:shrink-0 md:px-3.5 md:py-1.5">
           <ToggleSwitch
-            checked={isModuleEnabled}
-            onChange={handleToggleModule}
-            disabled={isTogglingModule}
+            checked={vm.module.isEnabled}
+            onChange={vm.module.onToggle}
+            disabled={vm.module.isToggling}
             labelPosition="left"
             size="md"
             className="w-full justify-between md:w-auto"
           >
-            {isModuleEnabled ? "Active" : "Disabled"} on mobile
+            {vm.module.isEnabled ? "Active" : "Disabled"} on mobile
           </ToggleSwitch>
         </div>
       </div>
@@ -69,26 +53,19 @@ export function DiscipleshipGroupsScheduleViews() {
       {/* Tab Switch: Directory & Calendar */}
       <div className="my-6">
         <DiscipleshipTabSwitch
-          activeTab={activeTab}
-          onChange={setActiveTab}
-          directoryCount={groups.length}
+          activeTab={vm.tab.active}
+          onChange={vm.tab.onChange}
+          directoryCount={vm.groups.length}
         />
       </div>
 
       {/* Tab Content */}
-      {activeTab === "directory" ? (
+      {vm.tab.active === "directory" ? (
         <DiscipleshipGroupsScheduleDirectory
-          groups={groups}
-          filteredGroups={filteredGroups}
-          availableLeaders={availableLeaders}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          selectedLeaders={selectedLeaders}
-          onLeaderToggle={handleLeaderToggle}
-          onClearLeaders={handleClearLeaders}
-          isLoading={isLoading}
-          error={error}
-          onRetry={refetch}
+          groups={vm.filteredGroups}
+          totalCount={vm.groups.length}
+          filter={vm.filter}
+          status={vm.status}
           onNewGroupClick={() => setIsNewGroupModalOpen(true)}
           onDiscussionPromptsClick={() => setIsDiscussionPromptModalOpen(true)}
         />
@@ -100,7 +77,7 @@ export function DiscipleshipGroupsScheduleViews() {
       <DiscipleshipModalNewGroup
         isOpen={isNewGroupModalOpen}
         onClose={() => setIsNewGroupModalOpen(false)}
-        availableLeaders={availableLeaders}
+        availableLeaders={vm.filter.leaders}
         onSubmit={(formData) => {
           console.log("New Discipleship Group Created:", formData);
           setIsNewGroupModalOpen(false);
