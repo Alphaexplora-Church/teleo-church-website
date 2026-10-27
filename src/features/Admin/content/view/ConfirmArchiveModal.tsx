@@ -26,7 +26,7 @@ export function ConfirmArchiveModal({ open, itemKind, itemTitle, isArchiving = f
 
     return (
         <div className={`z-[70] ${modalOverlayClass(visible)}`}>
-            <div className={`mx-4 w-full max-w-sm rounded-2xl bg-white admin-solid-surface p-8 text-center shadow-2xl ${modalPanelClass(visible)}`}>
+            <div className={`mx-4 w-full max-w-sm rounded-2xl bg-white p-8 text-center shadow-2xl ${modalPanelClass(visible)}`}>
                 <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-50">
                     <Archive className="h-7 w-7 text-amber-600" />
                 </div>

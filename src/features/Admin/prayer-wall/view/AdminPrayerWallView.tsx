@@ -101,11 +101,11 @@ export default function AdminPrayerWallView() {
                     ) : (
                         <>
                             {/* Featured prayer card with flip animation */}
-                            <section className="prayer-featured-stage relative overflow-hidden rounded-3xl border border-white/70 bg-white/65 px-5 py-10 shadow-xl shadow-midnight-teal/5 backdrop-blur-xl sm:px-10">
+                            <section className="relative min-h-[610px] overflow-hidden rounded-3xl border border-white/70 bg-white/65 px-5 py-10 shadow-xl shadow-midnight-teal/5 backdrop-blur-xl sm:px-10">
                                 <div className="mx-auto max-w-md">
                                     {vm.featured ? (
                                         <>
-                                            <div className="prayer-card-deck relative mx-auto max-w-sm">
+                                            <div className="relative mx-auto h-[470px] min-h-[470px] max-w-sm">
                                                 {/* Colored cards behind active card */}
                                                 <motion.div className="absolute inset-x-7 bottom-3 top-7 rounded-3xl shadow-xl" animate={{ rotate: 6, backgroundColor: theme.backOne }} transition={{ duration: 0.45, ease: 'easeInOut' }} />
                                                 <motion.div className="absolute inset-x-7 bottom-3 top-7 rounded-3xl shadow-xl" animate={{ rotate: -6, backgroundColor: theme.backTwo }} transition={{ duration: 0.45, ease: 'easeInOut', delay: 0.03 }} />

@@ -1,314 +1,237 @@
-# Teleo Church — Frontend Admin & Web Portal
+# Teleo Church — Admin Portal
 
-The frontend application for **Teleo Church**, built using modern web development standards, scalable architectural patterns, and a robust fail-closed security model.
+Frontend administrative web portal for **Teleo Church**. This application is strictly an internal admin and ministry management portal (managing content, events, prayer requests, discipleship groups, and registrations). Public congregant-facing pages are hosted separately.
 
 ---
 
-## 🏛️ Architectural Overview: Feature-Based MVVM
+## Architecture: Feature-Based MVVM
 
-The project follows a **Feature-Based MVVM (Model-View-ViewModel)** architecture. This pattern separates business and API logic from presentation components, keeping features modular, testable, and maintainable.
+The project follows a **Feature-Based MVVM (Model-View-ViewModel)** pattern to keep domain logic decoupled from UI presentation:
 
 ```
 ┌────────────────────────────────────────────────────────┐
 │                        VIEW                            │
-│   Pure React TSX components (rendering, styles)        │
-│   Consumes ViewModels via clean, declarative hooks     │
+│   React components (.tsx)                              │
+│   Renders UI and handles user layout                   │
+│   Consumes ViewModels via hooks                        │
 └───────────────────────────▲────────────────────────────┘
                             │
 ┌───────────────────────────┴────────────────────────────┐
 │                      VIEWMODEL                         │
-│   Custom hooks (`use*ViewModel.ts`)                    │
-│   Handles UI state, async actions, event handlers      │
+│   Custom hooks (use*ViewModel.ts)                      │
+│   Manages local UI state, handlers, and validation     │
 └───────────────────────────▲────────────────────────────┘
                             │
 ┌───────────────────────────┴────────────────────────────┐
 │                        MODEL                           │
-│   Pure API services, data contracts, and DTO types     │
-│   Centralized Axios client (`withCredentials: true`)   │
+│   API services, data contracts, and DTO types          │
+│   Plain TypeScript without React hooks or UI logic     │
 └────────────────────────────────────────────────────────┘
 ```
 
-- **Model (`model/`, `shared/models/`):**
-  Defines TypeScript data contracts, domain interfaces, and pure API communication services. Completely isolated from React rendering lifecycle and hooks.
-- **ViewModel (`viewmodel/`, `shared/viewmodels/`):**
-  Custom React hooks (`use...ViewModel`) that encapsulate component state, user interactions, validation, and lifecycle management. Exposes a clean, typed interface to the View.
-- **View (`view/`, `shared/components/`):**
-  Pure presentation components (`.tsx`) focused exclusively on rendering JSX and user styling. Zero inline data fetching or direct API mutations.
-- **Decoupled Shell Layout (`AdminLayoutView.tsx`):**
-  Centralized admin navigation shell hosting the persistent sidebar, header, and a scrollable `<Outlet />` viewport for domain views.
+- **Model (`model/` or `models/`):** Data contracts (`*.types.ts`) and API client methods (`*.service.ts`, `*.model.ts`, or `*.api.ts`).
+- **ViewModel (`viewmodel/`):** Custom hooks (`use*ViewModel.ts`) that hold UI state and async actions.
+- **View (`view/`, `views/`, `components/`):** Presentation components responsible for JSX rendering.
+
+> **Cross-Cutting Concerns:** Shared concerns such as authentication session management (`AuthContext`, `useAuth`), route protection (`ProtectedRoute`, `FeatureGuard`), and universal UI primitives live in `src/shared/` and `src/router/` rather than within individual feature MVVM folders. ViewModels consume these shared utilities directly.
+>
+> **Feature Model Variations:**
+>
+> - In some modules, API files use `.service.ts`, `.model.ts`, or `.api.ts` depending on when the module was built. All represent the Model layer.
+> - The `settings/` feature intentionally has no local `model/` directory because its operations (viewing profile, roles, and logout) are driven directly by `useAuth()`.
 
 ---
 
-## ⚡ Scanned Tech Stack
+## Tech Stack
 
-Verified and extracted from [`package.json`](./package.json):
+Exact package versions are tracked in [`package.json`](./package.json).
 
-| Category             | Technology                 | Version    | Notes                                                          |
-| :------------------- | :------------------------- | :--------- | :------------------------------------------------------------- |
-| **Framework & Core** | React                      | `^19.2.0`  | React 19 modern hooks & concurrent rendering                   |
-| **Language**         | TypeScript                 | `~5.9.3`   | Strict type checking with project references (`tsc -b`)        |
-| **Build Tooling**    | Vite                       | `^7.2.4`   | Ultra-fast HMR and production asset bundler                    |
-| **Styling**          | Tailwind CSS v4            | `^4.3.3`   | Native `@tailwindcss/vite` bundling (`@import "tailwindcss";`) |
-| **Routing**          | React Router DOM           | `^7.13.0`  | Centralized route configuration with nested `<Outlet />`       |
-| **HTTP Client**      | Axios                      | `^1.20.0`  | Configured instance with HTTP-only cookies & 401 eviction      |
-| **Icons**            | Lucide React               | `^0.564.0` | Consistent, lightweight SVG iconography                        |
-| **Motion & Drag**    | Framer Motion              | `^12.34.3` | Fluid UI transitions and drag-and-drop reordering              |
-| **Code Quality**     | ESLint                     | `^9.39.1`  | Flat config (`eslint.config.js`)                               |
-| **Type Linting**     | TypeScript ESLint          | `^8.46.4`  | Static type-aware lint rules                                   |
+| Technology           | Category     | Purpose                                      |
+| :------------------- | :----------- | :------------------------------------------- |
+| **React**            | Framework    | UI library                                   |
+| **TypeScript**       | Language     | Type safety (`tsc -b`)                       |
+| **Vite**             | Build Tool   | Development server and production bundler    |
+| **Tailwind CSS v4**  | Styling      | Utility-first CSS and `@theme` design tokens |
+| **React Router DOM** | Routing      | Client-side routing with nested layouts      |
+| **Axios**            | HTTP Client  | API communication with cookie credentials    |
+| **Lucide React**     | Icons        | SVG icon set                                 |
+| **Framer Motion**    | Animation    | Transitions and interactive elements         |
+| **ESLint**           | Code Quality | Static analysis and code linting             |
 
 ---
 
-## 📁 Actual Directory Structure
-
-Actual layout scanned from the repository workspace:
+## Directory Structure
 
 ```text
 teleo-church-website/
-├── .env.example                                  # Canonical environment configuration template
-├── .env.local                                    # Local development overrides (git-ignored)
-├── .github/
-│   └── workflows/
-│       └── ci.yml                                # GitHub Actions CI workflow (Node 20, lint & build)
-├── eslint.config.js                              # ESLint 9 flat configuration
-├── index.html                                    # HTML entry point with web font imports
-├── package.json                                  # Dependencies and npm scripts
-├── tsconfig.json                                 # Project reference root configuration
-├── tsconfig.app.json                             # Application TypeScript compiler options
-├── tsconfig.node.json                            # Tooling & Vite configuration compiler options
-├── vite.config.ts                                # Vite configuration with React, Tailwind, & /api proxy
+├── .env.example                 # Environment variable template
+├── .env.local                   # Local overrides (git-ignored via .env.*)
+├── .github/workflows/ci.yml     # GitHub Actions workflow (Node 20, lint & build)
+├── .nvmrc                       # Node.js runtime version (20)
+├── index.html                   # Application entry point
+├── package.json                 # Dependencies, engines, and npm scripts
+├── vite.config.ts               # Vite configuration and /api proxy
 │
 └── src/
-    ├── main.tsx                                  # App bootstrapping with AuthProvider & StrictMode
-    ├── App.tsx                                   # Root component hosting AppRouter
-    ├── index.css                                 # Tailwind CSS v4 design tokens & custom utilities
-    ├── vite-env.d.ts                             # Environment variable type declarations (ImportMetaEnv)
+    ├── main.tsx                 # Bootstrapping with AuthProvider
+    ├── App.tsx                  # Root router wrapper
+    ├── index.css                # Tailwind CSS v4 design tokens and styles
     │
-    ├── assets/                                   # Static branding assets and custom web fonts
-    │   ├── admin-bg.jpg                          # Admin shell textured backdrop
-    │   ├── react.svg                             # React logo asset
-    │   ├── teleo-logo.png                        # Core Teleo mark
-    │   ├── teleo-logo-with-text.jpg              # Full Teleo branding graphic
+    ├── assets/                  # Logos, backgrounds, and fonts
     │   └── fonts/
-    │       └── Vogun-Medium.ttf                  # Custom Vogun serif display font
+    │       └── Vogun-Medium.ttf # Local serif display font (verify license for public distribution)
     │
-    ├── router/                                   # Centralized Routing Layer
-    │   ├── AppRouter.tsx                         # BrowserRouter provider & suspense fallback
-    │   ├── ProtectedRoute.tsx                    # Fail-closed authentication barrier
-    │   ├── FeatureGuard.tsx                      # Church subscription/feature-level access guard
-    │   └── routes.config.tsx                     # Lazy route catalog with chunk reload retry handler
+    ├── router/                  # Centralized routing & guards
+    │   ├── AppRouter.tsx        # BrowserRouter provider
+    │   ├── ProtectedRoute.tsx   # Authentication guard
+    │   ├── FeatureGuard.tsx     # Feature-subscription access gate
+    │   └── routes.config.tsx    # Lazy-loaded route definitions
     │
-    ├── features/                                 # Feature Modules (MVVM Pattern)
-    │   │
-    │   ├── Auth/                                 # Authentication Domain
-    │   │   └── login/
-    │   │       ├── model/
-    │   │       │   └── login.model.ts            # LoginModel: authenticate, getCurrentUser, logout
-    │   │       ├── view/
-    │   │       │   └── LoginView.tsx             # Responsive split-panel authentication UI
-    │   │       └── viewmodel/
-    │   │           └── useLoginViewModel.ts      # Login form state, error handling, redirect logic
-    │   │
-    │   └── Admin/                                # Admin Portal Domain
-    │       ├── views/
-    │       │   └── AdminLayoutView.tsx           # Persistent shell layout wrapper (<Outlet />)
-    │       │
-    │       ├── dashboard/                        # Overview & Analytics
-    │       │   ├── model/
-    │       │   │   ├── adminDashboard.model.ts   # Dashboard aggregate fetching service
-    │       │   │   └── adminDashboard.types.ts   # Dashboard KPI & visitor summary types
-    │       │   ├── view/
-    │       │   │   └── AdminDashboardView.tsx    # KPI metrics, upcoming events & registration cards
-    │       │   └── viewmodel/
-    │       │       └── useAdminDashboardViewModel.ts # Dashboard state & metrics orchestration
-    │       │
-    │       ├── events/                           # Events & Announcements
-    │       │   ├── model/
-    │       │   │   ├── adminEvents.service.ts    # CRUD API service for events & announcements
-    │       │   │   ├── adminEvents.types.ts      # Filter, sort, and form data interfaces
-    │       │   │   └── content.types.ts          # ChurchEvent & Announcement entity definitions
-    │       │   ├── view/
-    │       │   │   ├── AdminEventsView.tsx       # Tabbed event/announcement management grid
-    │       │   │   ├── ConfirmDeleteModal.tsx    # Deletion confirmation dialog
-    │       │   │   ├── ContentPreviewModal.tsx   # Live modal preview for events & announcements
-    │       │   │   └── EventModal.tsx            # Create/Edit modal with date pickers & banner upload
-    │       │   └── viewmodel/
-    │       │       └── useAdminEventsViewModel.ts # Filter, search, and form mutation handlers
-    │       │
-    │       ├── content/                          # Series & Journeys Builder
-    │       │   ├── model/
-    │       │   │   ├── adminContent.service.ts   # Journeys & parts API service
-    │       │   │   └── adminContent.types.ts     # Journey, Part, and ContentType domain contracts
-    │       │   ├── view/
-    │       │   │   ├── AdminContentView.tsx      # Journeys listing and status controls
-    │       │   │   ├── ConfirmArchiveModal.tsx   # Archive confirmation dialog
-    │       │   │   ├── contentStyles.ts          # Shared badge and card style utilities
-    │       │   │   ├── JourneyEditor.tsx         # Series editor (metadata, parts, reordering)
-    │       │   │   ├── PartModal.tsx             # Part modal (video URL validation & text body)
-    │       │   │   └── PartReorderPanel.tsx      # Framer Motion drag-and-drop reorder panel
-    │       │   └── viewmodel/
-    │       │       └── useAdminContentViewModel.ts # Journey creation, part ordering, and validation
-    │       │
-    │       ├── prayer-wall/                      # Prayer Requests & Praise Reports
-    │       │   ├── components/
-    │       │   │   └── AdminPrayerDrawer.tsx     # Slide-over detail inspection & comment drawer
-    │       │   ├── model/
-    │       │   │   ├── adminPrayerWall.model.ts  # Prayer wall moderation API service
-    │       │   │   └── adminPrayerWall.types.ts  # PrayerItem, comment, and status definitions
-    │       │   ├── view/
-    │       │   │   └── AdminPrayerWallView.tsx   # Moderation queue and spotlight card deck
-    │       │   └── viewmodel/
-    │       │       └── useAdminPrayerWallViewModel.ts # Moderation actions, filters, and drawer state
-    │       │
-    │       ├── registrations/                    # Guest & Member Program Records
-    │       │   ├── model/
-    │       │   │   ├── adminRegistrations.service.ts # Multi-endpoint registration fetcher
-    │       │   │   ├── adminRegistrations.types.ts   # "Plan a Visit" guest registration contract
-    │       │   │   ├── adminEncounterRegistrations.types.ts # "Encounter" retreat contract
-    │       │   │   └── adminDiscipleshipRegistrations.types.ts # "Discipleship" class contract
-    │       │   ├── view/
-    │       │   │   └── AdminRegistrationsView.tsx    # Multi-tab table (Plan a Visit, Encounter, Discipleship)
-    │       │   └── viewmodel/
-    │       │       └── useAdminRegistrationsViewModel.ts # Search, pagination, and guest stats
-    │       │
-    │       ├── users/                            # User Account Management
-    │       │   ├── model/
-    │       │   │   ├── adminUsers.model.ts       # User directory & update API service
-    │       │   │   └── adminUsers.types.ts       # ManagedUser & UserUpdateForm types
-    │       │   ├── view/
-    │       │   │   ├── AdminUsersView.tsx        # System users table and church assignments
-    │       │   │   └── UpdateUserModal.tsx       # User role and profile update modal
-    │       │   └── viewmodel/
-    │       │       └── useAdminUsersViewModel.ts # User list state, modal toggle, and update handlers
-    │       │
-    │       └── settings/                         # Admin Settings & Session
-    │           ├── view/
-    │           │   └── AdminSettingsView.tsx     # Current user profile card, roles, and logout
-    │           └── viewmodel/
-    │               └── useAdminSettingsViewModel.ts # Profile retrieval and logout navigation
+    ├── features/                # Domain feature modules
+    │   ├── Auth/
+    │   │   └── login/           # Authentication screen and state
+    │   └── Admin/
+    │       ├── layout/          # AdminSidebar, AdminHeader, layout types
+    │       ├── dashboard/       # Overview metrics and recent activity
+    │       ├── discipleship/    # Groups directory, calendar, applications
+    │       ├── events/          # Events and announcements management
+    │       ├── content/         # Series and journeys builder
+    │       ├── prayer-wall/     # Prayer moderation queue
+    │       ├── registrations/   # Visit, retreat, and discipleship records
+    │       ├── users/           # User accounts and roles
+    │       └── settings/        # Admin account info and session actions
     │
-    └── shared/                                   # Shared Global Infrastructure
-        ├── components/
-        │   ├── AdminHeader.tsx                   # Top bar with current route title and user summary
-        │   └── AdminSidebar.tsx                  # Navigation sidebar filtered by feature flags
-        │
-        ├── context/
-        │   ├── AuthContext.tsx                   # AuthProvider with session guard and rehydration
-        │   ├── authContextInstance.ts            # React Context instance definition
-        │   └── useAuth.ts                        # Consumer hook for authentication context
-        │
-        ├── viewmodels/
-        │   ├── useAdminHeaderViewModel.ts        # Dynamic header title mapping
-        │   ├── useAdminSidebarViewModel.ts       # Sidebar link visibility based on feature flags
-        │   └── useModalTransition.ts             # Modal mount/unmount and escape key listener
-        │
-        └── models/
-            ├── api/
-            │   └── axiosClient.api.ts            # Central Axios client (60s timeout, 401 eviction)
-            └── types/
-                └── auth.types.ts                 # AuthUser, UserProfile, FeaturesConfig contracts
+    └── shared/                  # Universal components, context, and models
+        ├── components/          # Reusable UI (Button, Badge, TabSwitch, etc.)
+        ├── context/             # AuthContext and useAuth
+        ├── models/              # Shared types and axiosClient instance
+        └── viewmodels/          # Reusable viewmodel hooks
 ```
 
 ---
 
-## 🔒 Security & Access Control Model
+## Security & Access Control
 
-1. **HTTP-Only Cookie Session Security:**
-   - Credentials are exchanged over secure HTTP-only cookies (`withCredentials: true`). No JWT or access tokens are ever stored in `localStorage`.
-2. **Session-Only Active Guard:**
-   - Managed via a `sessionStorage` flag (`teleo_admin_session_active`).
-   - If the browser or tab is closed, `sessionStorage` is purged, requiring re-authentication upon next launch to protect shared terminal devices.
-3. **Reactive 401 Unauthorized Eviction:**
-   - The Axios response interceptor (`axiosClient.api.ts`) intercepts any `401 Unauthorized` responses and dispatches the window event `auth:unauthorized`.
-   - `AuthContext` listens for this event, purges the session marker, and evicts user state, prompting `ProtectedRoute` to redirect cleanly to `/login` without requiring full-page reloads.
-4. **Subscription-Level Access Control (`FeatureGuard`):**
-   - Church organizations have dynamic feature toggles (`FeaturesConfig`).
-   - `FeatureGuard` enforces fail-closed access on routes (e.g. `/admin/content`, `/admin/prayer-wall`, `/admin/registrations`, `/admin/events`). Disabled features redirect to `/admin/dashboard`.
-   - `AdminSidebar` automatically hides menu items for features not provisioned in the church's config.
+1. **Cookie-Based Sessions:** Authentication sessions rely on secure, HTTP-only cookies (`withCredentials: true`). The app does not store tokens in `localStorage`.
+2. **Session Storage Marker:** A `sessionStorage` key (`teleo_admin_session_active`) marks active sessions. Closing the browser tab clears this marker, prompting re-authentication.
+3. **401 Unauthorized Eviction:** An Axios response interceptor dispatches an `auth:unauthorized` event on 401 errors, clearing authentication state and redirecting to `/login`.
+4. **Subscription Feature Gates (`FeatureGuard`):** Permissions are checked against the church organization's `FeaturesConfig`. Features not enabled for the organization are hidden in navigation and blocked at the router level.
 
 ---
 
-## 🎨 Design System & Styling Tokens
+## Roles & Permissions
 
-Built on **Tailwind CSS v4** utilizing modern CSS `@theme` design tokens and glassmorphism styling in [`src/index.css`](./src/index.css):
-
-### Color Tokens
-- `--color-midnight-teal`: `#002e38` (Primary brand / deep backdrop)
-- `--color-deep-teal`: `#074f56` (Secondary accent)
-- `--color-soft-linen`: `#e6edef` (Neutral surface / light foreground)
-- `--color-harvest-orange`: `#ec662c` (Call-to-action & highlight)
-
-### Typography
-- **Serif Display:** `Vogun` ([`src/assets/fonts/Vogun-Medium.ttf`](./src/assets/fonts/Vogun-Medium.ttf))
-- **Sans Interface:** `Outfit` (loaded via Google Fonts)
+Access to the admin portal is restricted to authorized church administrators, pastoral staff, and ministry leads. Specific feature tabs (e.g. Discipleship, Prayer Wall, Content Management) are enabled based on church organization subscription flags.
 
 ---
 
-## ⚙️ Environment Configuration
+## Environment Configuration
 
-Configuration variables are managed via Vite's `import.meta.env` system:
+Configuration variables are read through Vite's `import.meta.env`:
 
-| Variable            | Description                                              | Default | Allowed Values           |
-| :------------------ | :------------------------------------------------------- | :------ | :----------------------- |
-| `VITE_API_BASE_URL` | Base URL of the backend API server (leave blank for dev) | `""`    | Any valid HTTP/HTTPS URL |
+| Variable            | Description                                      | Default | Allowed Values |
+| :------------------ | :----------------------------------------------- | :------ | :------------- |
+| `VITE_API_BASE_URL` | Backend API base URL (leave empty for dev proxy) | `""`    | Any valid URL  |
 
-### Setup Instructions:
+### Setup:
 
-1. Create a `.env.local` file by copying the example:
+1. Copy the example file:
    ```bash
    cp .env.example .env.local
    ```
-2. **Local Development (Default):**
-   Leave `VITE_API_BASE_URL=` blank. The Vite dev server proxies all `/api/*` calls directly to the live backend at `https://teleo-backend.onrender.com` without CORS friction.
-3. **Custom / Local Backend Server:**
-   Set `VITE_API_BASE_URL=http://localhost:4000` to point to a custom local backend instance.
+2. In local development, leave `VITE_API_BASE_URL=` blank. Vite proxies `/api/*` requests to the default development backend (`https://teleo-backend.onrender.com`).
+3. Point to a local backend instance if developing locally:
+   ```bash
+   VITE_API_BASE_URL=http://localhost:4000
+   ```
 
 ---
 
-## 🚀 Development & Verification Commands
+## Available NPM Scripts
 
-### 1. Installation
+| Command           | Description                                                                  |
+| :---------------- | :--------------------------------------------------------------------------- |
+| `npm run dev`     | Starts Vite local development server with HMR                                |
+| `npm run build`   | Runs TypeScript check (`tsc -b`) and builds production bundle (`vite build`) |
+| `npm run lint`    | Runs ESLint across all files (`eslint .`)                                    |
+| `npm run preview` | Starts a local web server serving the `dist/` production build               |
 
-Install project dependencies:
+---
+
+## Getting Started
+
+### Prerequisites
+
+- **Node.js:** `>= 20.0.0`
+- **npm:** `>= 10.0.0`
+
+### Installation
 
 ```bash
+# Optional: switch to Node 20 if using nvm
+nvm use
+
+# Install dependencies
 npm install
-```
 
-### 2. Development Server
+# Create local environment config
+cp .env.example .env.local
 
-Start the local Vite development server with Hot Module Replacement (HMR):
-
-```bash
+# Start dev server
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) in your browser.
-
-### 3. Quality & Verification Suite
-
-Run checks before committing or opening a Pull Request (mirrors GitHub Actions CI):
-
-- **Linting:**
-  ```bash
-  npm run lint
-  ```
-- **Type Checking & Production Build:**
-  ```bash
-  npm run build
-  ```
-  *(Runs `tsc -b && vite build`)*
-- **Production Bundle Preview:**
-  ```bash
-  npm run preview
-  ```
+App runs at [http://localhost:5173](http://localhost:5173).
 
 ---
 
-## 🔄 CI Pipeline
+## Branching & Contributing
 
-Automated checks are executed via GitHub Actions ([`.github/workflows/ci.yml`](./.github/workflows/ci.yml)) on pushes and pull requests targeting the `develop` branch:
+- **`main`**: Production release branch.
+- **`develop`**: Active integration branch.
+- **Feature Branches**: Branch from `develop` using `feat/*`, `fix/*`, or `chore/*`.
+- **Pull Request Rules**:
+  - Target branch must be `develop`.
+  - CI verification must pass before merging (0 ESLint warnings, successful build).
 
-1. **Environment:** Ubuntu Latest, Node.js 20.
-2. **Dependency Installation:** `npm ci`.
-3. **Code Quality:** `npm run lint -- --max-warnings 0`.
-4. **Build Validation:** `npm run build` (`tsc -b` and `vite build`).
+---
+
+## CI Pipeline
+
+Automated checks run via GitHub Actions ([`.github/workflows/ci.yml`](./.github/workflows/ci.yml)) on pushes and pull requests to `develop`:
+
+1. Ubuntu Latest with Node.js 20.
+2. Clean dependency install (`npm ci`).
+3. Lint validation (`npm run lint -- --max-warnings 0`).
+4. Type-check and production build (`npm run build`).
+
+---
+
+## Deployment
+
+This app is built as a Single-Page Application (SPA) and can be hosted on any static hosting service (e.g., Render, Vercel, Netlify, AWS S3/CloudFront).
+
+- **Build Command:** `npm run build`
+- **Publish Directory:** `dist`
+- **SPA Fallback:** All non-asset routes must be rewritten to `/index.html` to allow React Router to handle client-side routes.
+
+---
+
+## Backend API
+
+- **Default Backend Service:** `https://teleo-backend.onrender.com`
+- Backend endpoints expect session cookies over HTTPS. For custom API deployments, set `VITE_API_BASE_URL` in `.env.local` or environment variables.
+
+---
+
+## Known Gaps & Roadmap
+
+- **Automated Tests:** Unit tests (Vitest) and end-to-end tests (Playwright) are currently not configured in this repo.
+  - _Roadmap Item 1:_ Introduce Vitest and React Testing Library for testing ViewModels and store logic.
+  - _Roadmap Item 2:_ Introduce Playwright for critical auth and admin workflows.
+
+---
+
+## License & Ownership
+
+Proprietary software. Copyright © Teleo Church. All rights reserved.

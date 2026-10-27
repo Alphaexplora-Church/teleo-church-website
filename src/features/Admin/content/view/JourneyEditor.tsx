@@ -6,6 +6,7 @@
 // the lifecycle is draft to published to archived, and nothing is removed.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { motion } from 'framer-motion';
 import { Archive, ChevronDown, FileText, GripVertical, ImageOff, Loader2, Pencil, Plus, RotateCcw, Video, X } from 'lucide-react';
 import type { Journey, JourneyFormData, JourneyPart, PartFormData } from '../model/adminContent.types';
 import { CONTENT_TYPE_OPTIONS, EMPTY_JOURNEY_FORM, canPublishJourney } from '../model/adminContent.types';
@@ -404,10 +405,12 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
                                 {parts.map(part => {
                                     const isBeingDragged = draggingId === part.id;
                                     return (
-                                        <li
+                                        <motion.li
                                             key={part.id}
                                             ref={el => { itemRefs.current[part.id] = el; }}
-                                            className="animate-fade-in-up"
+                                            initial={{ opacity: 0, y: 6 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ duration: 0.32 }}
                                         >
                                             {isBeingDragged ? (
                                                 <div
@@ -423,7 +426,7 @@ export function JourneyEditor({ journey, onClose, onSaved, showToast }: JourneyE
                                                     onRestore={() => setPartStatus(part.id, 'draft')}
                                                 />
                                             )}
-                                        </li>
+                                        </motion.li>
                                     );
                                 })}
                             </ul>
