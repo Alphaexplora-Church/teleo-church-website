@@ -35,7 +35,7 @@ export default function AdminLayoutView() {
 
           <main
             id="admin-main-viewport"
-            className="flex-1 overflow-y-auto min-h-0 overscroll-contain p-4 lg:p-6"
+            className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 overscroll-contain p-4 lg:p-6"
           >
             <Outlet />
           </main>

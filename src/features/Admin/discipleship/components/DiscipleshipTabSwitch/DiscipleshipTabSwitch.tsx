@@ -7,11 +7,10 @@ import type { DiscipleshipTab } from "../../models/types/groupsScheduleDirectory
 
 export type { DiscipleshipTab };
 
-
 export interface DiscipleshipTabSwitchProps {
   activeTab: DiscipleshipTab;
   onChange: (tab: DiscipleshipTab) => void;
-  directoryCount?: number;
+  calendarTodayCount?: number;
   className?: string;
   fullWidth?: boolean | "mobile";
 }
@@ -19,7 +18,7 @@ export interface DiscipleshipTabSwitchProps {
 export function DiscipleshipTabSwitch({
   activeTab,
   onChange,
-  directoryCount,
+  calendarTodayCount,
   className = "",
   fullWidth = "mobile",
 }: DiscipleshipTabSwitchProps) {
@@ -28,14 +27,14 @@ export function DiscipleshipTabSwitch({
       {
         id: "directory",
         label: "Directory",
-        count: directoryCount,
       },
       {
         id: "calendar",
         label: "Calendar",
+        count: calendarTodayCount,
       },
     ],
-    [directoryCount],
+    [calendarTodayCount],
   );
 
   return (

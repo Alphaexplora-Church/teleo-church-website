@@ -4,6 +4,7 @@ import { useAbortController, isAbortError } from "../../../../shared/viewmodels/
 import { getApiErrorMessage } from "../../../../shared/models/api/axiosClient.api";
 import { DiscipleshipGroupListApi } from "../models/api/discipleshipGroupList.api";
 import { DiscipleshipModuleApi } from "../models/api/discipleshipModule.api";
+import { DiscipleshipCalendarApi } from "../models/api/discipleshipCalendar.api";
 import {
   mapApiGroupToItem,
   extractLeaderFilterOptions,
@@ -15,7 +16,9 @@ import type {
   LeaderFilterOption,
   DiscipleshipTab,
 } from "../models/types/groupsScheduleDirectory.types";
+import type { ApiDiscipleshipMeeting } from "../models/types/discipleshipCalendar.types";
 import { filterDiscipleshipGroups } from "../components/DirectoriesFilter/directoriesFilter.utils";
+import { formatDateISO } from "../models/utils/discipleshipCalendar.utils";
 
 export interface UseDiscipleshipViewModelOptions {
   /** Optional override for churchId; defaults to authenticated user's home_church_id */
@@ -35,9 +38,10 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
   const [isModuleEnabled, setIsModuleEnabled] = useState(true);
   const [isTogglingModule, setIsTogglingModule] = useState(false);
 
-  // Data fetching states (Admin Journey 13a)
+  // Data fetching states (Admin Journey 13a & 13b)
   const [rawGroups, setRawGroups] = useState<ApiDiscipleshipGroup[]>([]);
   const [disciplerLoad, setDisciplerLoad] = useState<ApiDisciplerLoad[]>([]);
+  const [calendarMeetings, setCalendarMeetings] = useState<ApiDiscipleshipMeeting[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,7 +50,7 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
   const [selectedLeaders, setSelectedLeaders] = useState<string[]>([]);
 
   /**
-   * Fetches the church-wide discipleship dashboard from backend
+   * Fetches the church-wide discipleship dashboard and calendar from backend
    */
   const fetchDashboard = useCallback(async () => {
     setIsLoading(true);
@@ -54,25 +58,36 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
     const signal = getSignal();
 
     try {
-      const data = await DiscipleshipGroupListApi.getDiscipleshipDashboard(
-        churchId,
-        signal,
-      );
+      const [dashboardResult, calendarResult] = await Promise.allSettled([
+        DiscipleshipGroupListApi.getDiscipleshipDashboard(churchId, signal),
+        DiscipleshipCalendarApi.getChurchDiscipleshipCalendar(churchId, signal),
+      ]);
 
-      setRawGroups(data.groups ?? []);
-      setDisciplerLoad(data.discipler_load ?? []);
+      if (dashboardResult.status === "fulfilled") {
+        const data = dashboardResult.value;
+        setRawGroups(data.groups ?? []);
+        setDisciplerLoad(data.discipler_load ?? []);
 
-      if (typeof data.discipleship_enabled === "boolean") {
-        setIsModuleEnabled(data.discipleship_enabled);
+        if (typeof data.discipleship_enabled === "boolean") {
+          setIsModuleEnabled(data.discipleship_enabled);
+        }
+      } else if (dashboardResult.reason && !isAbortError(dashboardResult.reason)) {
+        const message = getApiErrorMessage(dashboardResult.reason);
+        setError(message || "Failed to load discipleship groups.");
+      }
+
+      if (calendarResult.status === "fulfilled") {
+        setCalendarMeetings(calendarResult.value.meetings ?? []);
       }
     } catch (err) {
       if (isAbortError(err)) return;
       const message = getApiErrorMessage(err);
-      setError(message || "Failed to load discipleship groups. Make sure the backend is running.");
+      setError(message || "Failed to load discipleship dashboard.");
     } finally {
       setIsLoading(false);
     }
   }, [churchId, getSignal]);
+
 
   // Fetch when church context or mount changes
   useEffect(() => {
@@ -136,6 +151,15 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
     setSelectedLeaders([]);
   }, []);
 
+  // Compute number of scheduled sessions for today
+  const todayScheduleCount = useMemo(() => {
+    const todayISO = formatDateISO(new Date());
+    return calendarMeetings.filter((m) => {
+      const mDate = m.meeting_date ?? "";
+      return mDate === todayISO;
+    }).length;
+  }, [calendarMeetings]);
+
   return {
     churchId,
 
@@ -143,7 +167,9 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
     tab: {
       active: activeTab,
       onChange: setActiveTab,
+      todayScheduleCount,
     },
+
 
     // Module toggle
     module: {

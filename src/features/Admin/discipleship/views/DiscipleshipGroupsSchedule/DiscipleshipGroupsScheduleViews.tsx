@@ -55,9 +55,10 @@ export function DiscipleshipGroupsScheduleViews() {
         <DiscipleshipTabSwitch
           activeTab={vm.tab.active}
           onChange={vm.tab.onChange}
-          directoryCount={vm.groups.length}
+          calendarTodayCount={vm.tab.todayScheduleCount}
         />
       </div>
+
 
       {/* Tab Content */}
       {vm.tab.active === "directory" ? (
@@ -70,7 +71,7 @@ export function DiscipleshipGroupsScheduleViews() {
           onDiscussionPromptsClick={() => setIsDiscussionPromptModalOpen(true)}
         />
       ) : (
-        <DiscipleshipGroupsScheduleCalendar />
+        <DiscipleshipGroupsScheduleCalendar availableLeaders={vm.filter.leaders} />
       )}
 
       {/* Reusable Create New Discipleship Group Modal */}
@@ -78,8 +79,7 @@ export function DiscipleshipGroupsScheduleViews() {
         isOpen={isNewGroupModalOpen}
         onClose={() => setIsNewGroupModalOpen(false)}
         availableLeaders={vm.filter.leaders}
-        onSubmit={(formData) => {
-          console.log("New Discipleship Group Created:", formData);
+        onSubmit={() => {
           setIsNewGroupModalOpen(false);
         }}
       />
@@ -90,7 +90,6 @@ export function DiscipleshipGroupsScheduleViews() {
         onClose={() => setIsDiscussionPromptModalOpen(false)}
         activePrompt={activeDiscussionPrompt}
         onSubmit={(promptText) => {
-          console.log("New Discussion Prompt Posted:", promptText);
           const formatted =
             promptText.startsWith("“") || promptText.startsWith('"')
               ? promptText

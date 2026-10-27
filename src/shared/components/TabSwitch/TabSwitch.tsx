@@ -82,14 +82,16 @@ export function TabSwitch<T extends string = string>({
               <span>{tab.label}</span>
               {typeof tab.count === "number" && (
                 <span
-                  className={`rounded-full px-2 py-0.5 text-xs font-bold transition-colors ${isActive
+                  className={`min-w-[20px] rounded-full px-1.5 py-0.5 text-center text-xs font-medium transition-colors ${
+                    isActive
                       ? "bg-white/20 text-white"
-                      : "bg-midnight-teal/10 text-midnight-teal"
-                    }`}
+                      : "bg-slate-100 text-slate-600"
+                  }`}
                 >
                   {tab.count}
                 </span>
               )}
+
             </Button>
           </div>
         );
