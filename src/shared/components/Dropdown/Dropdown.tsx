@@ -27,6 +27,7 @@ export interface DropdownProps<T = string> {
   items?: readonly DropdownOption<T>[] | DropdownOption<T>[];
   children?: ReactNode;
   align?: "left" | "right";
+  placement?: "bottom" | "top";
   isOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
   closeOnSelect?: boolean;
@@ -113,6 +114,7 @@ export function Dropdown<T = string>({
   items,
   children,
   align = "left",
+  placement = "bottom",
   isOpen: controlledIsOpen,
   onOpenChange,
   closeOnSelect,
@@ -166,6 +168,8 @@ export function Dropdown<T = string>({
   }, [isOpen, setOpen]);
 
   const alignmentClass = align === "right" ? "right-0" : "left-0";
+  const placementClass =
+    placement === "top" ? "bottom-full mb-2" : "top-full mt-2";
 
   return (
     <div
@@ -198,7 +202,7 @@ export function Dropdown<T = string>({
             initial="hidden"
             animate="visible"
             exit="exit"
-            className={`absolute z-50 mt-2 rounded-2xl border border-midnight-teal/10 bg-white/95 p-1.5 shadow-xl shadow-midnight-teal/10 backdrop-blur-md ${alignmentClass} ${width} ${menuClassName}`.trim()}
+            className={`absolute z-50 ${placementClass} rounded-2xl border border-midnight-teal/10 bg-white/95 p-1.5 shadow-xl shadow-midnight-teal/10 backdrop-blur-md ${alignmentClass} ${width} ${menuClassName}`.trim()}
           >
             {children ? (
               children

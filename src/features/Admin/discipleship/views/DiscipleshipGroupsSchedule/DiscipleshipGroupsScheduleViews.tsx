@@ -1,13 +1,23 @@
+import { useState } from "react";
 import { ToggleSwitch } from "../../../../../shared/components/ToggleSwitch/ToggleSwitch";
 import {
   DiscipleshipTabSwitch,
 } from "../../components/DiscipleshipTabSwitch/DiscipleshipTabSwitch";
+import { DiscipleshipModalNewGroup } from "../../components/DiscipleshipModal/DiscipleshipModalNewGroup";
+import {
+  DiscipleshipModalDiscussionPrompt,
+  type ActiveDiscussionPrompt,
+} from "../../components/DiscipleshipModal/DiscipleshipModalDiscussionPrompt";
 import { DiscipleshipGroupsScheduleDirectory } from "./DiscipleshipGropsScheduleDirectory";
 import { DiscipleshipGroupsScheduleCalendar } from "./DiscipleshipGroupsScheduleCalendar";
 import { GROUPS_SCHEDULE_UI } from "../../models/constants/groupsScheduleViews.constants";
 import { useDiscipleshipViewModel } from "../../viewmodels/useDiscipleshipViewModel";
 
 export function DiscipleshipGroupsScheduleViews() {
+  const [isNewGroupModalOpen, setIsNewGroupModalOpen] = useState(false);
+  const [isDiscussionPromptModalOpen, setIsDiscussionPromptModalOpen] = useState(false);
+  const [activeDiscussionPrompt, setActiveDiscussionPrompt] =
+    useState<ActiveDiscussionPrompt | null>(null);
   const {
     activeTab,
     setActiveTab,
@@ -79,10 +89,43 @@ export function DiscipleshipGroupsScheduleViews() {
           isLoading={isLoading}
           error={error}
           onRetry={refetch}
+          onNewGroupClick={() => setIsNewGroupModalOpen(true)}
+          onDiscussionPromptsClick={() => setIsDiscussionPromptModalOpen(true)}
         />
       ) : (
         <DiscipleshipGroupsScheduleCalendar />
       )}
+
+      {/* Reusable Create New Discipleship Group Modal */}
+      <DiscipleshipModalNewGroup
+        isOpen={isNewGroupModalOpen}
+        onClose={() => setIsNewGroupModalOpen(false)}
+        availableLeaders={availableLeaders}
+        onSubmit={(formData) => {
+          console.log("New Discipleship Group Created:", formData);
+          setIsNewGroupModalOpen(false);
+        }}
+      />
+
+      {/* Reusable Discussion Prompts Modal */}
+      <DiscipleshipModalDiscussionPrompt
+        isOpen={isDiscussionPromptModalOpen}
+        onClose={() => setIsDiscussionPromptModalOpen(false)}
+        activePrompt={activeDiscussionPrompt}
+        onSubmit={(promptText) => {
+          console.log("New Discussion Prompt Posted:", promptText);
+          const formatted =
+            promptText.startsWith("“") || promptText.startsWith('"')
+              ? promptText
+              : `“${promptText}”`;
+          setActiveDiscussionPrompt({
+            id: Date.now().toString(),
+            text: formatted,
+            postedAt: "Posted just now",
+            status: "ACTIVE",
+          });
+        }}
+      />
     </div>
   );
 }

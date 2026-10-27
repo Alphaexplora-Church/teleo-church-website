@@ -40,7 +40,9 @@ export function DiscipleshipGroupsScheduleDirectory({
   onDiscussionPromptsClick,
 }: DiscipleshipGroupsScheduleDirectoryProps) {
   const [internalSearch, setInternalSearch] = useState("");
-  const [internalSelectedLeaders, setInternalSelectedLeaders] = useState<string[]>([]);
+  const [internalSelectedLeaders, setInternalSelectedLeaders] = useState<
+    string[]
+  >([]);
 
   const searchQuery = controlledSearch ?? internalSearch;
   const selectedLeaders = controlledSelectedLeaders ?? internalSelectedLeaders;
@@ -108,7 +110,7 @@ export function DiscipleshipGroupsScheduleDirectory({
             onClick={onNewGroupClick}
             className="cursor-pointer select-none rounded-2xl bg-midnight-teal px-3 py-2.5 text-center text-sm font-semibold text-white shadow-xs transition-all hover:bg-midnight-teal/90 focus:outline-none focus:ring-2 focus:ring-midnight-teal/30"
           >
-            {GROUPS_SCHEDULE_UI.newGroupBtn ? `+ ${GROUPS_SCHEDULE_UI.newGroupBtn.replace(/^\+\s*/, "")}` : "+ New Group"}
+            {GROUPS_SCHEDULE_UI.newGroupBtn ?? "New Group"}
           </button>
         </div>
       </div>

@@ -75,7 +75,7 @@ export function DiscipleshipGroupCard({
             type="button"
             onClick={onActionClick}
             aria-label={`Options for ${title}`}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-midnight-teal"
+            className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-midnight-teal"
           >
             <MoreVertical className="h-4 w-4" />
           </button>
