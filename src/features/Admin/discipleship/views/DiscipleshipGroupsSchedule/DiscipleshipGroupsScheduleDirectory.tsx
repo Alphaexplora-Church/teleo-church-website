@@ -1,3 +1,4 @@
+import { Button } from "../../../../../shared/components/Button/Button";
 import { DirectoriesFilter } from "../../components/DirectoriesFilter/DirectoriesFilter";
 import { DiscipleshipGroupCardList } from "../../components/DiscipleshipCardList/DiscipleshipGroupCardList";
 import type { DiscipleshipGroupsScheduleDirectoryProps } from "../../models/types/groupsScheduleViews.types";
@@ -27,21 +28,23 @@ export function DiscipleshipGroupsScheduleDirectory({
 
         {/* Right Section: Action Buttons */}
         <div className="grid w-full grid-cols-2 gap-2 md:flex md:w-auto md:items-center md:gap-2 md:shrink-0">
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={onDiscussionPromptsClick}
-            className="cursor-pointer select-none rounded-2xl border border-midnight-teal/20 bg-white/90 px-3 py-2.5 text-center text-sm font-semibold text-midnight-teal shadow-xs backdrop-blur-md transition-all hover:border-midnight-teal/40 hover:bg-white focus:outline-none focus:ring-2 focus:ring-midnight-teal/20"
+            className="cursor-pointer select-none rounded-2xl border-slate-200 bg-white/90 px-3 py-2.5 text-center text-sm font-semibold text-slate-700 shadow-xs backdrop-blur-md transition-all hover:border-slate-300 hover:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20"
           >
             Discussion Prompts
-          </button>
+          </Button>
 
-          <button
+          <Button
             type="button"
+            variant="primary"
             onClick={onNewGroupClick}
-            className="cursor-pointer select-none rounded-2xl bg-midnight-teal px-3 py-2.5 text-center text-sm font-semibold text-white shadow-xs transition-all hover:bg-midnight-teal/90 focus:outline-none focus:ring-2 focus:ring-midnight-teal/30"
+            className="cursor-pointer select-none rounded-2xl bg-primary text-white hover:bg-primary/90 px-3 py-2.5 text-center text-sm font-semibold shadow-xs transition-all focus:outline-none focus:ring-2 focus:ring-primary/30"
           >
             New Group
-          </button>
+          </Button>
         </div>
       </div>
 

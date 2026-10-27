@@ -18,6 +18,9 @@ export interface TabSwitchProps<T extends string = string> {
   size?: ButtonSize;
   className?: string;
   fullWidth?: boolean | "mobile";
+  activePillClassName?: string;
+  activeTextClassName?: string;
+  inactiveTextClassName?: string;
 }
 
 export function TabSwitch<T extends string = string>({
@@ -28,6 +31,9 @@ export function TabSwitch<T extends string = string>({
   size = "md",
   className = "",
   fullWidth = false,
+  activePillClassName = "bg-primary shadow-md shadow-primary/20",
+  activeTextClassName = "text-white hover:text-white",
+  inactiveTextClassName = "text-slate-600 hover:text-slate-900 hover:bg-slate-100/60",
 }: TabSwitchProps<T>) {
   const isFullWidth = fullWidth === true;
   const isMobileFullWidth = fullWidth === "mobile";
@@ -47,7 +53,7 @@ export function TabSwitch<T extends string = string>({
   return (
     <div
       role="tablist"
-      className={`inline-flex items-center gap-1 rounded-2xl border border-midnight-teal/10 bg-white/80 p-1.5 shadow-sm backdrop-blur-md ${containerWidthClass} ${className}`.trim()}
+      className={`inline-flex items-center gap-1 rounded-2xl border border-slate-200/80 bg-white/80 p-1.5 shadow-sm backdrop-blur-md ${containerWidthClass} ${className}`.trim()}
     >
       {tabs.map((tab) => {
         const isActive = tab.id === activeTab;
@@ -61,7 +67,7 @@ export function TabSwitch<T extends string = string>({
             {isActive && (
               <motion.div
                 layoutId={layoutId}
-                className="absolute inset-0 rounded-xl bg-midnight-teal shadow-md shadow-midnight-teal/15 pointer-events-none"
+                className={`absolute inset-0 rounded-xl pointer-events-none ${activePillClassName}`}
                 transition={{ type: "spring", stiffness: 450, damping: 35 }}
               />
             )}
@@ -73,10 +79,9 @@ export function TabSwitch<T extends string = string>({
               variant="ghost"
               size={size}
               onClick={() => onChange(tab.id)}
-              className={`relative z-10 w-full rounded-xl font-semibold transition-colors duration-200 select-none ${isActive
-                  ? "text-white hover:text-white"
-                  : "text-midnight-teal/70 hover:text-midnight-teal hover:bg-white/40"
-                }`}
+              className={`relative z-10 w-full rounded-xl font-semibold transition-colors duration-200 select-none ${
+                isActive ? activeTextClassName : inactiveTextClassName
+              }`}
             >
               {tab.icon && <span className="shrink-0">{tab.icon}</span>}
               <span>{tab.label}</span>

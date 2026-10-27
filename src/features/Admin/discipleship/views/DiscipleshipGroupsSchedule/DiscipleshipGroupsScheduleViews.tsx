@@ -27,10 +27,10 @@ export function DiscipleshipGroupsScheduleViews() {
       <div className="flex flex-col gap-3.5 md:flex-row md:items-center md:justify-between">
         {/* Title & Subtitle */}
         <div className="space-y-1">
-          <h1 className="font-serif text-2xl text-midnight-teal">
+          <h1 className="font-serif text-2xl text-primary">
             {GROUPS_SCHEDULE_UI.title}
           </h1>
-          <p className="text-sm text-midnight-teal/70">
+          <p className="text-sm text-primary/70">
             {GROUPS_SCHEDULE_UI.description}
           </p>
         </div>

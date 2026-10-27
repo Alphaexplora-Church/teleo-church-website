@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { useAuth } from "../../../../shared/context/useAuth";
 import {
   useAbortController,
@@ -6,12 +6,18 @@ import {
 } from "../../../../shared/viewmodels/useAbortController";
 import { DiscipleshipGroupListApi } from "../models/api/discipleshipGroupList.api";
 import { mapApiGroupToPlacementGroup } from "../models/utils/discipleshipApplication.utils";
+import { discipleshipApplicationsStore } from "../models/utils/discipleshipApplication.store";
 import type {
   ApplicationChurchFilter,
   DiscipleshipApplicant,
   IntakeQuestion,
   PlacementGroup,
 } from "../models/types/discipleshipApplication.types";
+
+export {
+  discipleshipApplicationsStore,
+  usePendingApplicationsCount,
+} from "../models/utils/discipleshipApplication.store";
 
 export interface UseDiscipleshipApplicationsViewModelOptions {
   /** Optional churchId override; defaults to authenticated user's home_church_id */
@@ -31,19 +37,25 @@ export function useDiscipleshipApplicationsViewModel(
   const churchId = options?.churchId ?? user?.home_church_id ?? 1;
   const { getSignal } = useAbortController();
 
-  // 1. Applications List State (starts empty [])
-  const [applicants, setApplicants] = useState<DiscipleshipApplicant[]>(
-    options?.initialApplicants ?? [],
+  // 1. Applications List State (synchronized with global store for navigation badge reactivity)
+  const applicants = useSyncExternalStore(
+    discipleshipApplicationsStore.subscribe,
+    discipleshipApplicationsStore.getApplicants,
   );
+
+  useEffect(() => {
+    if (options?.initialApplicants) {
+      discipleshipApplicationsStore.setApplicants(options.initialApplicants);
+    }
+  }, [options?.initialApplicants]);
 
   // 2. Filter State: "all" | "home_church" | "other_churches"
   const [activeFilter, setActiveFilter] = useState<ApplicationChurchFilter>("all");
 
   // 3. Expanded Card Tracking
   const [expandedApplicantIds, setExpandedApplicantIds] = useState<string[]>(() => {
-    return options?.initialApplicants && options.initialApplicants.length > 0
-      ? [options.initialApplicants[0].id]
-      : [];
+    const initial = options?.initialApplicants ?? discipleshipApplicationsStore.getApplicants();
+    return initial.length > 0 ? [initial[0].id] : [];
   });
 
   const handleToggleExpand = (applicantId: string) => {
@@ -117,7 +129,7 @@ export function useDiscipleshipApplicationsViewModel(
 
   // 6. Action Handlers (Approve & Place, Reject)
   const handleApproveApplicant = (applicantId: string, groupId: string) => {
-    setApplicants((prev) =>
+    discipleshipApplicationsStore.setApplicants((prev) =>
       prev.map((app) =>
         app.id === applicantId
           ? { ...app, status: "APPROVED", assignedGroupId: groupId }
@@ -135,7 +147,7 @@ export function useDiscipleshipApplicationsViewModel(
   };
 
   const handleRejectApplicant = (applicantId: string) => {
-    setApplicants((prev) =>
+    discipleshipApplicationsStore.setApplicants((prev) =>
       prev.map((app) =>
         app.id === applicantId ? { ...app, status: "REJECTED" } : app,
       ),
@@ -165,6 +177,7 @@ export function useDiscipleshipApplicationsViewModel(
     },
     applicants: filteredApplicants,
     allApplicants: applicants,
+    setApplicants: discipleshipApplicationsStore.setApplicants,
     expandedApplicantIds,
     onToggleExpand: handleToggleExpand,
     availableGroups: placementGroups,

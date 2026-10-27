@@ -45,6 +45,9 @@ export function DiscipleshipTabSwitch({
       layoutId="discipleship-tab-active-pill"
       className={className}
       fullWidth={fullWidth}
+      activePillClassName="bg-primary shadow-md shadow-primary/20"
+      activeTextClassName="text-white hover:text-white"
+      inactiveTextClassName="text-slate-600 hover:text-slate-900 hover:bg-slate-100/60"
     />
   );
 }

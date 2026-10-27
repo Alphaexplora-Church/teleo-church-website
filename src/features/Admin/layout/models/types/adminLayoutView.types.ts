@@ -6,6 +6,7 @@ import type { FeaturesConfig } from "../../../../../shared/models/types/auth.typ
 export interface AdminNavSubItem {
   to: string;
   label: string;
+  count?: number;
 }
 
 /**
@@ -16,6 +17,7 @@ export interface AdminNavMenuConfig {
   label: string;
   featureKey?: Extract<keyof FeaturesConfig, string>;
   subItems?: readonly AdminNavSubItem[];
+  count?: number;
 }
 
 /**
@@ -25,4 +27,5 @@ export interface AdminNavItem {
   to: string;
   label: string;
   subItems?: readonly AdminNavSubItem[];
+  count?: number;
 }
