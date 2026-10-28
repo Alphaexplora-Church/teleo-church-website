@@ -64,14 +64,14 @@ function SeriesPartCard({
       dragControls={dragControls}
       onDragStart={() => setIsDragging(true)}
       onDragEnd={() => setIsDragging(false)}
-      className={`flex items-center justify-between gap-3 p-3.5 rounded-xl border transition-colors shadow-2xs relative select-none ${
+      className={`flex items-center justify-between gap-2.5 sm:gap-3 p-3 sm:p-4 rounded-xl border transition-colors shadow-2xs relative select-none ${
         isDragging
           ? "border-primary/50 shadow-lg opacity-70 z-20 cursor-grabbing bg-slate-50/80"
           : "border-slate-200/80 hover:border-slate-300 bg-white"
       }`}
     >
       {/* Left side: Drag handle, Order number, thumbnail (if any), title, and badges */}
-      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+      <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
         {/* 6-dots drag handle */}
         <div
           onPointerDown={(e) => {
@@ -98,7 +98,7 @@ function SeriesPartCard({
           <img
             src={part.videoThumbnail}
             alt=""
-            className="w-14 h-9 sm:w-16 sm:h-10 rounded-lg object-cover border border-slate-200 bg-slate-100 shrink-0 pointer-events-none"
+            className="w-12 h-8 sm:w-16 sm:h-10 rounded-md sm:rounded-lg object-cover border border-slate-200 bg-slate-100 shrink-0 pointer-events-none"
           />
         )}
 
@@ -107,13 +107,13 @@ function SeriesPartCard({
             {part.title}
           </p>
 
-          <div className="flex flex-wrap items-center gap-1.5 mt-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200/60">
+          <div className="flex flex-wrap items-center gap-1 sm:gap-1.5 mt-0.5 sm:mt-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 sm:px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200/60">
               {formatPartTypeBadge(part.type)}
             </span>
 
             <span
-              className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${getPartStatusBadgeClasses(
+              className={`text-[10px] font-bold uppercase tracking-wider px-1.5 sm:px-2 py-0.5 rounded-md border ${getPartStatusBadgeClasses(
                 part.status,
               )}`}
             >
@@ -124,7 +124,7 @@ function SeriesPartCard({
       </div>
 
       {/* Right side: 3-dots action trigger + dropdown */}
-      <div className="relative shrink-0">
+      <div className="relative shrink-0 ml-0.5 sm:ml-1">
         <button
           ref={buttonRef}
           type="button"
@@ -179,15 +179,15 @@ export function ContentNewJourneyModalSeriesParts({
       className={`space-y-3 ${className}`.trim()}
     >
       {/* 1. Header Row */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-bold text-slate-900">
+      <div className="flex items-center justify-between gap-2.5 sm:gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+          <span className="text-sm font-bold text-slate-900 shrink-0">
             Series Parts <span className="text-red-500">*</span>
           </span>
-          <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full font-medium">
+          <span className="text-[11px] sm:text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full font-medium truncate">
             {isLoading
-              ? "Loading parts..."
-              : `${parts.length} ${parts.length === 1 ? "part configured" : "parts configured"}`}
+              ? "Loading..."
+              : `${parts.length} ${parts.length === 1 ? "part" : "parts"}`}
           </span>
         </div>
 
@@ -195,7 +195,7 @@ export function ContentNewJourneyModalSeriesParts({
           type="button"
           onClick={onAddPart}
           disabled={disabled || isLoading}
-          className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold px-3.5 py-1.5 rounded-xl transition shadow-xs cursor-pointer select-none disabled:cursor-not-allowed disabled:opacity-50"
+          className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold px-3.5 py-1.5 rounded-xl transition shadow-xs cursor-pointer select-none disabled:cursor-not-allowed disabled:opacity-50 shrink-0"
         >
           Add Part
         </button>

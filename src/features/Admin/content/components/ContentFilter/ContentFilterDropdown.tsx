@@ -34,7 +34,7 @@ export function ContentFilterDropdown<T extends string = string>({
   options,
   allValue = "all" as T,
   className = "",
-  width = "min-w-[11rem]",
+  width = "w-full sm:min-w-[11rem]",
   disabled = false,
 }: ContentFilterDropdownProps<T>) {
   // Normalize options list: if the options list does not already contain the allValue option, prepend it.
@@ -71,7 +71,7 @@ export function ContentFilterDropdown<T extends string = string>({
       items={dropdownItems}
       closeOnSelect={true}
       width={width}
-      className={className}
+      className={`w-full sm:w-auto ${className}`.trim()}
       trigger={(isOpen) => (
         <button
           type="button"

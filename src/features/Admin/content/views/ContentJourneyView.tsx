@@ -105,14 +105,14 @@ export function ContentJourneyView() {
   } = useAdminContentViewModel();
 
   return (
-    <div className="flex flex-col h-full overflow-hidden p-6 gap-6">
-      {/* 1. Sticky / Non-scrolling Section Header */}
-      <div className="flex items-start sm:items-center justify-between gap-4 shrink-0">
+    <div className="flex flex-col min-h-full w-full overflow-x-hidden overflow-y-auto px-4 sm:px-6 md:px-8 py-4 sm:py-6 gap-4 sm:gap-6 pb-12 sm:pb-16">
+      {/* 1. Header Section */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full shrink-0">
         <div>
-          <h1 className="font-serif text-3xl font-bold tracking-tight text-primary">
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-primary">
             Journeys
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-xs sm:text-sm text-slate-500">
             Build and publish sermon series, bible studies, and devotional plans.
           </p>
         </div>
@@ -120,53 +120,52 @@ export function ContentJourneyView() {
         <button
           type="button"
           onClick={handleCreateJourney}
-          className="bg-primary text-white hover:bg-primary/90 px-4 py-2 rounded-md font-medium text-sm transition shadow-xs cursor-pointer select-none shrink-0"
+          className="w-full sm:w-auto bg-primary text-white hover:bg-primary/90 px-4 py-2.5 rounded-xl font-medium text-sm transition shadow-xs cursor-pointer select-none shrink-0 flex items-center justify-center text-center"
         >
           New Journey
         </button>
       </div>
 
-      {/* 2. Sticky / Non-scrolling Stats Row */}
-      <div className="shrink-0">
+      {/* 2. Stats Row */}
+      <div className="shrink-0 w-full">
         <ContentDashboardCardGrid
           items={kpiStats}
           isLoading={isLoading && allJourneys.length === 0}
         />
       </div>
 
-      {/* 3. Sticky / Non-scrolling Filters Section */}
-      <div className="shrink-0 space-y-3">
-        {/* Row 1 (Inputs & Selects): Search bar on left, Dropdowns on right */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div className="flex-1 max-w-md">
-            <ContentFilterSearchbar
-              value={searchQuery}
-              onChange={setSearchQuery}
-              placeholder="Search by title or category..."
-            />
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2.5">
-            <ContentFilterDropdown
-              value={selectedType}
-              onChange={setSelectedType}
-              placeholder="All content types"
-              options={contentTypeFilterOptions}
-              width="min-w-[11rem]"
-            />
-
-            <ContentFilterDropdown
-              value={selectedCategory}
-              onChange={setSelectedCategory}
-              placeholder="All categories"
-              options={categoryOptions}
-              width="min-w-[10rem]"
-            />
-          </div>
+      {/* 3. Filters Section */}
+      <div className="shrink-0 flex flex-col sm:grid sm:grid-cols-[1fr_auto] gap-3 w-full">
+        {/* Search Bar: Order 1 on mobile, Row 1 Col 1 on desktop */}
+        <div className="order-1 w-full sm:max-w-md">
+          <ContentFilterSearchbar
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Search by title or category..."
+          />
         </div>
 
-        {/* Row 2 (Status Pills): Directly UNDER the search bar */}
-        <div className="flex items-center gap-2 mt-3">
+        {/* Dropdowns: Order 3 on mobile (bottom), Row 1 Col 2 on desktop (right) */}
+        <div className="order-3 sm:order-2 w-full sm:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+          <ContentFilterDropdown
+            value={selectedType}
+            onChange={setSelectedType}
+            placeholder="All content types"
+            options={contentTypeFilterOptions}
+            width="w-full sm:min-w-[11rem]"
+          />
+
+          <ContentFilterDropdown
+            value={selectedCategory}
+            onChange={setSelectedCategory}
+            placeholder="All categories"
+            options={categoryOptions}
+            width="w-full sm:min-w-[10rem]"
+          />
+        </div>
+
+        {/* Status Filter Pills: Order 2 on mobile (under search), Row 2 on desktop */}
+        <div className="order-2 sm:order-3 sm:col-span-2 w-full flex flex-wrap items-center gap-2 mt-1 sm:mt-0">
           <ContentFilterStatus
             selectedStatuses={selectedStatuses}
             onToggleStatus={toggleStatus}
@@ -184,10 +183,10 @@ export function ContentJourneyView() {
         </div>
       </div>
 
-      {/* 4. Scrollable 3-Column Card List */}
-      <div className="flex-1 overflow-y-auto pr-1 min-h-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 hover:[&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full">
+      {/* 4. Card List Section */}
+      <div className="w-full min-h-0">
         {isLoading && journeys.length === 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 pb-8">
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <div
                 key={i}
@@ -212,7 +211,7 @@ export function ContentJourneyView() {
             onClearFilters={clearFilters}
           />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 pb-8">
             {journeys.map((journey) => (
               <ContentJourneyListCard
                 key={journey.id}

@@ -31,7 +31,7 @@ export function ContentDashboardCard({
 }: ContentDashboardCardProps) {
   return (
     <div
-      className={`rounded-2xl border border-gray-100 bg-white p-5 shadow-xs transition-shadow hover:shadow-sm ${className}`.trim()}
+      className={`rounded-2xl border border-gray-100 bg-white p-4 sm:p-5 shadow-xs transition-shadow hover:shadow-sm w-full ${className}`.trim()}
     >
       <p className="mb-1 text-xs font-bold uppercase tracking-widest text-gray-400 select-none">
         {label}
@@ -41,7 +41,7 @@ export function ContentDashboardCard({
         <div className="mt-1 h-9 w-16 animate-pulse rounded-md bg-slate-100" />
       ) : (
         <p
-          className={`font-serif text-3xl font-medium tracking-tight ${
+          className={`font-serif text-2xl sm:text-3xl font-medium tracking-tight ${
             accent ? "text-harvest-orange" : "text-primary"
           }`}
         >
@@ -62,7 +62,7 @@ export function ContentDashboardCardGrid({
 }: ContentDashboardCardGridProps) {
   return (
     <section
-      className={`grid grid-cols-1 gap-4 sm:grid-cols-3 ${className}`.trim()}
+      className={`grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 w-full ${className}`.trim()}
       aria-label="Content overview statistics"
     >
       {items.map((item, index) => (

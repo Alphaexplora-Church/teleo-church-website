@@ -95,14 +95,14 @@ function CategoriesSelect({
 
   return (
     <div className="space-y-1.5">
-      <div className="flex items-center">
+      <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-1">
         <label className="text-xs font-semibold text-slate-700">Categories</label>
-        <span className="text-slate-400 font-normal text-[11px] ml-1">
+        <span className="text-slate-400 font-normal text-[11px]">
           (Select at least one)
         </span>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 pt-1">
+      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-0.5">
         {categories.map((category) => {
           const isSelected = selectedCategories.includes(category);
 
@@ -113,8 +113,8 @@ function CategoriesSelect({
               onClick={() => handleToggle(category)}
               className={
                 isSelected
-                  ? "bg-primary text-white border-transparent px-3 py-1.5 rounded-xl text-xs font-medium shadow-xs transition cursor-pointer select-none"
-                  : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-3 py-1.5 rounded-xl text-xs font-medium transition cursor-pointer select-none"
+                  ? "bg-primary text-white border-transparent px-3 py-1 rounded-lg sm:rounded-xl text-xs font-medium shadow-xs transition cursor-pointer select-none"
+                  : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-3 py-1 rounded-lg sm:rounded-xl text-xs font-medium transition cursor-pointer select-none"
               }
             >
               {category}
@@ -186,7 +186,7 @@ function UploadImage({
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`p-4 rounded-xl border border-dashed transition-all flex items-center justify-between gap-4 ${
+      className={`p-3 sm:p-4 rounded-xl border border-dashed transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 ${
         isDragging
           ? "border-primary bg-primary/5"
           : "border-slate-200 bg-slate-50/50"
@@ -201,8 +201,8 @@ function UploadImage({
         className="hidden"
       />
 
-      <div className="flex items-center gap-3.5 min-w-0">
-        <div className="w-12 h-12 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 shrink-0 overflow-hidden">
+      <div className="flex items-center gap-3 sm:gap-3.5 min-w-0">
+        <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 shrink-0 overflow-hidden">
           {activePreview ? (
             <img
               src={activePreview}
@@ -230,7 +230,7 @@ function UploadImage({
           if (!disabled) fileInputRef.current?.click();
         }}
         disabled={disabled}
-        className="px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 shadow-xs transition shrink-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 select-none"
+        className="w-full sm:w-auto px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 shadow-xs transition shrink-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 select-none text-center"
       >
         Browse Image
       </button>
@@ -281,7 +281,7 @@ export function ContentNewJourneyModalMetadata({
   return (
     <section
       aria-label="Journey Details & Metadata"
-      className={`bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-5 ${className}`.trim()}
+      className={`bg-white rounded-xl sm:rounded-2xl border border-slate-200/80 p-3.5 sm:p-6 shadow-xs space-y-4 sm:space-y-5 ${className}`.trim()}
     >
       {/* Header */}
       <div className="flex items-center gap-2">
@@ -329,7 +329,7 @@ export function ContentNewJourneyModalMetadata({
 
       {/* Row 3: Short Summary */}
       <div className="space-y-1.5">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-0.5 sm:gap-2">
           <label className="text-xs font-semibold text-slate-700">
             Short Summary / Teaser
           </label>

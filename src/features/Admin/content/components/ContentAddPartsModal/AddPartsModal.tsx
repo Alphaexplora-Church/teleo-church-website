@@ -37,7 +37,7 @@ function SwitchTab({ activeTab, onChange }: SwitchTabProps) {
       activePillClassName="bg-slate-900 rounded-lg shadow-xs"
       activeTextClassName="text-white hover:text-white font-semibold text-xs"
       inactiveTextClassName="text-slate-600 hover:text-slate-900 font-medium text-xs hover:bg-transparent"
-      buttonClassName="rounded-lg h-9 px-3.5 text-xs border-0 shadow-none"
+      buttonClassName="rounded-lg h-9 px-2 sm:px-3.5 text-xs border-0 shadow-none"
     />
   );
 }
@@ -47,9 +47,15 @@ interface StatusDropdownProps {
   value: PartStatus;
   onChange: (status: PartStatus) => void;
   disabled?: boolean;
+  placement?: "bottom" | "top";
 }
 
-function StatusDropdown({ value, onChange, disabled = false }: StatusDropdownProps) {
+function StatusDropdown({
+  value,
+  onChange,
+  disabled = false,
+  placement = "top",
+}: StatusDropdownProps) {
   const selectedLabel = useMemo(() => {
     const match = PART_STATUS_DROPDOWN_OPTIONS.find((opt) => opt.value === value);
     return match ? match.label : "Select status";
@@ -77,6 +83,7 @@ function StatusDropdown({ value, onChange, disabled = false }: StatusDropdownPro
     <Dropdown
       items={dropdownItems}
       closeOnSelect={true}
+      placement={placement}
       width="w-full"
       menuClassName="rounded-xl border border-slate-200/80 bg-white shadow-xl py-1.5"
       className="w-full"
@@ -152,7 +159,7 @@ function VideoLinkValidate({
 
   return (
     <div className="w-full">
-      <div className="flex items-center gap-2 w-full">
+      <div className="flex flex-col sm:flex-row gap-2 w-full">
         <input
           type="url"
           value={videoUrl}
@@ -163,13 +170,13 @@ function VideoLinkValidate({
           onKeyDown={handleKeyDown}
           disabled={disabled || isValidating}
           placeholder="Paste YouTube link..."
-          className="flex-1 h-[42px] px-3.5 py-2 rounded-xl border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 bg-white focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition disabled:bg-slate-50 disabled:cursor-not-allowed"
+          className="w-full flex-1 h-[42px] px-3.5 py-2 rounded-xl border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 bg-white focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition disabled:bg-slate-50 disabled:cursor-not-allowed"
         />
         <button
           type="button"
           onClick={() => void handleValidate()}
           disabled={disabled || isValidating || !videoUrl.trim()}
-          className="h-[42px] px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shrink-0 transition cursor-pointer select-none disabled:bg-slate-300 disabled:cursor-not-allowed"
+          className="w-full sm:w-auto h-[42px] px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shrink-0 transition cursor-pointer select-none disabled:bg-slate-300 disabled:cursor-not-allowed text-center justify-center flex items-center"
         >
           {isValidating ? "Validating..." : "Validate"}
         </button>
@@ -186,10 +193,10 @@ function VideoLinkValidate({
           <img
             src={preview.thumbnail}
             alt="Video thumbnail"
-            className="w-20 h-12 object-cover rounded-md border border-slate-200 bg-slate-200 shrink-0"
+            className="w-16 h-10 sm:w-20 sm:h-12 object-cover rounded-md border border-slate-200 bg-slate-200 shrink-0"
           />
           <div className="min-w-0 flex-1">
-            <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider block">
+            <span className="text-[10px] sm:text-[11px] font-bold text-emerald-600 uppercase tracking-wider block">
               Verified YouTube Link
             </span>
             <p className="text-xs font-medium text-slate-700 truncate mt-0.5">
@@ -297,16 +304,16 @@ export function AddPartsModal({
       role="dialog"
       aria-modal="true"
       onClick={onClose}
-      className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+      className="fixed inset-0 z-60 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-slate-200 flex flex-col relative z-10 overflow-visible"
+        className="bg-white w-full max-w-lg mx-3 sm:mx-auto rounded-2xl shadow-2xl border border-slate-200 flex flex-col relative z-10 max-h-[85vh] overflow-hidden"
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white rounded-t-2xl shrink-0">
+        <div className="px-4 py-3.5 sm:px-6 sm:py-4 border-b border-slate-100 flex items-center justify-between bg-white rounded-t-2xl shrink-0">
           <div>
-            <h2 className="text-lg font-bold text-slate-900">{modalTitle}</h2>
+            <h2 className="text-base sm:text-lg font-bold text-slate-900">{modalTitle}</h2>
             <p className="text-xs text-slate-500 mt-0.5">
               Configure media, scripture content, and publishing status.
             </p>
@@ -322,7 +329,7 @@ export function AddPartsModal({
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-5 bg-white overflow-visible">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 bg-white overflow-y-auto flex-1 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 hover:[&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full">
           {/* Part Title */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1.5">
@@ -392,7 +399,7 @@ export function AddPartsModal({
           )}
 
           {/* Part Status */}
-          <div>
+          <div className="pb-1">
             <label className="block text-xs font-semibold text-slate-700 mb-1.5">
               Part Status
             </label>
@@ -404,11 +411,11 @@ export function AddPartsModal({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-slate-100 bg-white flex items-center justify-end gap-3 rounded-b-2xl shrink-0">
+        <div className="p-3 sm:px-6 sm:py-4 border-t border-slate-100 bg-white flex items-center justify-end gap-2.5 sm:gap-3 rounded-b-2xl shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-600 hover:text-slate-900 text-sm font-medium px-4 py-2 transition cursor-pointer select-none"
+            className="flex-1 sm:flex-initial text-center justify-center text-slate-600 hover:text-slate-900 text-sm font-medium px-4 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 transition cursor-pointer select-none"
           >
             Cancel
           </button>
@@ -418,8 +425,8 @@ export function AddPartsModal({
             disabled={!canSave}
             className={
               !canSave
-                ? "bg-slate-300 text-white text-sm font-medium px-5 py-2 rounded-xl cursor-not-allowed select-none"
-                : "bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium px-5 py-2 rounded-xl shadow-xs transition cursor-pointer select-none"
+                ? "flex-1 sm:flex-initial text-center justify-center bg-slate-300 text-white text-sm font-medium px-5 py-2.5 rounded-xl cursor-not-allowed select-none"
+                : "flex-1 sm:flex-initial text-center justify-center bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium px-5 py-2.5 rounded-xl shadow-xs transition cursor-pointer select-none"
             }
           >
             {submitLabel}
