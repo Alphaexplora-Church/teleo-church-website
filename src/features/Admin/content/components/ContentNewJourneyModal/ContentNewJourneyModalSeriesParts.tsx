@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
-import { Layers, MoreVertical } from "lucide-react";
+import { Reorder, useDragControls } from "framer-motion";
+import { GripVertical, Layers, MoreVertical } from "lucide-react";
 import type {
   JourneyPart,
   PartContentType,
@@ -50,13 +51,45 @@ function SeriesPartCard({
   disabled = false,
 }: SeriesPartCardProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const displayOrder = part.order || index + 1;
+  const dragControls = useDragControls();
+  const displayOrder = index + 1;
 
   return (
-    <div className="flex items-center justify-between gap-3 p-3.5 rounded-xl border border-slate-200/80 bg-white hover:border-slate-300 transition-colors shadow-2xs relative">
-      {/* Left side: Order number, thumbnail (if any), title, and badges */}
-      <div className="flex items-center gap-3 min-w-0 flex-1">
+    <Reorder.Item
+      value={part}
+      id={part.id}
+      dragListener={false}
+      dragControls={dragControls}
+      onDragStart={() => setIsDragging(true)}
+      onDragEnd={() => setIsDragging(false)}
+      className={`flex items-center justify-between gap-3 p-3.5 rounded-xl border transition-colors shadow-2xs relative select-none ${
+        isDragging
+          ? "border-primary/50 shadow-lg opacity-70 z-20 cursor-grabbing bg-slate-50/80"
+          : "border-slate-200/80 hover:border-slate-300 bg-white"
+      }`}
+    >
+      {/* Left side: Drag handle, Order number, thumbnail (if any), title, and badges */}
+      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+        {/* 6-dots drag handle */}
+        <div
+          onPointerDown={(e) => {
+            if (!disabled) {
+              dragControls.start(e);
+            }
+          }}
+          className={`text-slate-400 hover:text-slate-700 p-1 -ml-1 rounded-md transition touch-none shrink-0 ${
+            disabled
+              ? "cursor-not-allowed opacity-40"
+              : "cursor-grab active:cursor-grabbing hover:bg-slate-100"
+          }`}
+          title="Drag to reorder"
+          aria-label="Drag to reorder"
+        >
+          <GripVertical className="w-4 h-4 stroke-[2]" />
+        </div>
+
         <span className="w-6 h-6 rounded-lg bg-slate-100 text-slate-600 font-bold text-xs flex items-center justify-center shrink-0">
           {displayOrder}
         </span>
@@ -65,7 +98,7 @@ function SeriesPartCard({
           <img
             src={part.videoThumbnail}
             alt=""
-            className="w-14 h-9 sm:w-16 sm:h-10 rounded-lg object-cover border border-slate-200 bg-slate-100 shrink-0"
+            className="w-14 h-9 sm:w-16 sm:h-10 rounded-lg object-cover border border-slate-200 bg-slate-100 shrink-0 pointer-events-none"
           />
         )}
 
@@ -114,7 +147,7 @@ function SeriesPartCard({
           onDelete={() => onDeletePart(part.id)}
         />
       </div>
-    </div>
+    </Reorder.Item>
   );
 }
 
@@ -124,6 +157,7 @@ export interface ContentNewJourneyModalSeriesPartsProps {
   onAddPart: () => void;
   onEditPart: (part: JourneyPart) => void;
   onDeletePart: (partId: string) => void;
+  onReorderParts?: (newParts: JourneyPart[]) => void;
   className?: string;
   disabled?: boolean;
   isLoading?: boolean;
@@ -134,6 +168,7 @@ export function ContentNewJourneyModalSeriesParts({
   onAddPart,
   onEditPart,
   onDeletePart,
+  onReorderParts,
   className = "",
   disabled = false,
   isLoading = false,
@@ -162,7 +197,7 @@ export function ContentNewJourneyModalSeriesParts({
           disabled={disabled || isLoading}
           className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold px-3.5 py-1.5 rounded-xl transition shadow-xs cursor-pointer select-none disabled:cursor-not-allowed disabled:opacity-50"
         >
-          + Add Part
+          Add Part
         </button>
       </div>
 
@@ -196,8 +231,13 @@ export function ContentNewJourneyModalSeriesParts({
           </p>
         </div>
       ) : (
-        /* 4. Configured Parts List View */
-        <div className="space-y-2">
+        /* 4. Configured Parts List View with Reorder.Group */
+        <Reorder.Group
+          axis="y"
+          values={parts}
+          onReorder={(newOrder) => onReorderParts?.(newOrder)}
+          className="space-y-2 list-none p-0 m-0"
+        >
           {parts.map((part, index) => (
             <SeriesPartCard
               key={part.id}
@@ -208,7 +248,7 @@ export function ContentNewJourneyModalSeriesParts({
               disabled={disabled}
             />
           ))}
-        </div>
+        </Reorder.Group>
       )}
     </section>
   );

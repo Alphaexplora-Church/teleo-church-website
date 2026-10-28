@@ -232,6 +232,14 @@ export function useJourneyModalViewModel({
     setPartModal(null);
   };
 
+  const handleReorderParts = (newParts: JourneyPart[]) => {
+    const reordered = newParts.map((part, index) => ({
+      ...part,
+      order: index + 1,
+    }));
+    setParts(reordered);
+  };
+
   // Form Save
   const handleSave = async (status: JourneyStatus) => {
     if (!isTitleValid) {
@@ -317,6 +325,7 @@ export function useJourneyModalViewModel({
     handleDeletePart,
     handleClosePartModal,
     handleSavePart,
+    handleReorderParts,
     handleSave,
     isTitleValid,
     canPublish,

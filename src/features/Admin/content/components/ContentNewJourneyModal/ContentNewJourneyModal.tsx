@@ -77,6 +77,7 @@ export function ContentNewJourneyModal(props: ContentNewJourneyModalProps) {
               onAddPart={vm.handleAddPart}
               onEditPart={vm.handleEditPart}
               onDeletePart={vm.handleDeletePart}
+              onReorderParts={vm.handleReorderParts}
               disabled={vm.isSaving || vm.isLoadingParts}
             />
           </div>
