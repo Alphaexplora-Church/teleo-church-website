@@ -6,7 +6,6 @@
 // reflecting downstream effects on Member completion totals/visibility" spec.
 import { Archive, Loader2 } from 'lucide-react';
 import { useControlledModalTransition } from '../../../../shared/viewmodels/useModalTransition';
-import { modalOverlayClass, modalPanelClass } from './contentStyles';
 
 interface ConfirmArchiveModalProps {
     open: boolean;
@@ -25,26 +24,28 @@ export function ConfirmArchiveModal({ open, itemKind, itemTitle, isArchiving = f
     const isJourney = itemKind === 'Journey';
 
     return (
-        <div className={`z-[70] ${modalOverlayClass(visible)}`}>
-            <div className={`mx-4 w-full max-w-sm rounded-2xl bg-white p-8 text-center shadow-2xl ${modalPanelClass(visible)}`}>
-                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-50">
+        <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs transition-opacity duration-200 ${visible ? "opacity-100" : "opacity-0"}`}>
+            <div className={`bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 p-6 flex flex-col gap-4 relative z-10 transition-all duration-200 ${visible ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}>
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-50">
                     <Archive className="h-7 w-7 text-amber-600" />
                 </div>
-                <h3 className="mb-2 font-serif text-xl text-midnight-teal">Archive this {itemKind}?</h3>
-                <p className="mb-3 text-sm text-gray-500">
-                    “<span className="font-semibold text-gray-700">{itemTitle}</span>” will be hidden from Members{isJourney ? ', including every Part in it,' : ''} but not deleted.
-                </p>
-                <p className="mb-6 rounded-xl bg-amber-50 px-4 py-3 text-left text-xs font-semibold leading-relaxed text-amber-800">
+                <div className="text-center">
+                    <h3 className="mb-2 text-xl font-bold text-slate-900">Archive this {itemKind}?</h3>
+                    <p className="mb-3 text-sm text-slate-500">
+                        “<span className="font-semibold text-slate-700">{itemTitle}</span>” will be hidden from Members{isJourney ? ', including every Part in it,' : ''} but not deleted.
+                    </p>
+                </div>
+                <p className="rounded-xl bg-amber-50 px-4 py-3 text-left text-xs font-semibold leading-relaxed text-amber-800 border border-amber-200/60">
                     {isJourney
                         ? 'Members who already started this journey keep their existing completion progress — it just drops off active listings and can no longer be continued until restored.'
                         : 'Members who already completed this part keep that record on their completion totals — it just disappears from the series until restored.'}
                 </p>
-                <div className="flex justify-center gap-3">
-                    <button onClick={onCancel} disabled={isArchiving} className="rounded-lg px-5 py-2 text-sm font-bold text-gray-500 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50">Cancel</button>
+                <div className="flex justify-end gap-3 mt-2">
+                    <button onClick={onCancel} disabled={isArchiving} className="rounded-xl px-5 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer">Cancel</button>
                     <button
                         onClick={onConfirm}
                         disabled={isArchiving}
-                        className="flex min-w-[6.5rem] items-center justify-center gap-2 rounded-lg bg-amber-600 px-5 py-2 text-sm font-bold text-white transition-colors hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-70"
+                        className="flex min-w-[6.5rem] items-center justify-center gap-2 rounded-xl bg-amber-600 hover:bg-amber-700 px-5 py-2 text-sm font-medium text-white shadow-xs transition-colors disabled:cursor-not-allowed disabled:opacity-70 cursor-pointer"
                     >
                         {isArchiving ? <Loader2 size={16} className="animate-spin" /> : 'Archive'}
                     </button>

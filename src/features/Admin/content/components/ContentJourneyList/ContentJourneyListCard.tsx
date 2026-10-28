@@ -8,9 +8,9 @@ import {
 } from "lucide-react";
 import type {
   Journey,
-  JourneyContentType,
   JourneyStatus,
 } from "../../models/types/adminContent.types";
+import { CONTENT_TYPE_DISPLAY } from "../../models/constants/adminContent.constants";
 import { ContentJourneyListDropdown } from "./ContentJourneyListDropdown";
 import { ContentJourneyListIconBtn } from "./ContentJourneyListIconBtn";
 
@@ -21,13 +21,6 @@ export interface ContentJourneyListCardProps {
   onDelete?: (journey: Journey) => void;
   className?: string;
 }
-
-const CONTENT_TYPE_DISPLAY: Record<JourneyContentType, string> = {
-  "discipleship-course": "DISCIPLESHIP TRACK",
-  "bible-study": "BIBLE STUDY",
-  "sermon-series": "SERMON SERIES",
-  devotional: "DEVOTIONAL",
-};
 
 function formatRelativeTime(dateString?: string, isDraft = false): string {
   if (!dateString) return isDraft ? "Drafted recently" : "Updated recently";

@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { motion } from "framer-motion";
-import { Button } from "../Button/Button";
-import type { ButtonSize } from "../Button/button.styles";
+import { sizeStyle, type ButtonSize } from "../Button/button.styles";
 
 export interface TabOption<T extends string = string> {
   id: T;
@@ -58,41 +57,38 @@ export function TabSwitch<T extends string = string>({
     ? `${containerClassName} ${containerWidthClass} ${className}`.trim()
     : `inline-flex items-center gap-1 rounded-2xl border border-slate-200/80 bg-white/80 p-1.5 shadow-sm backdrop-blur-md ${containerWidthClass} ${className}`.trim();
 
+  const pillRadius = activePillClassName.includes("rounded-") ? "" : "rounded-xl";
+
   return (
-    <div
-      role="tablist"
-      className={containerClass}
-    >
+    <div role="tablist" className={containerClass}>
       {tabs.map((tab) => {
         const isActive = tab.id === activeTab;
+        const defaultButtonPadding = buttonClassName ? "" : `${sizeStyle[size]} rounded-xl`;
 
         return (
-          <div
+          <button
             key={tab.id}
-            className={`relative ${itemWidthClass}`}
+            type="button"
+            role="tab"
+            aria-selected={isActive}
+            onClick={() => onChange(tab.id)}
+            className={`relative isolate flex items-center justify-center gap-1.5 font-semibold transition-colors duration-200 select-none cursor-pointer focus:outline-none ${itemWidthClass} ${defaultButtonPadding} ${
+              isActive ? activeTextClassName : inactiveTextClassName
+            } ${buttonClassName}`.trim()}
           >
-            {/* Sliding Pill Background */}
+            {/* Sliding Pill Background — strictly positioned on parent boundary without Y-axis variance */}
             {isActive && (
               <motion.div
                 layoutId={layoutId}
-                className={`absolute inset-0 rounded-xl pointer-events-none ${activePillClassName}`}
-                transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                className={`absolute inset-0 -z-10 pointer-events-none ${pillRadius} ${activePillClassName}`.trim()}
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                style={{ originY: 0 }}
               />
             )}
 
-            <Button
-              type="button"
-              role="tab"
-              aria-selected={isActive}
-              variant="ghost"
-              size={size}
-              onClick={() => onChange(tab.id)}
-              className={`relative z-10 w-full rounded-xl font-semibold transition-colors duration-200 select-none ${
-                isActive ? activeTextClassName : inactiveTextClassName
-              } ${buttonClassName}`.trim()}
-            >
+            <span className="relative z-10 flex items-center justify-center gap-1.5 w-full">
               {tab.icon && <span className="shrink-0">{tab.icon}</span>}
-              <span>{tab.label}</span>
+              <span className="truncate">{tab.label}</span>
               {typeof tab.count === "number" && (
                 <span
                   className={`min-w-[20px] rounded-full px-1.5 py-0.5 text-center text-xs font-medium transition-colors ${
@@ -104,9 +100,8 @@ export function TabSwitch<T extends string = string>({
                   {tab.count}
                 </span>
               )}
-
-            </Button>
-          </div>
+            </span>
+          </button>
         );
       })}
     </div>

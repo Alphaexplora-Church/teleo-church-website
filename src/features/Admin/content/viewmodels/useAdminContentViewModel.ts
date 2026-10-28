@@ -4,7 +4,13 @@ import type {
   JourneyContentType,
   JourneyStatus,
 } from "../models/types/adminContent.types";
-import { AdminContentService } from "../models/api/adminContent.api";
+import { fetchJourneys, setStatus } from "../models/api/adminContent.api";
+import { createContentDashboardStats } from "../models/constants/contentDashboardCard.constants";
+import {
+  CONTENT_STATUS_FILTER_OPTIONS,
+  CONTENT_TYPE_FILTER_OPTIONS,
+  type ContentFilterOption,
+} from "../models/constants/contentFilter.constants";
 
 export type ToastMessage = { msg: string; type: "success" | "error" } | null;
 
@@ -73,16 +79,17 @@ export function useAdminContentViewModel() {
     setIsLoading(true);
     setError(null);
     try {
-      const items = await AdminContentService.fetchJourneys({
+      const items = await fetchJourneys({
         search: debouncedSearch || undefined,
         status: statusFilter.length === 1 ? statusFilter[0] : undefined,
         contentType:
           contentTypeFilter === "all" ? undefined : contentTypeFilter,
         category: categoryFilter === "all" ? undefined : categoryFilter,
       });
-      setJourneys(items);
-    } catch {
-      setError("Could not load journeys.");
+      setJourneys(Array.isArray(items) ? items : []);
+    } catch (err) {
+      setJourneys([]);
+      setError(err instanceof Error ? err.message : "Could not load journeys.");
     } finally {
       setIsLoading(false);
     }
@@ -91,9 +98,10 @@ export function useAdminContentViewModel() {
   /** Unfiltered catalog for the stat cards and the category dropdown. */
   const loadAll = async () => {
     try {
-      setAllJourneys(await AdminContentService.fetchJourneys());
+      const all = await fetchJourneys();
+      setAllJourneys(Array.isArray(all) ? all : []);
     } catch {
-      // Non-fatal: the list itself still renders, only the counters go stale.
+      setAllJourneys([]);
     }
   };
 
@@ -143,18 +151,23 @@ export function useAdminContentViewModel() {
     [allJourneys],
   );
 
-  const stats = [
-    { label: "Total journeys", value: allJourneys.length },
-    {
-      label: "Published",
-      value: allJourneys.filter((j) => j.status === "published").length,
-      accent: true,
-    },
-    {
-      label: "Drafts",
-      value: allJourneys.filter((j) => j.status === "draft").length,
-    },
-  ];
+  const categoryOptions = useMemo<ContentFilterOption[]>(
+    () => [
+      { value: "all", label: "All categories" },
+      ...availableCategories.map((cat) => ({ value: cat, label: cat })),
+    ],
+    [availableCategories],
+  );
+
+  const stats = useMemo(
+    () =>
+      createContentDashboardStats({
+        total: allJourneys.length,
+        published: allJourneys.filter((j) => j.status === "published").length,
+        draft: allJourneys.filter((j) => j.status === "draft").length,
+      }),
+    [allJourneys],
+  );
 
   const toggleStatusFilter = (status: JourneyStatus) => {
     setStatusFilter((current) =>
@@ -188,7 +201,7 @@ export function useAdminContentViewModel() {
       ),
     );
     try {
-      const updated = await AdminContentService.setStatus(journey.id, status);
+      const updated = await setStatus(journey.id, status);
       setJourneys((current) =>
         current.map((item) => (item.id === updated.id ? updated : item)),
       );
@@ -238,6 +251,9 @@ export function useAdminContentViewModel() {
     selectedCategory: categoryFilter,
     setSelectedCategory: setCategoryFilter,
     availableCategories,
+    categoryOptions,
+    contentTypeFilterOptions: CONTENT_TYPE_FILTER_OPTIONS,
+    statusFilterOptions: CONTENT_STATUS_FILTER_OPTIONS,
     hasActiveFilters,
     clearFilters,
 

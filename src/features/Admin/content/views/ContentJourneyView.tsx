@@ -1,15 +1,13 @@
-import { useMemo } from "react";
 import { BookOpen } from "lucide-react";
 import { ContentDashboardCardGrid } from "../components/ContentDashboardCard/ContentDashboardCard";
 import { ContentFilterDropdown } from "../components/ContentFilter/ContentFilterDropdown";
 import { ContentFilterSearchbar } from "../components/ContentFilter/ContentFilterSearchbar";
 import { ContentFilterStatus } from "../components/ContentFilter/ContentFilterStatus";
 import { ContentJourneyListCard } from "../components/ContentJourneyList/ContentJourneyListCard";
-import { CONTENT_TYPE_FILTER_OPTIONS } from "../models/constants/contentFilter.constants";
 import type { ToastMessage } from "../viewmodels/useAdminContentViewModel";
 import { useAdminContentViewModel } from "../viewmodels/useAdminContentViewModel";
 import { ConfirmArchiveModal } from "./ConfirmArchiveModal";
-import { ContentNewJourneyModal } from "../components/ContentNewJourneyModal";
+import { ContentNewJourneyModal } from "../components/ContentNewJourneyModal/ContentNewJourneyModal";
 
 // ─── Toast Component ──────────────────────────────────────────────────────────
 function Toast({ toast }: { toast: ToastMessage }) {
@@ -86,7 +84,8 @@ export function ContentJourneyView() {
     setSelectedCategory,
     selectedStatuses,
     toggleStatus,
-    availableCategories,
+    categoryOptions,
+    contentTypeFilterOptions,
     hasActiveFilters,
     clearFilters,
     handleCreateJourney,
@@ -104,14 +103,6 @@ export function ContentJourneyView() {
     closeArchiveModal,
     confirmArchive,
   } = useAdminContentViewModel();
-
-  const categoryOptions = useMemo(
-    () => [
-      { value: "all", label: "All categories" },
-      ...availableCategories.map((cat) => ({ value: cat, label: cat })),
-    ],
-    [availableCategories],
-  );
 
   return (
     <div className="flex flex-col h-full overflow-hidden p-6 gap-6">
@@ -160,7 +151,7 @@ export function ContentJourneyView() {
               value={selectedType}
               onChange={setSelectedType}
               placeholder="All content types"
-              options={CONTENT_TYPE_FILTER_OPTIONS}
+              options={contentTypeFilterOptions}
               width="min-w-[11rem]"
             />
 

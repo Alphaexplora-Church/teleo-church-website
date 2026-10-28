@@ -1,15 +1,208 @@
-import { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import { useState, useEffect, useMemo, type KeyboardEvent } from "react";
+import { ChevronDown, X } from "lucide-react";
+import { TabSwitch } from "../../../../../shared/components/TabSwitch/TabSwitch";
+import {
+  Dropdown,
+  type DropdownOption,
+} from "../../../../../shared/components/Dropdown/Dropdown";
+import {
+  EMPTY_PART_FORM,
+  PART_CONTENT_TYPE_TABS,
+  PART_STATUS_DROPDOWN_OPTIONS,
+} from "../../models/constants/adminContent.constants";
 import type {
   JourneyPart,
+  PartContentType,
   PartFormData,
+  PartStatus,
+  VideoPreview,
 } from "../../models/types/adminContent.types";
-import { EMPTY_PART_FORM } from "../../models/types/adminContent.types";
-import type { VideoPreview } from "../../models/api/adminContent.api";
-import { AddPartsModalSwitchTab } from "./AddPartsModalSwitchTab";
-import { AddPartsModalDropdown } from "./AddPartsModalDropdown";
-import { AddPartsModalVideoLinkValidate } from "./AddPartsModalVideoLinkValidate";
+import { isYouTubeUrl, validateYouTubeUrl } from "../../models/api/youtube.api";
 
+// ─── Sub-Component: Content Type Tabs ────────────────────────────────────────
+interface SwitchTabProps {
+  activeTab: PartContentType;
+  onChange: (tab: PartContentType) => void;
+}
+
+function SwitchTab({ activeTab, onChange }: SwitchTabProps) {
+  return (
+    <TabSwitch
+      tabs={PART_CONTENT_TYPE_TABS}
+      activeTab={activeTab}
+      onChange={onChange}
+      layoutId="add-parts-modal-active-pill"
+      fullWidth={true}
+      containerClassName="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl"
+      activePillClassName="bg-slate-900 rounded-lg shadow-xs"
+      activeTextClassName="text-white hover:text-white font-semibold text-xs"
+      inactiveTextClassName="text-slate-600 hover:text-slate-900 font-medium text-xs hover:bg-transparent"
+      buttonClassName="rounded-lg h-9 px-3.5 text-xs border-0 shadow-none"
+    />
+  );
+}
+
+// ─── Sub-Component: Part Status Dropdown ─────────────────────────────────────
+interface StatusDropdownProps {
+  value: PartStatus;
+  onChange: (status: PartStatus) => void;
+  disabled?: boolean;
+}
+
+function StatusDropdown({ value, onChange, disabled = false }: StatusDropdownProps) {
+  const selectedLabel = useMemo(() => {
+    const match = PART_STATUS_DROPDOWN_OPTIONS.find((opt) => opt.value === value);
+    return match ? match.label : "Select status";
+  }, [value]);
+
+  const dropdownItems = useMemo<DropdownOption<PartStatus>[]>(() => {
+    return PART_STATUS_DROPDOWN_OPTIONS.map((opt) => ({
+      id: opt.value,
+      label: (
+        <span
+          className={
+            opt.value === value
+              ? "font-bold text-slate-900"
+              : "font-medium text-slate-700"
+          }
+        >
+          {opt.label}
+        </span>
+      ),
+      onClick: () => onChange(opt.value),
+    }));
+  }, [value, onChange]);
+
+  return (
+    <Dropdown
+      items={dropdownItems}
+      closeOnSelect={true}
+      width="w-full"
+      menuClassName="rounded-xl border border-slate-200/80 bg-white shadow-xl py-1.5"
+      className="w-full"
+      trigger={(isOpen) => (
+        <button
+          type="button"
+          disabled={disabled}
+          className="flex h-[42px] w-full items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800 shadow-2xs transition-all hover:border-slate-300 focus:border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50 select-none cursor-pointer"
+        >
+          <span className="truncate">{selectedLabel}</span>
+          <ChevronDown
+            className={`h-4 w-4 shrink-0 stroke-[2] text-slate-400 transition-transform duration-200 ${
+              isOpen ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+      )}
+    />
+  );
+}
+
+// ─── Sub-Component: Video Link Input & Validator ─────────────────────────────
+interface VideoLinkValidateProps {
+  videoUrl: string;
+  onChangeVideoUrl: (url: string) => void;
+  preview: VideoPreview | null;
+  onPreviewChange: (preview: VideoPreview | null) => void;
+  disabled?: boolean;
+}
+
+function VideoLinkValidate({
+  videoUrl,
+  onChangeVideoUrl,
+  preview,
+  onPreviewChange,
+  disabled = false,
+}: VideoLinkValidateProps) {
+  const [isValidating, setIsValidating] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const handleValidate = async () => {
+    const trimmed = videoUrl.trim();
+    if (!trimmed || !isYouTubeUrl(trimmed)) {
+      setErrorMessage("Invalid YouTube video URL");
+      onPreviewChange(null);
+      return;
+    }
+
+    setIsValidating(true);
+    setErrorMessage(null);
+
+    try {
+      const result = await validateYouTubeUrl(trimmed);
+      if (result) {
+        onPreviewChange(result);
+        setErrorMessage(null);
+      } else {
+        setErrorMessage("Could not load YouTube video preview.");
+      }
+    } catch {
+      setErrorMessage("Failed to validate YouTube URL.");
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      void handleValidate();
+    }
+  };
+
+  return (
+    <div className="w-full">
+      <div className="flex items-center gap-2 w-full">
+        <input
+          type="url"
+          value={videoUrl}
+          onChange={(e) => {
+            onChangeVideoUrl(e.target.value);
+            if (errorMessage) setErrorMessage(null);
+          }}
+          onKeyDown={handleKeyDown}
+          disabled={disabled || isValidating}
+          placeholder="Paste YouTube link..."
+          className="flex-1 h-[42px] px-3.5 py-2 rounded-xl border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 bg-white focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition disabled:bg-slate-50 disabled:cursor-not-allowed"
+        />
+        <button
+          type="button"
+          onClick={() => void handleValidate()}
+          disabled={disabled || isValidating || !videoUrl.trim()}
+          className="h-[42px] px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shrink-0 transition cursor-pointer select-none disabled:bg-slate-300 disabled:cursor-not-allowed"
+        >
+          {isValidating ? "Validating..." : "Validate"}
+        </button>
+      </div>
+
+      {errorMessage && (
+        <p className="text-xs text-rose-500 mt-1.5 font-medium">
+          {errorMessage}
+        </p>
+      )}
+
+      {preview && !errorMessage && (
+        <div className="mt-2.5 flex items-center gap-3 p-2.5 rounded-xl border border-slate-200 bg-slate-50/80">
+          <img
+            src={preview.thumbnail}
+            alt="Video thumbnail"
+            className="w-20 h-12 object-cover rounded-md border border-slate-200 bg-slate-200 shrink-0"
+          />
+          <div className="min-w-0 flex-1">
+            <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider block">
+              Verified YouTube Link
+            </span>
+            <p className="text-xs font-medium text-slate-700 truncate mt-0.5">
+              {preview.title}
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Main Modal Component ────────────────────────────────────────────────────
 export interface AddPartsModalProps {
   isOpen?: boolean;
   mode?: "add" | "edit";
@@ -80,7 +273,7 @@ export function AddPartsModal({
   useEffect(() => {
     if (!isOpen) return;
 
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: globalThis.KeyboardEvent) => {
       if (e.key === "Escape") {
         onClose();
       }
@@ -151,7 +344,7 @@ export function AddPartsModal({
             <label className="block text-xs font-semibold text-slate-700 mb-1.5">
               Content Type <span className="text-red-500 ml-0.5">*</span>
             </label>
-            <AddPartsModalSwitchTab
+            <SwitchTab
               activeTab={form.type}
               onChange={(type) => setForm((prev) => ({ ...prev, type }))}
             />
@@ -163,7 +356,7 @@ export function AddPartsModal({
               <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                 Video Link
               </label>
-              <AddPartsModalVideoLinkValidate
+              <VideoLinkValidate
                 videoUrl={form.videoUrl}
                 onChangeVideoUrl={(url) => {
                   setForm((prev) => ({ ...prev, videoUrl: url }));
@@ -203,7 +396,7 @@ export function AddPartsModal({
             <label className="block text-xs font-semibold text-slate-700 mb-1.5">
               Part Status
             </label>
-            <AddPartsModalDropdown
+            <StatusDropdown
               value={form.status}
               onChange={(status) => setForm((prev) => ({ ...prev, status }))}
             />
