@@ -9,7 +9,7 @@ import { CONTENT_TYPE_FILTER_OPTIONS } from "../models/constants/contentFilter.c
 import type { ToastMessage } from "../viewmodels/useAdminContentViewModel";
 import { useAdminContentViewModel } from "../viewmodels/useAdminContentViewModel";
 import { ConfirmArchiveModal } from "./ConfirmArchiveModal";
-import { JourneyEditor } from "./JourneyEditor";
+import { ContentNewJourneyModal } from "../components/ContentNewJourneyModal";
 
 // ─── Toast Component ──────────────────────────────────────────────────────────
 function Toast({ toast }: { toast: ToastMessage }) {
@@ -238,11 +238,12 @@ export function ContentJourneyView() {
       {/* Toast Feedback */}
       <Toast toast={toast} />
 
-      {/* Journey Creation / Edit Drawer Modal */}
+      {/* Journey Creation / Edit Modal */}
       {isEditorOpen && (
-        <JourneyEditor
+        <ContentNewJourneyModal
           key={editingJourney?.id ?? "new"}
-          journey={editingJourney}
+          isOpen={isEditorOpen}
+          initialJourney={editingJourney}
           onClose={closeEditor}
           onSaved={onJourneySaved}
           showToast={showToast}

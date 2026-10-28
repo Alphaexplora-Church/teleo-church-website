@@ -102,3 +102,10 @@ export const EMPTY_PART_FORM: PartFormData = {
 /** A journey may be published only once it has at least one Published Part. */
 export const canPublishJourney = (parts: JourneyPart[]): boolean =>
     parts.some(part => part.status === 'published');
+
+export const canPublishSeries = canPublishJourney;
+
+/** A series requires at least one configured part */
+export const hasRequiredParts = (parts: JourneyPart[]): boolean =>
+    parts.length > 0;
+
