@@ -19,6 +19,9 @@ export type { ContentNewJourneyModalSeriesPartsProps } from "./ContentNewJourney
 export { ContentNewJourneyModal } from "./ContentNewJourneyModal";
 export type { ContentNewJourneyModalProps } from "./ContentNewJourneyModal";
 
+export { ContentNewJourneyModalSeriesCard } from "./ContentNewJourneyModalSeriesCard";
+export type { ContentNewJourneyModalSeriesCardProps } from "./ContentNewJourneyModalSeriesCard";
+
 export {
   canPublishSeries,
   hasRequiredParts,

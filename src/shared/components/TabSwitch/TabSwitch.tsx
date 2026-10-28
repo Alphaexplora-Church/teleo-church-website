@@ -17,6 +17,8 @@ export interface TabSwitchProps<T extends string = string> {
   layoutId?: string;
   size?: ButtonSize;
   className?: string;
+  containerClassName?: string;
+  buttonClassName?: string;
   fullWidth?: boolean | "mobile";
   activePillClassName?: string;
   activeTextClassName?: string;
@@ -30,6 +32,8 @@ export function TabSwitch<T extends string = string>({
   layoutId = "tab-active-pill",
   size = "md",
   className = "",
+  containerClassName,
+  buttonClassName = "",
   fullWidth = false,
   activePillClassName = "bg-primary shadow-md shadow-primary/20",
   activeTextClassName = "text-white hover:text-white",
@@ -50,10 +54,14 @@ export function TabSwitch<T extends string = string>({
       ? "flex-1 md:flex-initial"
       : "";
 
+  const containerClass = containerClassName
+    ? `${containerClassName} ${containerWidthClass} ${className}`.trim()
+    : `inline-flex items-center gap-1 rounded-2xl border border-slate-200/80 bg-white/80 p-1.5 shadow-sm backdrop-blur-md ${containerWidthClass} ${className}`.trim();
+
   return (
     <div
       role="tablist"
-      className={`inline-flex items-center gap-1 rounded-2xl border border-slate-200/80 bg-white/80 p-1.5 shadow-sm backdrop-blur-md ${containerWidthClass} ${className}`.trim()}
+      className={containerClass}
     >
       {tabs.map((tab) => {
         const isActive = tab.id === activeTab;
@@ -81,7 +89,7 @@ export function TabSwitch<T extends string = string>({
               onClick={() => onChange(tab.id)}
               className={`relative z-10 w-full rounded-xl font-semibold transition-colors duration-200 select-none ${
                 isActive ? activeTextClassName : inactiveTextClassName
-              }`}
+              } ${buttonClassName}`.trim()}
             >
               {tab.icon && <span className="shrink-0">{tab.icon}</span>}
               <span>{tab.label}</span>

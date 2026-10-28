@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { CheckCircle2, Lock, X } from "lucide-react";
+import { X } from "lucide-react";
 import { AdminContentService, type VideoPreview } from "../../models/api/adminContent.api";
 import type {
   Journey,
@@ -9,7 +9,7 @@ import type {
   JourneyStatus,
   PartFormData,
 } from "../../models/types/adminContent.types";
-import { PartModal } from "../../views/PartModal";
+import { AddPartsModal } from "../ContentsAddPartsModal";
 import { ContentNewJourneyModalMetadata } from "./ContentNewJourneyModalMetadata";
 import { ContentNewJourneyModalSeriesParts } from "./ContentNewJourneyModalSeriesParts";
 
@@ -297,64 +297,44 @@ export function ContentNewJourneyModal({
         </div>
 
         {/* 3. Footer Section */}
-        <div className="px-6 py-4 border-t border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white shrink-0">
-          {/* Left side: Warning or Readiness Banner */}
-          <div>
-            {!canPublish ? (
-              <div className="rounded-xl border border-amber-300 bg-amber-50/80 px-3.5 py-1.5 text-xs font-medium text-amber-800 flex items-center gap-1.5">
-                <Lock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                <span>
-                  Publish is locked until required fields are filled and at
-                  least one Part is set to Published.
-                </span>
-              </div>
-            ) : (
-              <div className="rounded-xl border border-emerald-300 bg-emerald-50/80 px-3.5 py-1.5 text-xs font-medium text-emerald-800 flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                <span>Ready to publish series</span>
-              </div>
-            )}
-          </div>
+        <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-end gap-3 bg-white shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isSaving}
+            className="text-slate-600 hover:text-slate-900 text-sm font-medium px-4 py-2 cursor-pointer transition select-none disabled:opacity-50"
+          >
+            Cancel
+          </button>
 
-          {/* Right side: Action Buttons (Pure text only, strictly NO icons) */}
-          <div className="flex items-center justify-end gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isSaving}
-              className="text-slate-600 hover:text-slate-900 text-sm font-medium px-4 py-2 cursor-pointer transition select-none disabled:opacity-50"
-            >
-              Cancel
-            </button>
+          <button
+            type="button"
+            onClick={() => void handleSave("draft")}
+            disabled={isSaving || !title.trim()}
+            className="border border-slate-200 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl text-sm font-medium cursor-pointer transition select-none shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Save as Draft
+          </button>
 
-            <button
-              type="button"
-              onClick={() => void handleSave("draft")}
-              disabled={isSaving || !title.trim()}
-              className="border border-slate-200 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl text-sm font-medium cursor-pointer transition select-none shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Save as Draft
-            </button>
-
-            <button
-              type="button"
-              onClick={() => void handleSave("published")}
-              disabled={!canPublish || isSaving}
-              className={
-                !canPublish
-                  ? "opacity-50 cursor-not-allowed bg-slate-400 text-white px-5 py-2 rounded-xl text-sm font-medium select-none"
-                  : "bg-slate-900 hover:bg-slate-800 text-white px-5 py-2 rounded-xl text-sm font-medium transition cursor-pointer select-none"
-              }
-            >
-              Publish Series
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => void handleSave("published")}
+            disabled={!canPublish || isSaving}
+            className={
+              !canPublish
+                ? "opacity-50 cursor-not-allowed bg-slate-400 text-white px-5 py-2 rounded-xl text-sm font-medium select-none"
+                : "bg-slate-900 hover:bg-slate-800 text-white px-5 py-2 rounded-xl text-sm font-medium transition cursor-pointer select-none"
+            }
+          >
+            Publish Series
+          </button>
         </div>
       </div>
 
       {/* Nested Part Modal for Adding/Editing a Part */}
       {partModal && (
-        <PartModal
+        <AddPartsModal
+          mode={partModal.mode}
           title={partModal.mode === "add" ? "Add New Part" : "Edit Part"}
           initial={partModal.mode === "edit" ? partModal.part : undefined}
           onClose={() => setPartModal(null)}
