@@ -8,7 +8,10 @@ import {
   DEFAULT_JOURNEY_CATEGORIES,
   DEFAULT_JOURNEY_CONTENT_TYPES,
 } from "../../models/constants/adminContent.constants";
-import type { JourneyContentType } from "../../models/types/adminContent.types";
+import type {
+  JourneyCategoryOption,
+  JourneyContentType,
+} from "../../models/types/adminContent.types";
 
 // ─── Sub-Component: Content Type Dropdown ────────────────────────────────────
 interface ContentTypeDropdownProps {
@@ -86,8 +89,13 @@ function CategoriesSelect({
   const handleToggle = (cat: string) => {
     onToggleCategory?.(cat);
     if (onChange) {
-      const next = selectedCategories.includes(cat)
-        ? selectedCategories.filter((c) => c !== cat)
+      const exists = selectedCategories.some(
+        (c) => c.toLowerCase() === cat.toLowerCase(),
+      );
+      const next = exists
+        ? selectedCategories.filter(
+            (c) => c.toLowerCase() !== cat.toLowerCase(),
+          )
         : [...selectedCategories, cat];
       onChange(next);
     }
@@ -104,7 +112,9 @@ function CategoriesSelect({
 
       <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-0.5">
         {categories.map((category) => {
-          const isSelected = selectedCategories.includes(category);
+          const isSelected = selectedCategories.some(
+            (c) => c.toLowerCase() === category.toLowerCase(),
+          );
 
           return (
             <button
@@ -244,6 +254,7 @@ export interface ContentNewJourneyModalMetadataProps {
   onTitleChange?: (title: string) => void;
   contentType?: JourneyContentType;
   onContentTypeChange?: (type: JourneyContentType) => void;
+  categoryOptions?: JourneyCategoryOption[];
   availableCategories?: readonly string[] | string[];
   selectedCategories?: string[];
   onToggleCategory?: (category: string) => void;
@@ -264,6 +275,7 @@ export function ContentNewJourneyModalMetadata({
   onTitleChange,
   contentType = "sermon-series",
   onContentTypeChange,
+  categoryOptions = [],
   availableCategories = DEFAULT_JOURNEY_CATEGORIES,
   selectedCategories = [],
   onToggleCategory,
@@ -278,6 +290,48 @@ export function ContentNewJourneyModalMetadata({
   disabled = false,
   className = "",
 }: ContentNewJourneyModalMetadataProps) {
+  const displayedCategories = useMemo(() => {
+    const list: string[] = [];
+    const seen = new Set<string>();
+
+    if (categoryOptions && categoryOptions.length > 0) {
+      for (const opt of categoryOptions) {
+        const lower = opt.name.toLowerCase();
+        if (!seen.has(lower)) {
+          seen.add(lower);
+          list.push(opt.name);
+        }
+      }
+    } else if (availableCategories && availableCategories.length > 0) {
+      for (const cat of availableCategories) {
+        const lower = cat.toLowerCase();
+        if (!seen.has(lower)) {
+          seen.add(lower);
+          list.push(cat);
+        }
+      }
+    } else {
+      for (const cat of DEFAULT_JOURNEY_CATEGORIES) {
+        const lower = cat.toLowerCase();
+        if (!seen.has(lower)) {
+          seen.add(lower);
+          list.push(cat);
+        }
+      }
+    }
+
+    // Always include any currently selected categories so they are guaranteed to appear
+    for (const cat of selectedCategories) {
+      const lower = cat.toLowerCase();
+      if (!seen.has(lower)) {
+        seen.add(lower);
+        list.push(cat);
+      }
+    }
+
+    return list;
+  }, [categoryOptions, availableCategories, selectedCategories]);
+
   return (
     <section
       aria-label="Journey Details & Metadata"
@@ -321,7 +375,7 @@ export function ContentNewJourneyModalMetadata({
 
       {/* Row 2: Categories Multi-Select */}
       <CategoriesSelect
-        categories={availableCategories}
+        categories={displayedCategories}
         selectedCategories={selectedCategories}
         onToggleCategory={onToggleCategory}
         onChange={onCategoriesChange}

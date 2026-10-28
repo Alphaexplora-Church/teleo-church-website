@@ -57,6 +57,7 @@ export function ContentNewJourneyModal(props: ContentNewJourneyModalProps) {
             onTitleChange={vm.setTitle}
             contentType={vm.contentType}
             onContentTypeChange={vm.setContentType}
+            categoryOptions={vm.categoryOptions}
             selectedCategories={vm.selectedCategories}
             onToggleCategory={vm.handleToggleCategory}
             summary={vm.summary}

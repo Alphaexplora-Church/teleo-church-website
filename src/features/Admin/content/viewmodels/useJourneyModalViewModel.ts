@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import {
   createJourney,
+  fetchCategoryCatalog,
   fetchJourneyDetail,
   saveJourney,
 } from "../models/api/adminContent.api";
 import { uid } from "../models/constants/adminContent.constants";
 import type {
   Journey,
+  JourneyCategoryOption,
   JourneyContentType,
   JourneyFormData,
   JourneyPart,
@@ -28,6 +30,29 @@ export type PartModalMode =
   | { mode: "edit"; part: JourneyPart }
   | null;
 
+/**
+ * Normalizes an array of category identifiers/names against the loaded category catalog,
+ * ensuring case-insensitive matching and canonical title mapping.
+ */
+export function resolveCategoryNames(
+  categories: string[],
+  catalog: JourneyCategoryOption[],
+): string[] {
+  if (!Array.isArray(categories) || categories.length === 0) return [];
+  if (!Array.isArray(catalog) || catalog.length === 0) return categories;
+
+  const idMap = new Map<string, string>();
+  for (const item of catalog) {
+    idMap.set(item.categoryId.toLowerCase(), item.name);
+    idMap.set(item.name.toLowerCase(), item.name);
+  }
+
+  return categories.map((cat) => {
+    const trimmed = cat.trim();
+    return idMap.get(trimmed.toLowerCase()) ?? trimmed;
+  });
+}
+
 export function useJourneyModalViewModel({
   isOpen,
   onClose,
@@ -36,6 +61,11 @@ export function useJourneyModalViewModel({
   initialJourney = null,
 }: UseJourneyModalViewModelProps) {
   const isEditing = Boolean(initialJourney);
+
+  // Dynamic Category Catalog
+  const [categoryOptions, setCategoryOptions] = useState<
+    JourneyCategoryOption[]
+  >([]);
 
   // Form State
   const [title, setTitle] = useState(initialJourney?.title ?? "");
@@ -66,6 +96,27 @@ export function useJourneyModalViewModel({
   const [partModal, setPartModal] = useState<PartModalMode>(null);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Fetch dynamic category catalog on mount
+  useEffect(() => {
+    let isCancelled = false;
+    fetchCategoryCatalog()
+      .then((catalog) => {
+        if (!isCancelled && Array.isArray(catalog) && catalog.length > 0) {
+          setCategoryOptions(catalog);
+          setSelectedCategories((current) =>
+            resolveCategoryNames(current, catalog),
+          );
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch category catalog:", err);
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
   // Sync initialJourney changes and fetch full details (including parts)
   useEffect(() => {
     if (!isOpen) return;
@@ -73,7 +124,12 @@ export function useJourneyModalViewModel({
     if (initialJourney) {
       setTitle(initialJourney.title);
       setContentType(initialJourney.contentType);
-      setSelectedCategories(initialJourney.categories ?? []);
+      const rawCategories = initialJourney.categories ?? [];
+      setSelectedCategories(
+        categoryOptions.length > 0
+          ? resolveCategoryNames(rawCategories, categoryOptions)
+          : rawCategories,
+      );
       setSummary(initialJourney.summary ?? "");
       setDescription(initialJourney.description ?? "");
       setThumbnailPreview(initialJourney.thumbnailUrl ?? null);
@@ -102,6 +158,13 @@ export function useJourneyModalViewModel({
             if (detailed.thumbnailUrl && !initialJourney.thumbnailUrl) {
               setThumbnailPreview(detailed.thumbnailUrl);
             }
+            if (detailed.categories && detailed.categories.length > 0) {
+              setSelectedCategories((current) =>
+                current.length > 0
+                  ? current
+                  : resolveCategoryNames(detailed.categories, categoryOptions),
+              );
+            }
           })
           .catch((err) => {
             if (isCancelled) return;
@@ -129,7 +192,7 @@ export function useJourneyModalViewModel({
       setOriginalParts([]);
       setIsLoadingParts(false);
     }
-  }, [initialJourney, isOpen]);
+  }, [categoryOptions, initialJourney, isOpen]);
 
   // Handle escape key
   useEffect(() => {
@@ -159,11 +222,14 @@ export function useJourneyModalViewModel({
 
   // Category Toggle
   const handleToggleCategory = (category: string) => {
-    setSelectedCategories((current) =>
-      current.includes(category)
-        ? current.filter((c) => c !== category)
-        : [...current, category],
-    );
+    setSelectedCategories((current) => {
+      const exists = current.some(
+        (c) => c.toLowerCase() === category.toLowerCase(),
+      );
+      return exists
+        ? current.filter((c) => c.toLowerCase() !== category.toLowerCase())
+        : [...current, category];
+    });
   };
 
   const handleThumbnailChange = (file: File | null) => {
@@ -309,6 +375,7 @@ export function useJourneyModalViewModel({
     setTitle,
     contentType,
     setContentType,
+    categoryOptions,
     selectedCategories,
     handleToggleCategory,
     summary,

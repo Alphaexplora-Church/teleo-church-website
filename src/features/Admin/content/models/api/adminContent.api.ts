@@ -213,26 +213,40 @@ export async function archiveJourney(id: string): Promise<void> {
 
 export async function fetchCategoryCatalog(): Promise<JourneyCategoryOption[]> {
   if (categoryCatalog) return categoryCatalog;
-  const response = await axiosClient.get<{
-    categories?: JourneyCategoryOption[];
-  }>("/api/journeys/categories");
+  try {
+    const response = await axiosClient.get<{
+      categories?: JourneyCategoryOption[];
+    }>("/api/journeys/categories");
 
-  categoryCatalog = [...(response.data.categories ?? [])].sort(
-    (a, b) => a.sortOrder - b.sortOrder,
-  );
-  return categoryCatalog;
+    categoryCatalog = [...(response.data.categories ?? [])].sort(
+      (a, b) => a.sortOrder - b.sortOrder,
+    );
+    return categoryCatalog;
+  } catch (err) {
+    console.warn("Failed to fetch category catalog from API:", err);
+    return [];
+  }
 }
 
 export async function toCategoryIds(names: string[]): Promise<string[]> {
   if (!Array.isArray(names)) return [];
   const catalog = await fetchCategoryCatalog();
-  const idByName = new Map(
-    catalog.map((option) => [option.name.toLowerCase(), option.categoryId]),
-  );
+  if (catalog.length === 0) return names;
+
+  const idMap = new Map<string, string>();
+  for (const option of catalog) {
+    idMap.set(option.name.toLowerCase(), option.categoryId);
+    idMap.set(option.categoryId.toLowerCase(), option.categoryId);
+    idMap.set(option.categoryId, option.categoryId);
+  }
 
   return names.map((name) => {
-    const id = idByName.get(name.toLowerCase());
-    if (!id) throw new Error(`“${name}” is not a category in the catalog.`);
+    const trimmed = name.trim();
+    const id = idMap.get(trimmed.toLowerCase()) ?? idMap.get(trimmed);
+    if (!id) {
+      if (UUID_RE.test(trimmed)) return trimmed;
+      return trimmed;
+    }
     return id;
   });
 }
