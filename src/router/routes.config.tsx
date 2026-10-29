@@ -37,8 +37,8 @@ const AdminDashboardView = safeLazy(
 const AdminEventsView = safeLazy(
   () => import("../features/Admin/events/view/AdminEventsView"),
 );
-const AdminContentView = safeLazy(
-  () => import("../features/Admin/content/view/AdminContentView"),
+const ContentJourneyView = safeLazy(
+  () => import("../features/Admin/content/views/ContentJourneyView"),
 );
 const AdminPrayerWallView = safeLazy(
   () => import("../features/Admin/prayer-wall/view/AdminPrayerWallView"),
@@ -54,15 +54,11 @@ const AdminSettingsView = safeLazy(
 );
 const DiscipleshipGroupsScheduleViews = safeLazy(
   () =>
-    import(
-      "../features/Admin/discipleship/views/DiscipleshipGroupsSchedule/DiscipleshipGroupsScheduleViews"
-    ),
+    import("../features/Admin/discipleship/views/DiscipleshipGroupsSchedule/DiscipleshipGroupsScheduleViews"),
 );
 const DiscipleshipApplicationsViews = safeLazy(
   () =>
-    import(
-      "../features/Admin/discipleship/views/DiscipleshipApplications/DiscipleshipApplicationsViews"
-    ),
+    import("../features/Admin/discipleship/views/DiscipleshipApplications/DiscipleshipApplicationsViews"),
 );
 
 export const adminRoutes: RouteObject[] = [
@@ -76,7 +72,10 @@ export const adminRoutes: RouteObject[] = [
           { path: "dashboard", element: <AdminDashboardView /> },
           { path: "users", element: <AdminUsersView /> },
           { path: "settings", element: <AdminSettingsView /> },
-          { path: "discipleship", element: <DiscipleshipGroupsScheduleViews /> },
+          {
+            path: "discipleship",
+            element: <DiscipleshipGroupsScheduleViews />,
+          },
           {
             path: "discipleship/application",
             element: <DiscipleshipApplicationsViews />,
@@ -93,7 +92,7 @@ export const adminRoutes: RouteObject[] = [
           },
           {
             element: <FeatureGuard requiredFeature="content_management" />,
-            children: [{ path: "content", element: <AdminContentView /> }],
+            children: [{ path: "content", element: <ContentJourneyView /> }],
           },
           {
             element: <FeatureGuard requiredFeature="prayer_wall" />,
