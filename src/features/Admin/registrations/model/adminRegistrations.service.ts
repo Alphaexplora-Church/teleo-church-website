@@ -2,7 +2,15 @@
 import type { Registration } from './adminRegistrations.types';
 import type { EncounterRegistration } from './adminEncounterRegistrations.types';
 import type { DiscipleshipRegistration } from './adminDiscipleshipRegistrations.types';
-import { axiosClient } from '../../../../shared/models/api/axiosClient.api';
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000';
+
+/** The session is authenticated via the HTTP-only access_token cookie sent with every request. */
+const authHeaders = () => ({ 'Content-Type': 'application/json' });
+
+/** Wraps fetch to always send the HTTP-only auth cookies to the API. */
+const authFetch = (url: string, init: RequestInit = {}): Promise<Response> =>
+    fetch(url, { ...init, credentials: 'include' });
 
 interface CollectionResponse<T> {
     data?: T[];
@@ -34,10 +42,12 @@ export const AdminRegistrationsService = {
         let disableApi = true;
         if (disableApi) return { items: [], total: 0 };
 
-        const response = await axiosClient.get<CollectionResponse<WithCreatedAt<Registration>>>('/api/wlcm/registrations', {
-            params: { page, limit },
+        const response = await authFetch(`${API_BASE}/api/wlcm/registrations?page=${page}&limit=${limit}`, {
+            headers: authHeaders(),
         });
-        const { items, total } = parseTotalFromResponse<WithCreatedAt<Registration>>(response.data);
+        if (!response.ok) throw new Error('Failed to fetch plan-a-visit registrations');
+        const json = await response.json();
+        const { items, total } = parseTotalFromResponse<WithCreatedAt<Registration>>(json);
         return {
             items: items.map(item => ({
                 ...item,
@@ -56,10 +66,12 @@ export const AdminRegistrationsService = {
         let disableApi = true;
         if (disableApi) return { items: [], total: 0 };
 
-        const response = await axiosClient.get<CollectionResponse<WithCreatedAt<EncounterRegistration>>>('/api/wlcm/encounter', {
-            params: { page, limit },
+        const response = await authFetch(`${API_BASE}/api/wlcm/encounter?page=${page}&limit=${limit}`, {
+            headers: authHeaders(),
         });
-        const { items, total } = parseTotalFromResponse<WithCreatedAt<EncounterRegistration>>(response.data);
+        if (!response.ok) throw new Error('Failed to fetch encounter registrations');
+        const json = await response.json();
+        const { items, total } = parseTotalFromResponse<WithCreatedAt<EncounterRegistration>>(json);
         return {
             items: items.map(item => ({
                 ...item,
@@ -78,10 +90,12 @@ export const AdminRegistrationsService = {
         let disableApi = true;
         if (disableApi) return { items: [], total: 0 };
 
-        const response = await axiosClient.get<CollectionResponse<WithCreatedAt<DiscipleshipRegistration>>>('/api/wlcm/discipleship', {
-            params: { page, limit },
+        const response = await authFetch(`${API_BASE}/api/wlcm/discipleship?page=${page}&limit=${limit}`, {
+            headers: authHeaders(),
         });
-        const { items, total } = parseTotalFromResponse<WithCreatedAt<DiscipleshipRegistration>>(response.data);
+        if (!response.ok) throw new Error('Failed to fetch discipleship submissions');
+        const json = await response.json();
+        const { items, total } = parseTotalFromResponse<WithCreatedAt<DiscipleshipRegistration>>(json);
         return {
             items: items.map(item => ({
                 ...item,
