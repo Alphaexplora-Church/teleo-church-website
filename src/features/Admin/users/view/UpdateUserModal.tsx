@@ -40,7 +40,7 @@ function UpdateUserForm({ user, onClose, onSave }: { user: ManagedUser; onClose:
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-midnight-teal/45 p-4 backdrop-blur-md" onMouseDown={onClose}>
-            <form onSubmit={submit} onMouseDown={event => event.stopPropagation()} className="admin-solid-surface max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-3xl border border-white/70 shadow-2xl shadow-midnight-teal/30">
+            <form onSubmit={submit} onMouseDown={event => event.stopPropagation()} className="bg-white max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-3xl border border-white/70 shadow-2xl shadow-midnight-teal/30">
                 <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-midnight-teal/95 px-6 py-5 backdrop-blur-xl">
                     <h2 className="font-serif text-2xl text-soft-linen">Update User</h2>
                     <button type="button" onClick={onClose} aria-label="Close update form" className="flex h-9 w-9 items-center justify-center rounded-full text-2xl leading-none text-soft-linen/60 transition-colors hover:bg-white/10 hover:text-soft-linen">&times;</button>
