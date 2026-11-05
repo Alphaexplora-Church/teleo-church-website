@@ -1,6 +1,4 @@
 import { Archive, CalendarDays, Eye, Image as ImageIcon, Megaphone, Pencil, Plus, Search } from 'lucide-react';
-import AdminHeader from '../../../../shared/components/AdminHeader';
-import AdminSidebar from '../../../../shared/components/AdminSidebar';
 import { isChurchEvent } from '../model/content.types';
 import type { ContentItem } from '../model/content.types';
 import { useAdminEventsViewModel } from '../viewmodel/useAdminEventsViewModel';
@@ -62,11 +60,7 @@ export default function AdminEventsView() {
     const visibleItems: ContentItem[] = isEvent ? vm.filteredEvents : vm.filteredAnnouncements;
 
     return (
-        <div className="admin-shell flex flex-col lg:flex-row">
-            <AdminSidebar />
-            <div className="relative z-10 flex flex-1 flex-col">
-                <AdminHeader />
-                <main className="admin-main mx-auto w-full max-w-7xl flex-1 space-y-6 px-6 py-8 lg:px-10">
+        <div className="mx-auto w-full max-w-7xl space-y-6">
                     <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                         <div>
                             <h1 className="font-serif text-2xl text-midnight-teal">{isEvent ? 'Events' : 'Announcements'}</h1>
@@ -128,8 +122,6 @@ export default function AdminEventsView() {
                             <PageButton disabled={!vm.hasMore} onClick={vm.nextPage}>Next</PageButton>
                         </div>
                     )}
-                </main>
-            </div>
 
             {vm.toast && <div className={`fixed bottom-6 right-6 z-50 rounded-xl px-5 py-3 text-sm font-semibold shadow-xl ${vm.toast.type === 'success' ? 'bg-midnight-teal text-soft-linen' : 'bg-red-500 text-white'}`}>{vm.toast.msg}</div>}
             {vm.showModal && <EventModal key={vm.editTarget?.id ?? 'new'} title={modalTitle} isEvent={isEvent} initial={modalInitial} onClose={vm.closeModal} onSave={vm.handleSave} />}
