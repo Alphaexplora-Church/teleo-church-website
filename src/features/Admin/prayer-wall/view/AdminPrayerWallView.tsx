@@ -1,5 +1,7 @@
 import { CheckCircle2, ChevronLeft, ChevronRight, Flame, Heart, HeartHandshake, MessageSquare, Shield, Sparkles } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import AdminHeader from '../../../../shared/components/AdminHeader';
+import AdminSidebar from '../../../../shared/components/AdminSidebar';
 import AdminPrayerDrawer from '../components/AdminPrayerDrawer';
 import type { AdminPrayer } from '../model/adminPrayerWall.types';
 import { useAdminPrayerWallViewModel } from '../viewmodel/useAdminPrayerWallViewModel';
@@ -9,7 +11,11 @@ export default function AdminPrayerWallView() {
     const theme = CARD_THEMES[vm.featuredIndex % CARD_THEMES.length];
 
     return (
-        <div className="mx-auto w-full max-w-7xl space-y-6">
+        <div className="admin-shell flex flex-col lg:flex-row">
+            <AdminSidebar />
+            <div className="relative flex flex-1 flex-col">
+                <AdminHeader />
+                <main className="admin-main mx-auto w-full max-w-7xl flex-1 space-y-6 px-6 py-8 lg:px-10">
                     {/* Header with Title & View Mode Switcher */}
                     <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <div>
@@ -101,11 +107,11 @@ export default function AdminPrayerWallView() {
                     ) : (
                         <>
                             {/* Featured prayer card with flip animation */}
-                            <section className="relative min-h-[610px] overflow-hidden rounded-3xl border border-white/70 bg-white/65 px-5 py-10 shadow-xl shadow-midnight-teal/5 backdrop-blur-xl sm:px-10">
+                            <section className="prayer-featured-stage relative overflow-hidden rounded-3xl border border-white/70 bg-white/65 px-5 py-10 shadow-xl shadow-midnight-teal/5 backdrop-blur-xl sm:px-10">
                                 <div className="mx-auto max-w-md">
                                     {vm.featured ? (
                                         <>
-                                            <div className="relative mx-auto h-[470px] min-h-[470px] max-w-sm">
+                                            <div className="prayer-card-deck relative mx-auto max-w-sm">
                                                 {/* Colored cards behind active card */}
                                                 <motion.div className="absolute inset-x-7 bottom-3 top-7 rounded-3xl shadow-xl" animate={{ rotate: 6, backgroundColor: theme.backOne }} transition={{ duration: 0.45, ease: 'easeInOut' }} />
                                                 <motion.div className="absolute inset-x-7 bottom-3 top-7 rounded-3xl shadow-xl" animate={{ rotate: -6, backgroundColor: theme.backTwo }} transition={{ duration: 0.45, ease: 'easeInOut', delay: 0.03 }} />
@@ -292,6 +298,8 @@ export default function AdminPrayerWallView() {
                             </section>
                         </>
                     )}
+                </main>
+            </div>
             <AdminPrayerDrawer
                 isOpen={Boolean(vm.selectedDrawerPrayer)}
                 onClose={vm.closeDrawer}

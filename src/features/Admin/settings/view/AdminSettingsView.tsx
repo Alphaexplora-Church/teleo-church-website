@@ -1,4 +1,6 @@
 import { Building2, LogOut, Mail, ShieldCheck, UserRound } from 'lucide-react';
+import AdminHeader from '../../../../shared/components/AdminHeader';
+import AdminSidebar from '../../../../shared/components/AdminSidebar';
 import { useAdminSettingsViewModel } from '../viewmodel/useAdminSettingsViewModel';
 
 export default function AdminSettingsView() {
@@ -6,7 +8,11 @@ export default function AdminSettingsView() {
     const initials = vm.userName.slice(0, 2).toUpperCase();
 
     return (
-        <div className="mx-auto w-full max-w-7xl space-y-6">
+        <div className="admin-shell flex flex-col lg:flex-row">
+            <AdminSidebar />
+            <div className="relative z-10 flex flex-1 flex-col">
+                <AdminHeader />
+                <main className="admin-main mx-auto w-full max-w-7xl flex-1 space-y-6 px-6 py-8 lg:px-10">
                     <header>
                         <h1 className="font-serif text-2xl text-midnight-teal">Settings</h1>
                         <p className="mt-1 text-sm text-gray-500">View your account, church assignment, and session controls.</p>
@@ -41,6 +47,8 @@ export default function AdminSettingsView() {
                             </section>
                         </div>
                     </div>
+                </main>
+            </div>
         </div>
     );
 }
