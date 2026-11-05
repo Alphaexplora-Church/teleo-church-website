@@ -5,7 +5,18 @@ import type {
     FetchAdminPrayersParams,
     FetchIntercessionParams
 } from './adminPrayerWall.types';
-import { axiosClient, getApiErrorMessage } from '../../../../shared/models/api/axiosClient.api';
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000';
+
+/** Wraps fetch to always send the HTTP-only auth cookies to the API. */
+const authFetch = (url: string, init: RequestInit = {}): Promise<Response> => {
+    const token = localStorage.getItem('access_token');
+    const headers = new Headers(init.headers || {});
+    if (token) {
+        headers.set('Authorization', `Bearer ${token}`);
+    }
+    return fetch(url, { ...init, headers, credentials: 'include' });
+};
 
 interface AdminPrayersApiResponse {
     data?: (AdminPrayer & { prayer_id?: string })[];
@@ -18,12 +29,15 @@ export const AdminPrayerWallModel = {
      * GET /api/prayers/admin/churches
      */
     fetchChurchPrayers: async ({ churchId, cursor, limit = 20 }: FetchAdminPrayersParams = {}): Promise<AdminPrayerPage> => {
-        const params: Record<string, string> = { limit: String(limit) };
-        if (churchId != null) params.church_id = String(churchId);
-        if (cursor) params.cursor = cursor;
+        const query = new URLSearchParams();
+        if (churchId != null) query.set('church_id', String(churchId));
+        if (cursor) query.set('cursor', cursor);
+        query.set('limit', String(limit));
 
-        const response = await axiosClient.get<AdminPrayersApiResponse>('/api/prayers/admin/churches', { params });
-        const json = response.data;
+        const response = await authFetch(`${API_BASE}/api/prayers/admin/churches?${query.toString()}`);
+        if (!response.ok) throw new Error('Failed to fetch church prayer requests');
+
+        const json = await response.json() as AdminPrayersApiResponse;
         const items: AdminPrayer[] = (json.data ?? []).map(p => ({
             ...p,
             id: p.id || p.prayer_id || ''
@@ -41,13 +55,16 @@ export const AdminPrayerWallModel = {
      * GET /api/prayers/admin/intercession
      */
     fetchIntercessionQueue: async ({ churchId, status = 'ALL', cursor, limit = 20 }: FetchIntercessionParams = {}): Promise<AdminPrayerPage> => {
-        const params: Record<string, string> = { limit: String(limit) };
-        if (churchId != null) params.church_id = String(churchId);
-        if (status) params.status = status;
-        if (cursor) params.cursor = cursor;
+        const query = new URLSearchParams();
+        if (churchId != null) query.set('church_id', String(churchId));
+        if (status) query.set('status', status);
+        if (cursor) query.set('cursor', cursor);
+        query.set('limit', String(limit));
 
-        const response = await axiosClient.get<AdminPrayersApiResponse>('/api/prayers/admin/intercession', { params });
-        const json = response.data;
+        const response = await authFetch(`${API_BASE}/api/prayers/admin/intercession?${query.toString()}`);
+        if (!response.ok) throw new Error('Failed to fetch intercession queue');
+
+        const json = await response.json() as AdminPrayersApiResponse;
         const items: AdminPrayer[] = (json.data ?? []).map(p => ({
             ...p,
             id: p.prayer_id || p.id || '',
@@ -67,8 +84,9 @@ export const AdminPrayerWallModel = {
      * GET /api/prayers/:id
      */
     fetchPrayerById: async (prayerId: string): Promise<AdminPrayer> => {
-        const response = await axiosClient.get<AdminPrayer>(`/api/prayers/${prayerId}`);
-        const json = response.data;
+        const response = await authFetch(`${API_BASE}/api/prayers/${prayerId}`);
+        if (!response.ok) throw new Error('Failed to fetch prayer details');
+        const json = await response.json() as AdminPrayer;
         return {
             ...json,
             id: json.id || json.prayer_id || ''
@@ -80,15 +98,19 @@ export const AdminPrayerWallModel = {
      * POST /api/prayers/:id/react { reaction_type: 'PRAYED' }
      */
     toggleMarkAsPrayed: async (prayerId: string): Promise<{ action: 'added' | 'removed' }> => {
-        try {
-            const response = await axiosClient.post<{ action: 'added' | 'removed' }>(
-                `/api/prayers/${prayerId}/react`,
-                { reaction_type: 'PRAYED' }
-            );
-            return response.data;
-        } catch (error) {
-            throw new Error(getApiErrorMessage(error) || 'Failed to update prayer reaction');
+        const response = await authFetch(`${API_BASE}/api/prayers/${prayerId}/react`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reaction_type: 'PRAYED' })
+        });
+
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            const msg = err?.error?.message || err?.message || (typeof err?.error === 'string' ? err.error : null) || 'Failed to update prayer reaction';
+            throw new Error(msg);
         }
+
+        return await response.json() as { action: 'added' | 'removed' };
     },
 
     /**
@@ -96,15 +118,19 @@ export const AdminPrayerWallModel = {
      * POST /api/prayers/:id/comments
      */
     addComment: async (prayerId: string, content: string): Promise<AdminPrayerComment> => {
-        try {
-            const response = await axiosClient.post<AdminPrayerComment>(
-                `/api/prayers/${prayerId}/comments`,
-                { content }
-            );
-            return response.data;
-        } catch (error) {
-            throw new Error(getApiErrorMessage(error) || 'Failed to post comment');
+        const response = await authFetch(`${API_BASE}/api/prayers/${prayerId}/comments`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content })
+        });
+
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            const msg = err?.error?.message || err?.message || (typeof err?.error === 'string' ? err.error : null) || 'Failed to post comment';
+            throw new Error(msg);
         }
+
+        return await response.json() as AdminPrayerComment;
     },
 
     /**
@@ -112,15 +138,19 @@ export const AdminPrayerWallModel = {
      * PUT /api/prayers/:id/comments/:commentId
      */
     updateComment: async (prayerId: string, commentId: string, content: string): Promise<AdminPrayerComment> => {
-        try {
-            const response = await axiosClient.put<AdminPrayerComment>(
-                `/api/prayers/${prayerId}/comments/${commentId}`,
-                { content }
-            );
-            return response.data;
-        } catch (error) {
-            throw new Error(getApiErrorMessage(error) || 'Failed to update comment');
+        const response = await authFetch(`${API_BASE}/api/prayers/${prayerId}/comments/${commentId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content })
+        });
+
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            const msg = err?.error?.message || err?.message || (typeof err?.error === 'string' ? err.error : null) || 'Failed to update comment';
+            throw new Error(msg);
         }
+
+        return await response.json() as AdminPrayerComment;
     },
 
     /**
@@ -128,13 +158,16 @@ export const AdminPrayerWallModel = {
      * DELETE /api/prayers/:id/comments/:commentId
      */
     deleteComment: async (prayerId: string, commentId: string): Promise<{ message: string }> => {
-        try {
-            const response = await axiosClient.delete<{ message: string }>(
-                `/api/prayers/${prayerId}/comments/${commentId}`
-            );
-            return response.data;
-        } catch (error) {
-            throw new Error(getApiErrorMessage(error) || 'Failed to delete comment');
+        const response = await authFetch(`${API_BASE}/api/prayers/${prayerId}/comments/${commentId}`, {
+            method: 'DELETE'
+        });
+
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            const msg = err?.error?.message || err?.message || (typeof err?.error === 'string' ? err.error : null) || 'Failed to delete comment';
+            throw new Error(msg);
         }
+
+        return await response.json() as { message: string };
     }
 };

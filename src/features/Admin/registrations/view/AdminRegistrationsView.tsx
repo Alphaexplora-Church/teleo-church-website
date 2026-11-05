@@ -1,4 +1,6 @@
 // ─── Admin Registrations: View ──────────────────────────────────────────────
+import AdminSidebar from '../../../../shared/components/AdminSidebar';
+import AdminHeader from '../../../../shared/components/AdminHeader';
 import { useAdminRegistrationsViewModel } from '../viewmodel/useAdminRegistrationsViewModel';
 import type { RegistrationTab } from '../viewmodel/useAdminRegistrationsViewModel';
 import type { Registration } from '../model/adminRegistrations.types';
@@ -65,7 +67,13 @@ export default function AdminRegistrationsView() {
     };
 
     return (
-        <div className="mx-auto w-full max-w-7xl space-y-6">
+        <div className="admin-shell flex flex-col lg:flex-row">
+            <AdminSidebar />
+
+            <div className="relative z-10 flex flex-1 flex-col">
+                <AdminHeader />
+
+                <main className="admin-main mx-auto w-full max-w-7xl flex-1 space-y-6 px-6 py-8 lg:px-10">
                     {/* ── Page Title ─────────────────────────────────── */}
                     <div>
                         <h1 className="text-2xl font-serif text-midnight-teal">Registrations</h1>
@@ -236,6 +244,8 @@ export default function AdminRegistrationsView() {
                             </button>
                         </div>
                     )}
+                </main>
+            </div>
         </div>
     );
 }
