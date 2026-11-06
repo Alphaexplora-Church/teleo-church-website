@@ -32,6 +32,7 @@ export interface ApiDiscipleshipGroup {
   name?: string;
   discipleship_name?: string;
   title?: string;
+  description?: string | null;
   capacity_limit?: number | null;
   max_seats?: number | null;
   active_member_count?: number;
@@ -40,8 +41,11 @@ export interface ApiDiscipleshipGroup {
   leader_name?: string | null;
   leader_image_url?: string | null;
   leaders?: Array<{
-    id: string;
-    name: string;
+    id?: string;
+    uid?: string;
+    name?: string;
+    first_name?: string;
+    last_name?: string;
     image_url?: string;
     role?: string;
   }>;
@@ -85,3 +89,105 @@ export interface ToggleDiscipleshipModuleResponse {
   discipleship_enabled: boolean;
   message?: string;
 }
+
+/**
+ * Payload for POST /api/discipleships
+ */
+export interface CreateDiscipleshipGroupPayload {
+  church_id?: number | string;
+  name: string;
+  description?: string;
+  capacity_limit?: number;
+}
+
+/**
+ * Response for POST /api/discipleships
+ */
+export interface CreateDiscipleshipGroupResponse {
+  discipleship_id?: string;
+  id?: string;
+  church_id?: number | string;
+  name: string;
+  capacity_limit?: number;
+  status?: string;
+  created_at?: string;
+}
+
+/**
+ * Payload for POST /api/discipleships/:id/disciplers
+ */
+export interface AssignDisciplerPayload {
+  user_id: string;
+  role?: "leader" | "co_leader" | string;
+}
+
+/**
+ * Response for POST /api/discipleships/:id/disciplers
+ */
+export interface AssignDisciplerResponse {
+  membership?: {
+    id: string;
+    discipleship_id: string;
+    user_id: string;
+    role: string;
+    status: string;
+  };
+}
+
+/**
+ * Discipler candidate returned by GET /api/churches/:churchId/discipler-candidates
+ */
+export interface ApiDisciplerCandidate {
+  uid?: string;
+  user_id?: string;
+  id?: string;
+  first_name?: string;
+  last_name?: string;
+  name?: string;
+  email?: string;
+  profile_picture_url?: string | null;
+}
+
+export interface DisciplerCandidatesResponse {
+  candidates?: ApiDisciplerCandidate[];
+}
+
+/**
+ * Payload for PATCH /api/discipleships/:id
+ */
+export interface UpdateDiscipleshipGroupPayload {
+  name?: string;
+  capacity_limit?: number;
+  status?: "active" | "inactive" | "archived" | string;
+}
+
+export interface UpdateDiscipleshipGroupResponse {
+  discipleship?: {
+    id: string;
+    name?: string;
+    capacity_limit?: number;
+    status?: string;
+    updated_at?: string;
+  };
+}
+
+/**
+ * Payload for POST /api/discipleship-discussion-questions
+ */
+export interface PostDiscussionQuestionPayload {
+  church_id?: number | string;
+  question_text: string;
+}
+
+/**
+ * Response for POST /api/discipleship-discussion-questions
+ */
+export interface PostDiscussionQuestionResponse {
+  question_id?: string;
+  id?: string;
+  church_id?: number | string;
+  question_text: string;
+  status?: string;
+  created_at?: string;
+}
+

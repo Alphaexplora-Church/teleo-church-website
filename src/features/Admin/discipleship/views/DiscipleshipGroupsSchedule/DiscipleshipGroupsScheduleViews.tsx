@@ -4,10 +4,7 @@ import {
   DiscipleshipTabSwitch,
 } from "../../components/DiscipleshipTabSwitch/DiscipleshipTabSwitch";
 import { DiscipleshipModalNewGroup } from "../../components/DiscipleshipModal/DiscipleshipModalNewGroup";
-import {
-  DiscipleshipModalDiscussionPrompt,
-  type ActiveDiscussionPrompt,
-} from "../../components/DiscipleshipModal/DiscipleshipModalDiscussionPrompt";
+import { DiscipleshipModalDiscussionPrompt } from "../../components/DiscipleshipModal/DiscipleshipModalDiscussionPrompt";
 import { DiscipleshipGroupsScheduleDirectory } from "./DiscipleshipGroupsScheduleDirectory";
 import { DiscipleshipGroupsScheduleCalendar } from "./DiscipleshipGroupsScheduleCalendar";
 import { GROUPS_SCHEDULE_UI } from "../../models/constants/groupsScheduleViews.constants";
@@ -16,8 +13,6 @@ import { useDiscipleshipViewModel } from "../../viewmodels/useDiscipleshipViewMo
 export function DiscipleshipGroupsScheduleViews() {
   const [isNewGroupModalOpen, setIsNewGroupModalOpen] = useState(false);
   const [isDiscussionPromptModalOpen, setIsDiscussionPromptModalOpen] = useState(false);
-  const [activeDiscussionPrompt, setActiveDiscussionPrompt] =
-    useState<ActiveDiscussionPrompt | null>(null);
 
   const vm = useDiscipleshipViewModel();
 
@@ -77,29 +72,36 @@ export function DiscipleshipGroupsScheduleViews() {
       {/* Reusable Create New Discipleship Group Modal */}
       <DiscipleshipModalNewGroup
         isOpen={isNewGroupModalOpen}
-        onClose={() => setIsNewGroupModalOpen(false)}
-        availableLeaders={vm.filter.leaders}
-        onSubmit={() => {
+        onClose={() => {
           setIsNewGroupModalOpen(false);
+          vm.groupCreation.clearError();
+        }}
+        availableLeaders={vm.groupCreation.candidates}
+        isLoading={vm.groupCreation.isCreating}
+        error={vm.groupCreation.error}
+        onSubmit={async (formData) => {
+          const success = await vm.groupCreation.onCreateGroup(formData);
+          if (success) {
+            setIsNewGroupModalOpen(false);
+          }
         }}
       />
 
       {/* Reusable Discussion Prompts Modal */}
       <DiscipleshipModalDiscussionPrompt
         isOpen={isDiscussionPromptModalOpen}
-        onClose={() => setIsDiscussionPromptModalOpen(false)}
-        activePrompt={activeDiscussionPrompt}
-        onSubmit={(promptText) => {
-          const formatted =
-            promptText.startsWith("“") || promptText.startsWith('"')
-              ? promptText
-              : `“${promptText}”`;
-          setActiveDiscussionPrompt({
-            id: Date.now().toString(),
-            text: formatted,
-            postedAt: "Posted just now",
-            status: "ACTIVE",
-          });
+        onClose={() => {
+          setIsDiscussionPromptModalOpen(false);
+          vm.discussionPrompt.clearError();
+        }}
+        activePrompt={vm.discussionPrompt.activePrompt}
+        isLoading={vm.discussionPrompt.isPosting}
+        error={vm.discussionPrompt.error}
+        onSubmit={async (promptText) => {
+          const success = await vm.discussionPrompt.onPostPrompt(promptText);
+          if (success) {
+            setIsDiscussionPromptModalOpen(false);
+          }
         }}
       />
     </div>

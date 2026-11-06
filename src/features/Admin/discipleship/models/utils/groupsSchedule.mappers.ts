@@ -49,9 +49,10 @@ export function extractLeaderFilterOptions(
   groups.forEach((group) => {
     if (group.leaders?.length) {
       group.leaders.forEach((leader) => {
-        if (leader.name && !leaderMap.has(leader.name)) {
+        const leaderId = leader.id || leader.uid || leader.name;
+        if (leader.name && leaderId && !leaderMap.has(leader.name)) {
           leaderMap.set(leader.name, {
-            id: leader.id,
+            id: leaderId,
             name: leader.name,
             imageUrl: leader.image_url,
           });

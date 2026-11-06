@@ -17,6 +17,7 @@ function IntakeSchemaModalContent({
   questions: initialQuestions,
   onSaveSchema,
   isLoading = false,
+  error = null,
 }: Omit<DiscipleshipModalIntakeSchemaProps, "isOpen">) {
   const [questions, setQuestions] = useState<IntakeQuestion[]>(initialQuestions ?? []);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -82,8 +83,12 @@ function IntakeSchemaModalContent({
 
   const handleSave = async () => {
     if (isSaveDisabled) return;
-    await onSaveSchema(questions);
-    onClose();
+    try {
+      await onSaveSchema(questions);
+      onClose();
+    } catch {
+      // Keep modal open on save failure so user doesn't lose edits
+    }
   };
 
   return (
@@ -126,6 +131,13 @@ function IntakeSchemaModalContent({
             <X className="h-5 w-5" />
           </button>
         </div>
+
+        {/* Error Banner */}
+        {error && (
+          <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-700">
+            {error}
+          </div>
+        )}
 
         {/* Question List Area */}
         <div className="mt-4 flex-1 space-y-3 overflow-y-auto pr-1">

@@ -5,6 +5,10 @@ import { getApiErrorMessage } from "../../../../shared/models/api/axiosClient.ap
 import { DiscipleshipGroupListApi } from "../models/api/discipleshipGroupList.api";
 import { DiscipleshipModuleApi } from "../models/api/discipleshipModule.api";
 import { DiscipleshipCalendarApi } from "../models/api/discipleshipCalendar.api";
+import { DiscipleshipGroupsApi } from "../models/api/discipleshipGroups.api";
+import { DiscipleshipDiscussionApi } from "../models/api/discipleshipDiscussion.api";
+import type { DiscipleshipNewGroupFormData } from "../components/DiscipleshipModal/DiscipleshipModalNewGroup";
+import type { ActiveDiscussionPrompt } from "../components/DiscipleshipModal/DiscipleshipModalDiscussionPrompt";
 import {
   mapApiGroupToItem,
   extractLeaderFilterOptions,
@@ -12,6 +16,7 @@ import {
 import type {
   ApiDisciplerLoad,
   ApiDiscipleshipGroup,
+  ApiDisciplerCandidate,
   DiscipleshipGroupItem,
   LeaderFilterOption,
   DiscipleshipTab,
@@ -42,15 +47,26 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
   const [rawGroups, setRawGroups] = useState<ApiDiscipleshipGroup[]>([]);
   const [disciplerLoad, setDisciplerLoad] = useState<ApiDisciplerLoad[]>([]);
   const [calendarMeetings, setCalendarMeetings] = useState<ApiDiscipleshipMeeting[]>([]);
+  const [disciplerCandidates, setDisciplerCandidates] = useState<ApiDisciplerCandidate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Group creation state
+  const [isCreatingGroup, setIsCreatingGroup] = useState(false);
+  const [createGroupError, setCreateGroupError] = useState<string | null>(null);
+
+  // Discussion prompt state
+  const [activeDiscussionPrompt, setActiveDiscussionPrompt] =
+    useState<ActiveDiscussionPrompt | null>(null);
+  const [isPostingPrompt, setIsPostingPrompt] = useState(false);
+  const [promptError, setPromptError] = useState<string | null>(null);
 
   // Filtering states
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLeaders, setSelectedLeaders] = useState<string[]>([]);
 
   /**
-   * Fetches the church-wide discipleship dashboard and calendar from backend
+   * Fetches the church-wide discipleship dashboard, calendar, and discipler candidates from backend
    */
   const fetchDashboard = useCallback(async () => {
     setIsLoading(true);
@@ -58,9 +74,10 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
     const signal = getSignal();
 
     try {
-      const [dashboardResult, calendarResult] = await Promise.allSettled([
+      const [dashboardResult, calendarResult, candidatesResult] = await Promise.allSettled([
         DiscipleshipGroupListApi.getDiscipleshipDashboard(churchId, signal),
         DiscipleshipCalendarApi.getChurchDiscipleshipCalendar(churchId, signal),
+        DiscipleshipGroupsApi.getDisciplerCandidates(churchId, signal),
       ]);
 
       if (dashboardResult.status === "fulfilled") {
@@ -78,6 +95,10 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
 
       if (calendarResult.status === "fulfilled") {
         setCalendarMeetings(calendarResult.value.meetings ?? []);
+      }
+
+      if (candidatesResult.status === "fulfilled") {
+        setDisciplerCandidates(candidatesResult.value);
       }
     } catch (err) {
       if (isAbortError(err)) return;
@@ -160,6 +181,118 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
     }).length;
   }, [calendarMeetings]);
 
+  /**
+   * Candidate leaders for group assignment: merges eligible candidates from
+   * /discipler-candidates with existing group leaders.
+   */
+  const candidateLeaders = useMemo<LeaderFilterOption[]>(() => {
+    const leaderMap = new Map<string, LeaderFilterOption>();
+
+    disciplerCandidates.forEach((c) => {
+      const id = c.uid || c.user_id || c.id;
+      const name = c.name || [c.first_name, c.last_name].filter(Boolean).join(" ");
+      if (id && name) {
+        leaderMap.set(id, {
+          id,
+          name,
+          imageUrl: c.profile_picture_url || undefined,
+        });
+      }
+    });
+
+    availableLeaders.forEach((l) => {
+      if (!leaderMap.has(l.id)) {
+        leaderMap.set(l.id, l);
+      }
+    });
+
+    return Array.from(leaderMap.values());
+  }, [disciplerCandidates, availableLeaders]);
+
+  /**
+   * Creates a new discipleship group and assigns the designated discipler
+   */
+  const handleCreateGroup = useCallback(
+    async (formData: DiscipleshipNewGroupFormData): Promise<boolean> => {
+      if (isCreatingGroup) return false;
+      setIsCreatingGroup(true);
+      setCreateGroupError(null);
+
+      try {
+        // 1. Create discipleship group: POST /api/discipleships
+        const createRes = await DiscipleshipGroupsApi.createGroup({
+          church_id: churchId,
+          name: formData.name.trim(),
+          capacity_limit: formData.maxCapacity > 0 ? formData.maxCapacity : undefined,
+        });
+
+        const newGroupId = createRes.discipleship_id || createRes.id;
+
+        // 2. If a discipler is selected, assign them: POST /api/discipleships/:id/disciplers
+        if (newGroupId && formData.disciplerId) {
+          try {
+            await DiscipleshipGroupsApi.assignDiscipler(newGroupId, {
+              user_id: formData.disciplerId,
+              role: "leader",
+            });
+          } catch (assignErr) {
+            console.error("Group created but leader assignment failed:", assignErr);
+          }
+        }
+
+        // 3. Auto-refresh dashboard & directory
+        await fetchDashboard();
+        return true;
+      } catch (err) {
+        const message = getApiErrorMessage(err);
+        setCreateGroupError(message || "Failed to create discipleship group.");
+        return false;
+      } finally {
+        setIsCreatingGroup(false);
+      }
+    },
+    [churchId, fetchDashboard, isCreatingGroup],
+  );
+
+  /**
+   * Posts a new church-wide discussion prompt to backend: POST /api/discipleship-discussion-questions
+   */
+  const handlePostDiscussionPrompt = useCallback(
+    async (promptText: string): Promise<boolean> => {
+      if (isPostingPrompt) return false;
+      setIsPostingPrompt(true);
+      setPromptError(null);
+
+      try {
+        const res = await DiscipleshipDiscussionApi.postDiscussionQuestion({
+          church_id: churchId,
+          question_text: promptText.trim(),
+        });
+
+        const formatted =
+          promptText.startsWith("“") || promptText.startsWith('"')
+            ? promptText
+            : `“${promptText}”`;
+
+        setActiveDiscussionPrompt({
+          id: res.question_id || res.id || Date.now().toString(),
+          text: res.question_text || formatted,
+          postedAt: "Posted just now",
+          status: "ACTIVE",
+        });
+
+        return true;
+      } catch (err) {
+        const message = getApiErrorMessage(err);
+        setPromptError(message || "Failed to post discussion prompt.");
+        return false;
+      } finally {
+        setIsPostingPrompt(false);
+      }
+    },
+    [churchId, isPostingPrompt],
+  );
+
   return {
     churchId,
 
@@ -169,7 +302,6 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
       onChange: setActiveTab,
       todayScheduleCount,
     },
-
 
     // Module toggle
     module: {
@@ -181,6 +313,24 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
     // Groups data
     groups,
     filteredGroups,
+
+    // Group Creation & Candidates
+    groupCreation: {
+      candidates: candidateLeaders,
+      isCreating: isCreatingGroup,
+      error: createGroupError,
+      onCreateGroup: handleCreateGroup,
+      clearError: () => setCreateGroupError(null),
+    },
+
+    // Discussion Prompts
+    discussionPrompt: {
+      activePrompt: activeDiscussionPrompt,
+      isPosting: isPostingPrompt,
+      error: promptError,
+      onPostPrompt: handlePostDiscussionPrompt,
+      clearError: () => setPromptError(null),
+    },
 
     // Filter controls
     filter: {
