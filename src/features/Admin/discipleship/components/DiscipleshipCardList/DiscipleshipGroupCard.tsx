@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { MoreVertical, Pencil, Trash2, Users } from "lucide-react";
 import { Dropdown } from "../../../../../shared/components/Dropdown/Dropdown";
+import { DiscipleshipAvatar } from "../DiscipleshipAvatar/DiscipleshipAvatar";
 
 export interface DiscipleshipGroupCardProps {
   /** Name of the discipleship group (e.g. "The Fig Tree Group") */
@@ -58,18 +59,12 @@ export function DiscipleshipGroupCard({
       {/* Top Header: Discipler Avatar + Discipler Name + Action Icon */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          {/* Discipler Image / Gray Circle Placeholder */}
-          <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-slate-200 ring-1 ring-slate-300/40">
-            {leaderImageUrl ? (
-              <img
-                src={leaderImageUrl}
-                alt={displayLeaderName}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div className="h-full w-full bg-slate-200" />
-            )}
-          </div>
+          {/* Discipler Avatar with User icon fallback */}
+          <DiscipleshipAvatar
+            src={leaderImageUrl}
+            alt={displayLeaderName}
+            size="md"
+          />
 
           {/* Discipler Name */}
           <span className="text-sm font-medium text-slate-600">

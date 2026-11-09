@@ -8,6 +8,7 @@ import {
 } from "../../../../../shared/components/Dropdown/Dropdown";
 import { dropdownItemVariants } from "../../../../../shared/components/Dropdown/dropdown.animations";
 import type { LeaderFilterOption } from "../../models/types/groupsScheduleDirectory.types";
+import { DiscipleshipAvatar } from "../DiscipleshipAvatar/DiscipleshipAvatar";
 
 export type { LeaderFilterOption };
 
@@ -186,19 +187,13 @@ export function DirectoriesFilter({
                     onClick={() => handleToggleLeader(leader.name)}
                     className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl px-2.5 py-2 text-left transition-colors hover:bg-midnight-teal/5"
                   >
-                    {/* Left side: Avatar Image / Gray Circle + Leader Name */}
+                    {/* Left side: Avatar Image + Leader Name */}
                     <div className="flex min-w-0 items-center gap-2.5">
-                      <div className="h-7 w-7 shrink-0 overflow-hidden rounded-full bg-slate-200 ring-1 ring-slate-300/40">
-                        {leader.imageUrl ? (
-                          <img
-                            src={leader.imageUrl}
-                            alt={leader.name}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <div className="h-full w-full bg-slate-200" />
-                        )}
-                      </div>
+                      <DiscipleshipAvatar
+                        src={leader.imageUrl}
+                        alt={leader.name}
+                        size="sm"
+                      />
 
                       <span className="truncate text-sm font-medium text-midnight-teal">
                         {leader.name}

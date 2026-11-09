@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Check, ChevronDown, X } from "lucide-react";
 import { Button } from "../../../../../shared/components/Button/Button";
 import type { LeaderFilterOption } from "../../models/types/groupsScheduleDirectory.types";
+import { DiscipleshipAvatar } from "../DiscipleshipAvatar/DiscipleshipAvatar";
 
 export interface DiscipleshipNewGroupFormData {
   name: string;
@@ -39,7 +40,9 @@ function DiscipleshipNewGroupModalContent({
   // Form State initialized fresh on mount
 
   const [name, setName] = useState(initialData?.name ?? "");
-  const [maxCapacity, setMaxCapacity] = useState<number>(initialData?.maxCapacity ?? 0);
+  const [maxCapacity, setMaxCapacity] = useState<number | string>(
+    initialData?.maxCapacity !== undefined ? initialData.maxCapacity : "",
+  );
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedDiscipler, setSelectedDiscipler] = useState<LeaderFilterOption | null>(() => {
     if (initialData?.disciplerId || initialData?.disciplerName) {
@@ -101,9 +104,14 @@ function DiscipleshipNewGroupModalContent({
     e.preventDefault();
     if (!name.trim() || !selectedDiscipler || isLoading) return;
 
+    const capacityNum =
+      typeof maxCapacity === "number"
+        ? maxCapacity
+        : parseInt(String(maxCapacity), 10) || 0;
+
     onSubmit?.({
       name: name.trim(),
-      maxCapacity,
+      maxCapacity: capacityNum,
       disciplerId: selectedDiscipler.id,
       disciplerName: selectedDiscipler.name,
       disciplerImageUrl: selectedDiscipler.imageUrl,
@@ -186,11 +194,17 @@ function DiscipleshipNewGroupModalContent({
             <input
               type="number"
               min={0}
-              required
               value={maxCapacity}
-              onChange={(e) =>
-                setMaxCapacity(Math.max(0, parseInt(e.target.value, 10) || 0))
-              }
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val === "") {
+                  setMaxCapacity("");
+                } else {
+                  const num = parseInt(val, 10);
+                  setMaxCapacity(isNaN(num) ? "" : Math.max(0, num));
+                }
+              }}
+              placeholder="e.g. 10"
               className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-base text-midnight-teal shadow-2xs transition-all placeholder:text-slate-400 focus:border-midnight-teal/40 focus:outline-none focus:ring-2 focus:ring-midnight-teal/10 sm:text-sm"
             />
           </div>
@@ -213,10 +227,10 @@ function DiscipleshipNewGroupModalContent({
                 <div className="flex min-w-0 items-center gap-2.5">
                   {selectedDiscipler ? (
                     <>
-                      {/* Grey Circle Placeholder for Lead */}
-                      <div
-                        className="h-7 w-7 shrink-0 rounded-full bg-slate-300 ring-1 ring-slate-200"
-                        aria-hidden="true"
+                      <DiscipleshipAvatar
+                        src={selectedDiscipler.imageUrl}
+                        alt={selectedDiscipler.name}
+                        size="sm"
                       />
 
                       <span className="truncate font-medium text-midnight-teal">
@@ -265,10 +279,10 @@ function DiscipleshipNewGroupModalContent({
                               }`}
                             >
                               <div className="flex min-w-0 items-center gap-2.5">
-                                {/* Grey Circle Placeholder for Lead */}
-                                <div
-                                  className="h-7 w-7 shrink-0 rounded-full bg-slate-300 ring-1 ring-slate-200"
-                                  aria-hidden="true"
+                                <DiscipleshipAvatar
+                                  src={leader.imageUrl}
+                                  alt={leader.name}
+                                  size="sm"
                                 />
 
                                 <span className="truncate">{leader.name}</span>

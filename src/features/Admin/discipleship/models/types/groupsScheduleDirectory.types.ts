@@ -194,6 +194,31 @@ export interface LeadershipHandoffResponse {
 }
 
 /**
+ * Discipleship Group Member row contract
+ * Aligned with discipleship_members table and GET /api/discipleship-members?discipleship_id=
+ */
+export interface ApiDiscipleshipMember {
+  id?: string;
+  membership_id?: string;
+  member_id?: string;
+  discipleship_member_id?: string;
+  discipleship_id?: string;
+  user_id?: string;
+  userId?: string;
+  uid?: string;
+  role?: "leader" | "co_leader" | "member" | string;
+  status?: "active" | "paused" | "left" | "removed" | string;
+  user?: {
+    id?: string;
+    uid?: string;
+    first_name?: string;
+    last_name?: string;
+    name?: string;
+    email?: string;
+  };
+}
+
+/**
  * Payload for POST /api/discipleship-discussion-questions
  */
 export interface PostDiscussionQuestionPayload {

@@ -10,6 +10,7 @@ import type {
   UpdateDiscipleshipGroupResponse,
   LeadershipHandoffPayload,
   LeadershipHandoffResponse,
+  ApiDiscipleshipMember,
 } from "../types/groupsScheduleDirectory.types";
 
 /**
@@ -100,6 +101,54 @@ export const DiscipleshipGroupsApi = {
     const response = await apiClient.post<LeadershipHandoffResponse>(
       "/api/discipleship-leadership-handoffs",
       payload,
+      { signal },
+    );
+    return response.data;
+  },
+
+  /**
+   * Fetches active and paused members of a discipleship group.
+   * Endpoint: GET /api/discipleship-members?discipleship_id=
+   */
+  getGroupMembers: async (
+    discipleshipId: string,
+    signal?: AbortSignal,
+  ): Promise<ApiDiscipleshipMember[]> => {
+    const response = await apiClient.get<any>(
+      `/api/discipleship-members?discipleship_id=${discipleshipId}`,
+      {
+        signal,
+      },
+    );
+    if (Array.isArray(response.data)) return response.data;
+    if (response.data && Array.isArray(response.data.members)) {
+      return response.data.members;
+    }
+    if (response.data?.data && Array.isArray(response.data.data)) {
+      return response.data.data;
+    }
+    if (response.data?.data && Array.isArray(response.data.data.members)) {
+      return response.data.data.members;
+    }
+    return [];
+  },
+
+  /**
+   * Updates membership status (e.g. 'removed', 'left', 'active').
+   * Endpoint: PATCH /api/discipleship-members/:memberId
+   */
+  updateMemberStatus: async (
+    memberId: string,
+    status: "active" | "paused" | "left" | "removed",
+    signal?: AbortSignal,
+  ): Promise<{ status: string }> => {
+    if (!memberId || memberId === "undefined") {
+      console.warn("Attempted to update member status with invalid memberId:", memberId);
+      return { status: "invalid" };
+    }
+    const response = await apiClient.patch<{ status: string }>(
+      `/api/discipleship-members/${memberId}`,
+      { status },
       { signal },
     );
     return response.data;

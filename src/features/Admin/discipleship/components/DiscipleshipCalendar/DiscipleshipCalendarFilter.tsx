@@ -8,6 +8,7 @@ import {
 import { dropdownItemVariants } from "../../../../../shared/components/Dropdown/dropdown.animations";
 import { DISCIPLESHIP_CALENDAR_UI } from "../../models/constants/discipleshipCalendar.constants";
 import type { DiscipleshipCalendarFilterProps } from "../../models/types/discipleshipCalendar.types";
+import { DiscipleshipAvatar } from "../DiscipleshipAvatar/DiscipleshipAvatar";
 
 export function DiscipleshipCalendarFilter({
   formattedWeekRange,
@@ -140,23 +141,11 @@ export function DiscipleshipCalendarFilter({
                     className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl px-2.5 py-2 text-left transition-colors hover:bg-primary/5"
                   >
                     <div className="flex min-w-0 items-center gap-2.5">
-                      <div className="h-7 w-7 shrink-0 overflow-hidden rounded-full bg-slate-200 ring-1 ring-slate-300/40">
-                        {leader.imageUrl ? (
-                          <img
-                            src={leader.imageUrl}
-                            alt={leader.name}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center bg-slate-200 text-[10px] font-bold text-slate-600">
-                            {leader.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .slice(0, 2)
-                              .join("")}
-                          </div>
-                        )}
-                      </div>
+                      <DiscipleshipAvatar
+                        src={leader.imageUrl}
+                        alt={leader.name}
+                        size="sm"
+                      />
 
                       <span className="truncate text-sm font-medium text-primary">
                         {leader.name}

@@ -120,18 +120,76 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
   }, [fetchDashboard]);
 
   /**
-   * Transforms raw API groups into UI model items
+   * Candidate pool derived from /discipler-candidates and discipler_load
+   */
+  const candidateLeadersPool = useMemo<LeaderFilterOption[]>(() => {
+    const leaderMap = new Map<string, LeaderFilterOption>();
+
+    disciplerCandidates.forEach((c) => {
+      const anyCandidate = c as Record<string, unknown>;
+      const id = c.uid || c.user_id || c.id || anyCandidate.profile_id;
+      const name = c.name || [c.first_name, c.last_name].filter(Boolean).join(" ");
+      const imageUrl =
+        c.profile_picture_url ||
+        (typeof anyCandidate.avatar_url === "string" ? anyCandidate.avatar_url : undefined) ||
+        (typeof anyCandidate.image_url === "string" ? anyCandidate.image_url : undefined) ||
+        undefined;
+
+      if (id && name) {
+        leaderMap.set(String(id), {
+          id: String(id),
+          name: name.trim(),
+          imageUrl,
+        });
+      }
+    });
+
+    disciplerLoad.forEach((load) => {
+      if (load.discipler_user_id && load.name && !leaderMap.has(String(load.discipler_user_id))) {
+        leaderMap.set(String(load.discipler_user_id), {
+          id: String(load.discipler_user_id),
+          name: load.name.trim(),
+          imageUrl: load.image_url,
+        });
+      }
+    });
+
+    return Array.from(leaderMap.values());
+  }, [disciplerCandidates, disciplerLoad]);
+
+  /**
+   * Transforms raw API groups into UI model items, resolving leader names against candidate pool
    */
   const groups = useMemo<DiscipleshipGroupItem[]>(() => {
-    return rawGroups.map(mapApiGroupToItem);
-  }, [rawGroups]);
+    return rawGroups.map((g) => mapApiGroupToItem(g, candidateLeadersPool));
+  }, [rawGroups, candidateLeadersPool]);
 
   /**
    * Dynamically extracts leader options from real API data
    */
   const availableLeaders = useMemo<LeaderFilterOption[]>(() => {
-    return extractLeaderFilterOptions(rawGroups, disciplerLoad);
-  }, [rawGroups, disciplerLoad]);
+    return extractLeaderFilterOptions(rawGroups, disciplerLoad, candidateLeadersPool);
+  }, [rawGroups, disciplerLoad, candidateLeadersPool]);
+
+  /**
+   * Candidate leaders for group assignment: merges eligible candidates from
+   * /discipler-candidates with existing group leaders.
+   */
+  const candidateLeaders = useMemo<LeaderFilterOption[]>(() => {
+    const leaderMap = new Map<string, LeaderFilterOption>();
+
+    candidateLeadersPool.forEach((c) => {
+      leaderMap.set(String(c.id), c);
+    });
+
+    availableLeaders.forEach((l) => {
+      if (!leaderMap.has(String(l.id))) {
+        leaderMap.set(String(l.id), l);
+      }
+    });
+
+    return Array.from(leaderMap.values());
+  }, [candidateLeadersPool, availableLeaders]);
 
   /**
    * Real-time filtered groups based on search text and selected leaders
@@ -141,7 +199,10 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
   }, [groups, searchQuery, selectedLeaders]);
 
   /**
-   * Handles toggle switch change with optimistic update and PATCH request
+   * [FEATURE ON HOLD / UNDER DECISION]
+   * Handles toggle switch change for "Active on mobile".
+   * Endpoint: PATCH /api/churches/:churchId/modules with { discipleship_enabled: boolean }
+   * Currently on hold while the UI toggle is hidden.
    */
   const handleToggleModule = useCallback(
     async (nextValue: boolean) => {
@@ -184,34 +245,6 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
       return mDate === todayISO;
     }).length;
   }, [calendarMeetings]);
-
-  /**
-   * Candidate leaders for group assignment: merges eligible candidates from
-   * /discipler-candidates with existing group leaders.
-   */
-  const candidateLeaders = useMemo<LeaderFilterOption[]>(() => {
-    const leaderMap = new Map<string, LeaderFilterOption>();
-
-    disciplerCandidates.forEach((c) => {
-      const id = c.uid || c.user_id || c.id;
-      const name = c.name || [c.first_name, c.last_name].filter(Boolean).join(" ");
-      if (id && name) {
-        leaderMap.set(id, {
-          id,
-          name,
-          imageUrl: c.profile_picture_url || undefined,
-        });
-      }
-    });
-
-    availableLeaders.forEach((l) => {
-      if (!leaderMap.has(l.id)) {
-        leaderMap.set(l.id, l);
-      }
-    });
-
-    return Array.from(leaderMap.values());
-  }, [disciplerCandidates, availableLeaders]);
 
   /**
    * Creates a new discipleship group and assigns the designated discipler
@@ -262,25 +295,49 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
    * Updates an existing discipleship group and reassigns/updates discipler
    */
   const handleUpdateGroup = useCallback(
-    async (groupId: string, formData: DiscipleshipNewGroupFormData): Promise<boolean> => {
+    async (
+      groupId: string,
+      formData: DiscipleshipNewGroupFormData,
+      currentLeaderId?: string,
+    ): Promise<boolean> => {
       if (isUpdatingGroup) return false;
       setIsUpdatingGroup(true);
       setUpdateGroupError(null);
 
       try {
+        // 1. Update group details (name, capacity limit)
         await DiscipleshipGroupsApi.updateGroup(groupId, {
           name: formData.name.trim(),
           capacity_limit: formData.maxCapacity > 0 ? formData.maxCapacity : undefined,
         });
 
-        if (formData.disciplerId) {
-          try {
+        // 2. Only modify leader if a leader is selected AND it is different from the current leader
+        const isLeaderChanged =
+          formData.disciplerId &&
+          formData.disciplerId.trim() !== (currentLeaderId || "").trim();
+
+        if (isLeaderChanged) {
+          if (currentLeaderId) {
+            // Group already had a leader: execute leadership handoff
+            try {
+              await DiscipleshipGroupsApi.executeLeadershipHandoff({
+                discipleship_id: groupId,
+                outgoing_user_id: currentLeaderId,
+                incoming_user_id: formData.disciplerId,
+              });
+            } catch (handoffErr) {
+              console.error("Leadership handoff failed, falling back to assign:", handoffErr);
+              await DiscipleshipGroupsApi.assignDiscipler(groupId, {
+                user_id: formData.disciplerId,
+                role: "leader",
+              });
+            }
+          } else {
+            // Group had no leader (initial assignment)
             await DiscipleshipGroupsApi.assignDiscipler(groupId, {
               user_id: formData.disciplerId,
               role: "leader",
             });
-          } catch (assignErr) {
-            console.error("Group updated but leader assignment failed:", assignErr);
           }
         }
 

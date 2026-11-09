@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ToggleSwitch } from "../../../../../shared/components/ToggleSwitch/ToggleSwitch";
+// import { ToggleSwitch } from "../../../../../shared/components/ToggleSwitch/ToggleSwitch";
 import {
   DiscipleshipTabSwitch,
 } from "../../components/DiscipleshipTabSwitch/DiscipleshipTabSwitch";
@@ -34,7 +34,27 @@ export function DiscipleshipGroupsScheduleViews() {
           </p>
         </div>
 
-        {/* Module Toggle Card: Full-width on mobile (< md), Inline on desktop (md+) */}
+        {/*
+          ====================================================================
+          [FEATURE ON HOLD / UNDER DECISION]
+          UI: "Active on mobile" Module Toggle Switch
+          
+          Purpose:
+          Allows church administrators to globally turn ON or OFF the Discipleship
+          module for their church on mobile devices.
+          
+          Endpoint:
+          - Method: PATCH
+          - Path: /api/churches/:churchId/modules
+          - Body: { "discipleship_enabled": boolean }
+          - Response: { "discipleship_enabled": boolean }
+          
+          Status:
+          Temporarily commented out pending team decision on mobile module
+          availability and access control requirements.
+          ====================================================================
+        */}
+        {/*
         <div className="flex w-full items-center rounded-2xl border border-midnight-teal/10 bg-white/90 px-4 py-2.5 shadow-xs backdrop-blur-md md:w-fit md:shrink-0 md:px-3.5 md:py-1.5">
           <ToggleSwitch
             checked={vm.module.isEnabled}
@@ -47,6 +67,7 @@ export function DiscipleshipGroupsScheduleViews() {
             {vm.module.isEnabled ? "Active" : "Disabled"} on mobile
           </ToggleSwitch>
         </div>
+        */}
       </div>
 
       {/* Tab Switch: Directory & Calendar */}
@@ -121,6 +142,7 @@ export function DiscipleshipGroupsScheduleViews() {
           const success = await vm.groupManagement.onUpdateGroup(
             String(editingGroup.id),
             formData,
+            editingGroup.leaderId,
           );
           if (success) {
             setEditingGroup(null);
