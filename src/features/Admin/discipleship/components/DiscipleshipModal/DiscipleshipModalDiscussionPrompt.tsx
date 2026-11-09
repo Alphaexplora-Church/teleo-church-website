@@ -17,6 +17,7 @@ export interface DiscipleshipModalDiscussionPromptProps {
   activePrompt?: ActiveDiscussionPrompt | null;
   onSubmit?: (promptText: string) => void | Promise<void>;
   isLoading?: boolean;
+  error?: string | null;
   maxLength?: number;
   minLength?: number;
 }
@@ -26,6 +27,7 @@ function DiscussionPromptModalContent({
   activePrompt = null,
   onSubmit,
   isLoading = false,
+  error = null,
   maxLength = 450,
   minLength = 1,
 }: Omit<DiscipleshipModalDiscussionPromptProps, "isOpen">) {
@@ -198,6 +200,13 @@ function DiscussionPromptModalContent({
               </motion.div>
             )}
           </div>
+
+          {/* Error Banner */}
+          {error && (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-700">
+              {error}
+            </div>
+          )}
 
           {/* New Discussion Prompt Section */}
           <form onSubmit={handleSubmit} className="space-y-4">

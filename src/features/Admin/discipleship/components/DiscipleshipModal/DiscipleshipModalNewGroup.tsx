@@ -15,10 +15,11 @@ export interface DiscipleshipNewGroupFormData {
 export interface DiscipleshipModalNewGroupProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit?: (data: DiscipleshipNewGroupFormData) => void;
+  onSubmit?: (data: DiscipleshipNewGroupFormData) => void | Promise<void>;
   availableLeaders?: readonly LeaderFilterOption[];
   initialData?: Partial<DiscipleshipNewGroupFormData>;
   isLoading?: boolean;
+  error?: string | null;
 }
 
 function DiscipleshipNewGroupModalContent({
@@ -27,6 +28,7 @@ function DiscipleshipNewGroupModalContent({
   availableLeaders = [],
   initialData,
   isLoading = false,
+  error = null,
 }: Omit<DiscipleshipModalNewGroupProps, "isOpen">) {
   const leaders = availableLeaders;
 
@@ -93,14 +95,14 @@ function DiscipleshipNewGroupModalContent({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim() || !selectedDiscipler || isLoading) return;
 
     onSubmit?.({
       name: name.trim(),
       maxCapacity,
-      disciplerId: selectedDiscipler?.id ?? "",
-      disciplerName: selectedDiscipler?.name ?? "",
-      disciplerImageUrl: selectedDiscipler?.imageUrl,
+      disciplerId: selectedDiscipler.id,
+      disciplerName: selectedDiscipler.name,
+      disciplerImageUrl: selectedDiscipler.imageUrl,
     });
   };
 
@@ -147,6 +149,13 @@ function DiscipleshipNewGroupModalContent({
             <X className="h-4 w-4" />
           </button>
         </div>
+
+        {/* Error Banner */}
+        {error && (
+          <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-700">
+            {error}
+          </div>
+        )}
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
@@ -289,7 +298,7 @@ function DiscipleshipNewGroupModalContent({
               type="submit"
               variant="primary"
               size="md"
-              disabled={!name.trim() || isLoading}
+              disabled={!name.trim() || !selectedDiscipler || isLoading}
               className="flex-1 rounded-xl font-semibold !text-white shadow-xs transition-all hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-initial sm:w-auto"
             >
               {isLoading ? "Creating..." : "Create Group"}

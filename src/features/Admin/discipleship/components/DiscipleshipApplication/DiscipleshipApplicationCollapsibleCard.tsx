@@ -14,6 +14,7 @@ export function DiscipleshipApplicationCollapsibleCard({
   onToggleExpand,
   onApprove,
   onReject,
+  isProcessing = false,
   className = "",
 }: DiscipleshipApplicationCollapsibleCardProps) {
   const [userSelectedGroupId, setUserSelectedGroupId] = useState<string | null>(
@@ -143,8 +144,9 @@ export function DiscipleshipApplicationCollapsibleCard({
                   <Button
                     variant="outline"
                     size="sm"
+                    disabled={isProcessing}
                     onClick={() => onReject(applicant.id)}
-                    className="rounded-xl border-slate-200 bg-white font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 hover:text-slate-900 cursor-pointer"
+                    className="rounded-xl border-slate-200 bg-white font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 hover:text-slate-900 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Reject
                   </Button>
@@ -152,11 +154,11 @@ export function DiscipleshipApplicationCollapsibleCard({
                   <Button
                     variant="primary"
                     size="sm"
-                    disabled={!selectedGroupId}
+                    disabled={!selectedGroupId || isProcessing}
                     onClick={() => onApprove(applicant.id, selectedGroupId)}
                     className="rounded-xl font-semibold !text-white shadow-xs hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   >
-                    Approve & Place
+                    {isProcessing ? "Processing..." : "Approve & Place"}
                   </Button>
                 </div>
               </div>
