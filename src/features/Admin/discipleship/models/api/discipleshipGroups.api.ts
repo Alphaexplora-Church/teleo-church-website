@@ -8,6 +8,8 @@ import type {
   ApiDisciplerCandidate,
   UpdateDiscipleshipGroupPayload,
   UpdateDiscipleshipGroupResponse,
+  LeadershipHandoffPayload,
+  LeadershipHandoffResponse,
 } from "../types/groupsScheduleDirectory.types";
 
 /**
@@ -82,6 +84,21 @@ export const DiscipleshipGroupsApi = {
   ): Promise<UpdateDiscipleshipGroupResponse> => {
     const response = await apiClient.patch<UpdateDiscipleshipGroupResponse>(
       `/api/discipleships/${id}`,
+      payload,
+      { signal },
+    );
+    return response.data;
+  },
+  /**
+   * Reassigns a group's discipler to an incoming candidate with audit log.
+   * Admin Endpoint: POST /api/discipleship-leadership-handoffs
+   */
+  executeLeadershipHandoff: async (
+    payload: LeadershipHandoffPayload,
+    signal?: AbortSignal,
+  ): Promise<LeadershipHandoffResponse> => {
+    const response = await apiClient.post<LeadershipHandoffResponse>(
+      "/api/discipleship-leadership-handoffs",
       payload,
       { signal },
     );

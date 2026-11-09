@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { MoreVertical, Users } from "lucide-react";
+import { MoreVertical, Pencil, Trash2, Users } from "lucide-react";
+import { Dropdown } from "../../../../../shared/components/Dropdown/Dropdown";
 
 export interface DiscipleshipGroupCardProps {
   /** Name of the discipleship group (e.g. "The Fig Tree Group") */
@@ -20,6 +21,10 @@ export interface DiscipleshipGroupCardProps {
   action?: ReactNode;
   /** Optional callback when the kebab/options button is clicked */
   onActionClick?: () => void;
+  /** Callback triggered when Edit option is clicked */
+  onEdit?: () => void;
+  /** Callback triggered when Remove group option is clicked */
+  onRemove?: () => void;
   /** Optional container className for additional styling */
   className?: string;
 }
@@ -34,8 +39,9 @@ export function DiscipleshipGroupCard({
   isFull: isFullProp,
   action,
   onActionClick,
+  onEdit,
+  onRemove,
   className = "",
-
 }: DiscipleshipGroupCardProps) {
   const displayLeaderName = disciplerName ?? leaderName;
 
@@ -71,16 +77,57 @@ export function DiscipleshipGroupCard({
           </span>
         </div>
 
-        {action ?? (
-          <button
-            type="button"
-            onClick={onActionClick}
-            aria-label={`Options for ${title}`}
-            className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-midnight-teal"
-          >
-            <MoreVertical className="h-4 w-4" />
-          </button>
-        )}
+        {action ??
+          (onEdit || onRemove ? (
+            <div onClick={(e) => e.stopPropagation()}>
+              <Dropdown
+                align="right"
+                placement="bottom"
+                width="w-44"
+                trigger={
+                  <button
+                    type="button"
+                    aria-label={`Options for ${title}`}
+                    className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-midnight-teal"
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </button>
+                }
+                items={[
+                  ...(onEdit
+                    ? [
+                        {
+                          id: "edit",
+                          label: "Edit",
+                          icon: <Pencil className="h-4 w-4 text-slate-500" />,
+                          onClick: onEdit,
+                        },
+                      ]
+                    : []),
+                  ...(onRemove
+                    ? [
+                        {
+                          id: "remove",
+                          label: "Remove group",
+                          icon: <Trash2 className="h-4 w-4 text-red-500" />,
+                          danger: true,
+                          onClick: onRemove,
+                        },
+                      ]
+                    : []),
+                ]}
+              />
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={onActionClick}
+              aria-label={`Options for ${title}`}
+              className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-midnight-teal"
+            >
+              <MoreVertical className="h-4 w-4" />
+            </button>
+          ))}
       </div>
 
       {/* Middle: Group Title (Enlarged) */}

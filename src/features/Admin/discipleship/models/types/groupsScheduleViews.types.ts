@@ -36,4 +36,6 @@ export interface DiscipleshipGroupsScheduleDirectoryProps {
   status: DiscipleshipDirectoryStatus;
   onNewGroupClick: () => void;
   onDiscussionPromptsClick: () => void;
+  onEditGroup?: (group: DiscipleshipGroupItem) => void;
+  onRemoveGroup?: (group: DiscipleshipGroupItem) => void;
 }

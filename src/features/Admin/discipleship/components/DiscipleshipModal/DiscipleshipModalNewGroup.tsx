@@ -20,6 +20,8 @@ export interface DiscipleshipModalNewGroupProps {
   initialData?: Partial<DiscipleshipNewGroupFormData>;
   isLoading?: boolean;
   error?: string | null;
+  title?: string;
+  submitLabel?: string;
 }
 
 function DiscipleshipNewGroupModalContent({
@@ -29,6 +31,8 @@ function DiscipleshipNewGroupModalContent({
   initialData,
   isLoading = false,
   error = null,
+  title = "Create New Discipleship Group",
+  submitLabel = "Create Group",
 }: Omit<DiscipleshipModalNewGroupProps, "isOpen">) {
   const leaders = availableLeaders;
 
@@ -133,7 +137,7 @@ function DiscipleshipNewGroupModalContent({
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-0.5 sm:space-y-1">
             <h2 className="font-sans text-lg font-bold tracking-tight text-midnight-teal sm:text-xl">
-              Create New Discipleship Group
+              {title}
             </h2>
             <p className="text-xs text-slate-500">
               Set up cohort details and assign an active discipler
@@ -301,7 +305,7 @@ function DiscipleshipNewGroupModalContent({
               disabled={!name.trim() || !selectedDiscipler || isLoading}
               className="flex-1 rounded-xl font-semibold !text-white shadow-xs transition-all hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-initial sm:w-auto"
             >
-              {isLoading ? "Creating..." : "Create Group"}
+              {isLoading ? "Saving..." : submitLabel}
             </Button>
           </div>
         </form>

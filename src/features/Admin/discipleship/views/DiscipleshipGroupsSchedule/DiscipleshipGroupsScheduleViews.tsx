@@ -5,14 +5,18 @@ import {
 } from "../../components/DiscipleshipTabSwitch/DiscipleshipTabSwitch";
 import { DiscipleshipModalNewGroup } from "../../components/DiscipleshipModal/DiscipleshipModalNewGroup";
 import { DiscipleshipModalDiscussionPrompt } from "../../components/DiscipleshipModal/DiscipleshipModalDiscussionPrompt";
+import { DiscipleshipModalRemoveGroup } from "../../components/DiscipleshipModal/DiscipleshipModalRemoveGroup";
 import { DiscipleshipGroupsScheduleDirectory } from "./DiscipleshipGroupsScheduleDirectory";
 import { DiscipleshipGroupsScheduleCalendar } from "./DiscipleshipGroupsScheduleCalendar";
 import { GROUPS_SCHEDULE_UI } from "../../models/constants/groupsScheduleViews.constants";
 import { useDiscipleshipViewModel } from "../../viewmodels/useDiscipleshipViewModel";
+import type { DiscipleshipGroupItem } from "../../models/types/groupsScheduleDirectory.types";
 
 export function DiscipleshipGroupsScheduleViews() {
   const [isNewGroupModalOpen, setIsNewGroupModalOpen] = useState(false);
   const [isDiscussionPromptModalOpen, setIsDiscussionPromptModalOpen] = useState(false);
+  const [editingGroup, setEditingGroup] = useState<DiscipleshipGroupItem | null>(null);
+  const [removingGroup, setRemovingGroup] = useState<DiscipleshipGroupItem | null>(null);
 
   const vm = useDiscipleshipViewModel();
 
@@ -64,6 +68,8 @@ export function DiscipleshipGroupsScheduleViews() {
           status={vm.status}
           onNewGroupClick={() => setIsNewGroupModalOpen(true)}
           onDiscussionPromptsClick={() => setIsDiscussionPromptModalOpen(true)}
+          onEditGroup={(group) => setEditingGroup(group)}
+          onRemoveGroup={(group) => setRemovingGroup(group)}
         />
       ) : (
         <DiscipleshipGroupsScheduleCalendar availableLeaders={vm.filter.leaders} />
@@ -83,6 +89,62 @@ export function DiscipleshipGroupsScheduleViews() {
           const success = await vm.groupCreation.onCreateGroup(formData);
           if (success) {
             setIsNewGroupModalOpen(false);
+          }
+        }}
+      />
+
+      {/* Reusable Edit Discipleship Group Modal */}
+      <DiscipleshipModalNewGroup
+        isOpen={Boolean(editingGroup)}
+        title="Edit Discipleship Group"
+        submitLabel="Save Changes"
+        initialData={
+          editingGroup
+            ? {
+                name: editingGroup.title,
+                maxCapacity: editingGroup.maxSeats,
+                disciplerId: editingGroup.leaderId,
+                disciplerName: editingGroup.leaderName,
+                disciplerImageUrl: editingGroup.leaderImageUrl,
+              }
+            : undefined
+        }
+        onClose={() => {
+          setEditingGroup(null);
+          vm.groupManagement.clearErrors();
+        }}
+        availableLeaders={vm.groupManagement.candidates}
+        isLoading={vm.groupManagement.isUpdating}
+        error={vm.groupManagement.updateError}
+        onSubmit={async (formData) => {
+          if (!editingGroup) return;
+          const success = await vm.groupManagement.onUpdateGroup(
+            String(editingGroup.id),
+            formData,
+          );
+          if (success) {
+            setEditingGroup(null);
+          }
+        }}
+      />
+
+      {/* Reusable Remove Discipleship Group Modal */}
+      <DiscipleshipModalRemoveGroup
+        isOpen={Boolean(removingGroup)}
+        groupTitle={removingGroup?.title}
+        onClose={() => {
+          setRemovingGroup(null);
+          vm.groupManagement.clearErrors();
+        }}
+        isLoading={vm.groupManagement.isRemoving}
+        error={vm.groupManagement.removeError}
+        onConfirm={async () => {
+          if (!removingGroup) return;
+          const success = await vm.groupManagement.onRemoveGroup(
+            String(removingGroup.id),
+          );
+          if (success) {
+            setRemovingGroup(null);
           }
         }}
       />

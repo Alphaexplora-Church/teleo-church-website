@@ -16,6 +16,7 @@ export interface DiscipleshipGroupItem {
   title: string;
   leaderName: string;
   leaderImageUrl?: string;
+  leaderId?: string;
   currentSeats: number;
   maxSeats: number;
   isFull?: boolean;
@@ -37,6 +38,7 @@ export interface ApiDiscipleshipGroup {
   max_seats?: number | null;
   active_member_count?: number;
   current_seats?: number;
+  is_full?: boolean;
   leader_user_ids?: string[];
   leader_name?: string | null;
   leader_image_url?: string | null;
@@ -169,6 +171,26 @@ export interface UpdateDiscipleshipGroupResponse {
     status?: string;
     updated_at?: string;
   };
+}
+
+/**
+ * Payload for POST /api/discipleship-leadership-handoffs
+ */
+export interface LeadershipHandoffPayload {
+  discipleship_id: string;
+  outgoing_user_id: string;
+  incoming_user_id: string;
+}
+
+/**
+ * Response for POST /api/discipleship-leadership-handoffs
+ */
+export interface LeadershipHandoffResponse {
+  handoff_id?: string;
+  discipleship_id: string;
+  outgoing_user_id: string;
+  incoming_user_id: string;
+  reassigned_at?: string;
 }
 
 /**

@@ -51,9 +51,13 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Group creation state
+  // Group creation, edit & removal state
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
   const [createGroupError, setCreateGroupError] = useState<string | null>(null);
+  const [isUpdatingGroup, setIsUpdatingGroup] = useState(false);
+  const [updateGroupError, setUpdateGroupError] = useState<string | null>(null);
+  const [isRemovingGroup, setIsRemovingGroup] = useState(false);
+  const [removeGroupError, setRemoveGroupError] = useState<string | null>(null);
 
   // Discussion prompt state
   const [activeDiscussionPrompt, setActiveDiscussionPrompt] =
@@ -255,6 +259,72 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
   );
 
   /**
+   * Updates an existing discipleship group and reassigns/updates discipler
+   */
+  const handleUpdateGroup = useCallback(
+    async (groupId: string, formData: DiscipleshipNewGroupFormData): Promise<boolean> => {
+      if (isUpdatingGroup) return false;
+      setIsUpdatingGroup(true);
+      setUpdateGroupError(null);
+
+      try {
+        await DiscipleshipGroupsApi.updateGroup(groupId, {
+          name: formData.name.trim(),
+          capacity_limit: formData.maxCapacity > 0 ? formData.maxCapacity : undefined,
+        });
+
+        if (formData.disciplerId) {
+          try {
+            await DiscipleshipGroupsApi.assignDiscipler(groupId, {
+              user_id: formData.disciplerId,
+              role: "leader",
+            });
+          } catch (assignErr) {
+            console.error("Group updated but leader assignment failed:", assignErr);
+          }
+        }
+
+        await fetchDashboard();
+        return true;
+      } catch (err) {
+        const message = getApiErrorMessage(err);
+        setUpdateGroupError(message || "Failed to update discipleship group.");
+        return false;
+      } finally {
+        setIsUpdatingGroup(false);
+      }
+    },
+    [fetchDashboard, isUpdatingGroup],
+  );
+
+  /**
+   * Archives/removes an existing discipleship group
+   */
+  const handleRemoveGroup = useCallback(
+    async (groupId: string): Promise<boolean> => {
+      if (isRemovingGroup) return false;
+      setIsRemovingGroup(true);
+      setRemoveGroupError(null);
+
+      try {
+        await DiscipleshipGroupsApi.updateGroup(groupId, {
+          status: "archived",
+        });
+
+        await fetchDashboard();
+        return true;
+      } catch (err) {
+        const message = getApiErrorMessage(err);
+        setRemoveGroupError(message || "Failed to remove discipleship group.");
+        return false;
+      } finally {
+        setIsRemovingGroup(false);
+      }
+    },
+    [fetchDashboard, isRemovingGroup],
+  );
+
+  /**
    * Posts a new church-wide discussion prompt to backend: POST /api/discipleship-discussion-questions
    */
   const handlePostDiscussionPrompt = useCallback(
@@ -321,6 +391,25 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
       error: createGroupError,
       onCreateGroup: handleCreateGroup,
       clearError: () => setCreateGroupError(null),
+    },
+
+    // Group Management (Create, Edit, Remove)
+    groupManagement: {
+      candidates: candidateLeaders,
+      isCreating: isCreatingGroup,
+      createError: createGroupError,
+      onCreateGroup: handleCreateGroup,
+      isUpdating: isUpdatingGroup,
+      updateError: updateGroupError,
+      onUpdateGroup: handleUpdateGroup,
+      isRemoving: isRemovingGroup,
+      removeError: removeGroupError,
+      onRemoveGroup: handleRemoveGroup,
+      clearErrors: () => {
+        setCreateGroupError(null);
+        setUpdateGroupError(null);
+        setRemoveGroupError(null);
+      },
     },
 
     // Discussion Prompts

@@ -21,6 +21,10 @@ export interface DiscipleshipGroupCardListProps {
   onRetry?: () => void;
   /** Callback triggered when the options / action button on a card is clicked */
   onCardActionClick?: (group: DiscipleshipGroupItem) => void;
+  /** Callback triggered when Edit is clicked on a group */
+  onEditGroup?: (group: DiscipleshipGroupItem) => void;
+  /** Callback triggered when Remove group is clicked on a group */
+  onRemoveGroup?: (group: DiscipleshipGroupItem) => void;
   /** Callback triggered when a card is clicked */
   onCardClick?: (group: DiscipleshipGroupItem) => void;
   /** Optional custom card renderer */
@@ -45,6 +49,8 @@ export function DiscipleshipGroupCardList({
   error = null,
   onRetry,
   onCardActionClick,
+  onEditGroup,
+  onRemoveGroup,
   onCardClick,
   renderCard,
   emptyMessage = "No active groups found.",
@@ -142,6 +148,8 @@ export function DiscipleshipGroupCardList({
                 onActionClick: onCardActionClick
                   ? () => onCardActionClick(group)
                   : undefined,
+                onEdit: onEditGroup ? () => onEditGroup(group) : undefined,
+                onRemove: onRemoveGroup ? () => onRemoveGroup(group) : undefined,
                 className: onCardClick ? "cursor-pointer" : "",
               };
 

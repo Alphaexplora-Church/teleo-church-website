@@ -10,6 +10,8 @@ export function DiscipleshipGroupsScheduleDirectory({
   status,
   onNewGroupClick,
   onDiscussionPromptsClick,
+  onEditGroup,
+  onRemoveGroup,
 }: DiscipleshipGroupsScheduleDirectoryProps) {
   return (
     <div className="flex flex-col gap-4">
@@ -55,6 +57,8 @@ export function DiscipleshipGroupsScheduleDirectory({
         isLoading={status.isLoading}
         error={status.error}
         onRetry={status.onRetry}
+        onEditGroup={onEditGroup}
+        onRemoveGroup={onRemoveGroup}
       />
     </div>
   );
