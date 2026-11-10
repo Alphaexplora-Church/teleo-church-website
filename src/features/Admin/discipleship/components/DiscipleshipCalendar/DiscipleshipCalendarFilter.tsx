@@ -23,7 +23,6 @@ export function DiscipleshipCalendarFilter({
   className = "",
 }: DiscipleshipCalendarFilterProps) {
   const selectedCount = selectedLeaders.length;
-  const totalLeadersCount = leaders.length;
 
   return (
     <div
@@ -75,31 +74,17 @@ export function DiscipleshipCalendarFilter({
         trigger={(isOpen) => (
           <button
             type="button"
-            className={`flex h-full min-h-11 w-full shrink-0 cursor-pointer items-center justify-between gap-2.5 rounded-2xl border border-primary/10 bg-white/90 px-4 py-2.5 text-sm font-semibold text-primary shadow-2xs backdrop-blur-md transition-all select-none hover:border-primary/20 hover:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 md:w-auto md:min-w-[10rem] ${
-              selectedCount > 0
-                ? "border-primary bg-primary text-white hover:bg-primary/90"
-                : ""
-            }`}
+            className="flex h-full min-h-11 w-full shrink-0 cursor-pointer items-center justify-between gap-2.5 rounded-2xl border border-primary/10 bg-white/90 px-4 py-2.5 text-sm font-semibold text-primary shadow-2xs backdrop-blur-md transition-all select-none hover:border-primary/20 hover:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 md:w-auto md:min-w-[10rem]"
           >
             <div className="flex items-center gap-2">
-              <Users
-                className={`h-4 w-4 shrink-0 ${
-                  selectedCount > 0 ? "text-white" : "text-primary/60"
-                }`}
-              />
-              <span>
-                {selectedCount > 0
-                  ? `Leaders (${selectedCount})`
-                  : totalLeadersCount > 0
-                    ? `All Leaders (${totalLeadersCount})`
-                    : "All Leaders"}
-              </span>
+              <Users className="h-4 w-4 shrink-0 text-primary/60" />
+              <span>Leaders</span>
             </div>
 
             <ChevronDown
-              className={`h-4 w-4 shrink-0 transition-transform duration-200 ${
-                selectedCount > 0 ? "text-white" : "text-primary/50"
-              } ${isOpen ? "rotate-180" : ""}`}
+              className={`h-4 w-4 shrink-0 text-primary/50 transition-transform duration-200 ${
+                isOpen ? "rotate-180" : ""
+              }`}
             />
           </button>
         )}

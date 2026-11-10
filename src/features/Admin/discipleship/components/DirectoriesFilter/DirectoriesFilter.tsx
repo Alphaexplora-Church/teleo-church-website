@@ -122,31 +122,17 @@ export function DirectoriesFilter({
         trigger={(isOpen) => (
           <button
             type="button"
-            className={`flex h-full min-h-11 w-full shrink-0 cursor-pointer items-center justify-between gap-2.5 rounded-2xl border border-midnight-teal/10 bg-white/90 px-4 py-2.5 text-sm font-semibold text-midnight-teal shadow-sm backdrop-blur-md transition-all select-none hover:bg-white hover:border-midnight-teal/20 focus:ring-2 focus:ring-midnight-teal/30 focus:outline-none md:w-auto md:min-w-[9rem] ${
-              selectedCount > 0
-                ? "border-midnight-teal bg-midnight-teal text-white hover:bg-midnight-teal/90"
-                : ""
-            }`}
+            className="flex h-full min-h-11 w-full shrink-0 cursor-pointer items-center justify-between gap-2.5 rounded-2xl border border-midnight-teal/10 bg-white/90 px-4 py-2.5 text-sm font-semibold text-midnight-teal shadow-sm backdrop-blur-md transition-all select-none hover:bg-white hover:border-midnight-teal/20 focus:ring-2 focus:ring-midnight-teal/30 focus:outline-none md:w-auto md:min-w-[9rem]"
           >
             <div className="flex items-center gap-2">
-              <Users
-                className={`h-4 w-4 shrink-0 ${
-                  selectedCount > 0 ? "text-white" : "text-midnight-teal/60"
-                }`}
-              />
+              <Users className="h-4 w-4 shrink-0 text-midnight-teal/60" />
               <span>Leaders</span>
-
-              {selectedCount > 0 && (
-                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-white/20 px-1.5 text-xs font-bold text-white">
-                  {selectedCount}
-                </span>
-              )}
             </div>
 
             <ChevronDown
-              className={`h-4 w-4 shrink-0 transition-transform duration-200 ${
-                selectedCount > 0 ? "text-white" : "text-midnight-teal/50"
-              } ${isOpen ? "rotate-180" : ""}`}
+              className={`h-4 w-4 shrink-0 text-midnight-teal/50 transition-transform duration-200 ${
+                isOpen ? "rotate-180" : ""
+              }`}
             />
           </button>
         )}
