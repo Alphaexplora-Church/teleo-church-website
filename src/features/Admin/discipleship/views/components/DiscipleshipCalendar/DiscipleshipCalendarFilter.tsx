@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { Check, ChevronDown, ChevronLeft, ChevronRight, Users } from "lucide-react";
 import {
@@ -23,6 +24,12 @@ export function DiscipleshipCalendarFilter({
   className = "",
 }: DiscipleshipCalendarFilterProps) {
   const selectedCount = selectedLeaders.length;
+
+  const sortedLeaders = useMemo(() => {
+    return [...leaders].sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
+    );
+  }, [leaders]);
 
   return (
     <div
@@ -111,7 +118,7 @@ export function DiscipleshipCalendarFilter({
 
           {/* Checklist of Leaders */}
           <ul className="m-0 flex max-h-64 flex-col gap-0.5 overflow-y-auto p-0 list-none">
-            {leaders.map((leader) => {
+            {sortedLeaders.map((leader) => {
               const isChecked = selectedLeaders.includes(leader.name);
 
               return (

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, ChevronDown, X } from "lucide-react";
 import { Button } from "../../../../../shared/components/Button/Button";
@@ -56,6 +56,12 @@ function DiscipleshipNewGroupModalContent({
   });
 
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const sortedLeaders = useMemo(() => {
+    return [...leaders].sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
+    );
+  }, [leaders]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -262,7 +268,7 @@ function DiscipleshipNewGroupModalContent({
                     className="absolute left-0 right-0 top-full mt-1.5 z-50 max-h-56 overflow-y-auto rounded-xl border border-gray-100 bg-white p-1 shadow-xl"
                   >
                     <ul className="m-0 flex flex-col gap-0.5 p-0 list-none">
-                      {leaders.map((leader) => {
+                      {sortedLeaders.map((leader) => {
                         const isSelected = selectedDiscipler?.id === leader.id;
                         return (
                           <li key={leader.id} className="list-none">

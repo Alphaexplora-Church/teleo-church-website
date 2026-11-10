@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Check, ChevronDown, Search, Users, X } from "lucide-react";
 import {
@@ -84,6 +84,12 @@ export function DirectoriesFilter({
 
   const selectedCount = selectedLeaders.length;
 
+  const sortedLeaders = useMemo(() => {
+    return [...leaders].sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
+    );
+  }, [leaders]);
+
   return (
     <div
       className={`relative z-30 flex flex-col gap-2.5 w-full md:flex-row md:items-center md:gap-2 md:max-w-xl md:flex-1 ${className}`.trim()}
@@ -159,7 +165,7 @@ export function DirectoriesFilter({
 
           {/* Checklist of Leaders */}
           <ul className="m-0 flex max-h-64 flex-col gap-0.5 overflow-y-auto p-0 list-none">
-            {leaders.map((leader) => {
+            {sortedLeaders.map((leader) => {
               const isChecked = selectedLeaders.includes(leader.name);
 
               return (

@@ -188,7 +188,9 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
       }
     });
 
-    return Array.from(leaderMap.values());
+    return Array.from(leaderMap.values()).sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
+    );
   }, [candidateLeadersPool, availableLeaders]);
 
   /**
