@@ -2,10 +2,10 @@ import { useState } from "react";
 // import { ToggleSwitch } from "../../../../../shared/components/ToggleSwitch/ToggleSwitch";
 import {
   DiscipleshipTabSwitch,
-} from "../../components/DiscipleshipTabSwitch/DiscipleshipTabSwitch";
-import { DiscipleshipModalNewGroup } from "../../components/DiscipleshipModal/DiscipleshipModalNewGroup";
-import { DiscipleshipModalDiscussionPrompt } from "../../components/DiscipleshipModal/DiscipleshipModalDiscussionPrompt";
-import { DiscipleshipModalRemoveGroup } from "../../components/DiscipleshipModal/DiscipleshipModalRemoveGroup";
+} from "../components/DiscipleshipTabSwitch/DiscipleshipTabSwitch";
+import { DiscipleshipModalNewGroup } from "../components/DiscipleshipModal/DiscipleshipModalNewGroup";
+import { DiscipleshipModalDiscussionPrompt } from "../components/DiscipleshipModal/DiscipleshipModalDiscussionPrompt";
+import { DiscipleshipModalRemoveGroup } from "../components/DiscipleshipModal/DiscipleshipModalRemoveGroup";
 import { DiscipleshipGroupsScheduleDirectory } from "./DiscipleshipGroupsScheduleDirectory";
 import { DiscipleshipGroupsScheduleCalendar } from "./DiscipleshipGroupsScheduleCalendar";
 import { GROUPS_SCHEDULE_UI } from "../../models/constants/groupsScheduleViews.constants";

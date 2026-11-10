@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, ChevronDown, X } from "lucide-react";
-import { Button } from "../../../../../shared/components/Button/Button";
-import type { LeaderFilterOption } from "../../models/types/groupsScheduleDirectory.types";
+import { Button } from "../../../../../../shared/components/Button/Button";
+import type { LeaderFilterOption } from "../../../models/types/groupsScheduleDirectory.types";
 import { DiscipleshipAvatar } from "../DiscipleshipAvatar/DiscipleshipAvatar";
 
 export interface DiscipleshipNewGroupFormData {

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { MoreVertical, Pencil, Trash2, Users } from "lucide-react";
-import { Dropdown } from "../../../../../shared/components/Dropdown/Dropdown";
+import { Dropdown } from "../../../../../../shared/components/Dropdown/Dropdown";
 import { DiscipleshipAvatar } from "../DiscipleshipAvatar/DiscipleshipAvatar";
 
 export interface DiscipleshipGroupCardProps {

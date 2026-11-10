@@ -2,8 +2,8 @@ import { useMemo } from "react";
 import {
   TabSwitch,
   type TabOption,
-} from "../../../../../shared/components/TabSwitch/TabSwitch";
-import type { DiscipleshipTab } from "../../models/types/groupsScheduleDirectory.types";
+} from "../../../../../../shared/components/TabSwitch/TabSwitch";
+import type { DiscipleshipTab } from "../../../models/types/groupsScheduleDirectory.types";
 
 export type { DiscipleshipTab };
 

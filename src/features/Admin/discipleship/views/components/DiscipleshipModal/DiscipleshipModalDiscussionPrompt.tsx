@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Clock, MessageSquareText, X } from "lucide-react";
-import { Button } from "../../../../../shared/components/Button/Button";
-import { Badge } from "../../../../../shared/components/Badge/Badge";
+import { Button } from "../../../../../../shared/components/Button/Button";
+import { Badge } from "../../../../../../shared/components/Badge/Badge";
 
 export interface ActiveDiscussionPrompt {
   id?: string | number;

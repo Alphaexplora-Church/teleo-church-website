@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Trash2, X } from "lucide-react";
-import { Button } from "../../../../../shared/components/Button/Button";
+import { Button } from "../../../../../../shared/components/Button/Button";
 
 export interface DiscipleshipModalRemoveGroupProps {
   isOpen: boolean;

@@ -1,8 +1,8 @@
-import { Button } from "../../../../../shared/components/Button/Button";
+import { Button } from "../../../../../../shared/components/Button/Button";
 import type {
   ApplicationChurchFilter,
   DiscipleshipApplicationFilterProps,
-} from "../../models/types/discipleshipApplication.types";
+} from "../../../models/types/discipleshipApplication.types";
 
 export function DiscipleshipApplicationFilter({
   activeFilter,

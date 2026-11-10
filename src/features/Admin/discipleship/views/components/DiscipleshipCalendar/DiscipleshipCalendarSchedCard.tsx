@@ -1,6 +1,6 @@
 import { MapPin, Video, Monitor } from "lucide-react";
-import { Badge } from "../../../../../shared/components/Badge/Badge";
-import type { DiscipleshipCalendarSchedCardProps } from "../../models/types/discipleshipCalendar.types";
+import { Badge } from "../../../../../../shared/components/Badge/Badge";
+import type { DiscipleshipCalendarSchedCardProps } from "../../../models/types/discipleshipCalendar.types";
 
 export function DiscipleshipCalendarSchedCard({
   session,

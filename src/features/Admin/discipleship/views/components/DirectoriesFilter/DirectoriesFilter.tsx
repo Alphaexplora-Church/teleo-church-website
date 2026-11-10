@@ -5,9 +5,9 @@ import {
   Dropdown,
   DropdownDivider,
   DropdownHeader,
-} from "../../../../../shared/components/Dropdown/Dropdown";
-import { dropdownItemVariants } from "../../../../../shared/components/Dropdown/dropdown.animations";
-import type { LeaderFilterOption } from "../../models/types/groupsScheduleDirectory.types";
+} from "../../../../../../shared/components/Dropdown/Dropdown";
+import { dropdownItemVariants } from "../../../../../../shared/components/Dropdown/dropdown.animations";
+import type { LeaderFilterOption } from "../../../models/types/groupsScheduleDirectory.types";
 import { DiscipleshipAvatar } from "../DiscipleshipAvatar/DiscipleshipAvatar";
 
 export type { LeaderFilterOption };

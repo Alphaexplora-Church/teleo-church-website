@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { Badge } from "../../../../../shared/components/Badge/Badge";
-import { Button } from "../../../../../shared/components/Button/Button";
+import { Badge } from "../../../../../../shared/components/Badge/Badge";
+import { Button } from "../../../../../../shared/components/Button/Button";
 import { DiscipleshipApplicationDropdownGroup } from "./DiscipleshipApplicationDropdownGroup";
-import type { DiscipleshipApplicationCollapsibleCardProps } from "../../models/types/discipleshipApplication.types";
-import { getLowestRemainingCapacityGroupId } from "../../models/utils/discipleshipApplication.utils";
+import type { DiscipleshipApplicationCollapsibleCardProps } from "../../../models/types/discipleshipApplication.types";
+import { getLowestRemainingCapacityGroupId } from "../../../models/utils/discipleshipApplication.utils";
 import { DiscipleshipAvatar } from "../DiscipleshipAvatar/DiscipleshipAvatar";
 
 export function DiscipleshipApplicationCollapsibleCard({

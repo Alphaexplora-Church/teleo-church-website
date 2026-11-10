@@ -7,8 +7,8 @@ import { DiscipleshipModuleApi } from "../models/api/discipleshipModule.api";
 import { DiscipleshipCalendarApi } from "../models/api/discipleshipCalendar.api";
 import { DiscipleshipGroupsApi } from "../models/api/discipleshipGroups.api";
 import { DiscipleshipDiscussionApi } from "../models/api/discipleshipDiscussion.api";
-import type { DiscipleshipNewGroupFormData } from "../components/DiscipleshipModal/DiscipleshipModalNewGroup";
-import type { ActiveDiscussionPrompt } from "../components/DiscipleshipModal/DiscipleshipModalDiscussionPrompt";
+import type { DiscipleshipNewGroupFormData } from "../views/components/DiscipleshipModal/DiscipleshipModalNewGroup";
+import type { ActiveDiscussionPrompt } from "../views/components/DiscipleshipModal/DiscipleshipModalDiscussionPrompt";
 import {
   mapApiGroupToItem,
   extractLeaderFilterOptions,
@@ -22,7 +22,7 @@ import type {
   DiscipleshipTab,
 } from "../models/types/groupsScheduleDirectory.types";
 import type { ApiDiscipleshipMeeting } from "../models/types/discipleshipCalendar.types";
-import { filterDiscipleshipGroups } from "../components/DirectoriesFilter/directoriesFilter.utils";
+import { filterDiscipleshipGroups } from "../views/components/DirectoriesFilter/directoriesFilter.utils";
 import { formatDateISO } from "../models/utils/discipleshipCalendar.utils";
 
 export interface UseDiscipleshipViewModelOptions {

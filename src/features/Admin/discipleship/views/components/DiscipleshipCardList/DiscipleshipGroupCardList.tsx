@@ -4,7 +4,7 @@ import {
   DiscipleshipGroupCard,
   type DiscipleshipGroupCardProps,
 } from "./DiscipleshipGroupCard";
-import type { DiscipleshipGroupItem } from "../../models/types/groupsScheduleDirectory.types";
+import type { DiscipleshipGroupItem } from "../../../models/types/groupsScheduleDirectory.types";
 
 export type { DiscipleshipGroupItem };
 

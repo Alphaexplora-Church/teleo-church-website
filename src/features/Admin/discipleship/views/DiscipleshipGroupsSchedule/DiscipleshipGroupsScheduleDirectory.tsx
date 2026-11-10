@@ -1,6 +1,6 @@
 import { Button } from "../../../../../shared/components/Button/Button";
-import { DirectoriesFilter } from "../../components/DirectoriesFilter/DirectoriesFilter";
-import { DiscipleshipGroupCardList } from "../../components/DiscipleshipCardList/DiscipleshipGroupCardList";
+import { DirectoriesFilter } from "../components/DirectoriesFilter/DirectoriesFilter";
+import { DiscipleshipGroupCardList } from "../components/DiscipleshipCardList/DiscipleshipGroupCardList";
 import type { DiscipleshipGroupsScheduleDirectoryProps } from "../../models/types/groupsScheduleViews.types";
 
 export function DiscipleshipGroupsScheduleDirectory({
