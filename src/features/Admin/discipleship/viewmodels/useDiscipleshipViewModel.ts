@@ -92,6 +92,25 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
         if (typeof data.discipleship_enabled === "boolean") {
           setIsModuleEnabled(data.discipleship_enabled);
         }
+
+        // Check if backend dashboard returns an active discussion prompt
+        const anyData = data as unknown as Record<string, unknown>;
+        const backendQuestion =
+          (typeof anyData.discussion_question === "string" && anyData.discussion_question) ||
+          (typeof anyData.active_question === "string" && anyData.active_question) ||
+          (typeof anyData.active_prompt === "string" && anyData.active_prompt) ||
+          (typeof (anyData.question as Record<string, unknown>)?.question_text === "string" &&
+            ((anyData.question as Record<string, unknown>).question_text as string));
+
+        if (backendQuestion) {
+          const syncedPrompt: ActiveDiscussionPrompt = {
+            id: "server-prompt",
+            text: backendQuestion,
+            postedAt: "Active",
+            status: "ACTIVE",
+          };
+          setActiveDiscussionPrompt(syncedPrompt);
+        }
       } else if (dashboardResult.reason && !isAbortError(dashboardResult.reason)) {
         const message = getApiErrorMessage(dashboardResult.reason);
         setError(message || "Failed to load discipleship groups.");
@@ -403,13 +422,14 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
             ? promptText
             : `“${promptText}”`;
 
-        setActiveDiscussionPrompt({
+        const newPrompt: ActiveDiscussionPrompt = {
           id: res.question_id || res.id || Date.now().toString(),
           text: res.question_text || formatted,
           postedAt: "Posted just now",
           status: "ACTIVE",
-        });
+        };
 
+        setActiveDiscussionPrompt(newPrompt);
         return true;
       } catch (err) {
         const message = getApiErrorMessage(err);
