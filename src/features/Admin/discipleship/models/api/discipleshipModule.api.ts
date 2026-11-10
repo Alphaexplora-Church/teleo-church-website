@@ -45,10 +45,12 @@ export const DiscipleshipModuleApi = {
    * NOTE: Temporarily in mock/no-op mode while UI switch is hidden.
    */
   toggleDiscipleshipModule: async (
-    _churchId: string | number,
+    churchId: string | number,
     payload: ToggleDiscipleshipModulePayload,
-    _signal?: AbortSignal,
+    signal?: AbortSignal,
   ): Promise<ToggleDiscipleshipModuleResponse> => {
+    void churchId;
+    void signal;
     /*
     const response = await apiClient.patch<ToggleDiscipleshipModuleResponse>(
       `/api/churches/${churchId}/modules`,

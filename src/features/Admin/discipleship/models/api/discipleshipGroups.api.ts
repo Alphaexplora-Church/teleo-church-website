@@ -114,21 +114,23 @@ export const DiscipleshipGroupsApi = {
     discipleshipId: string,
     signal?: AbortSignal,
   ): Promise<ApiDiscipleshipMember[]> => {
-    const response = await apiClient.get<any>(
+    const response = await apiClient.get<Record<string, unknown> | ApiDiscipleshipMember[]>(
       `/api/discipleship-members?discipleship_id=${discipleshipId}`,
       {
         signal,
       },
     );
     if (Array.isArray(response.data)) return response.data;
-    if (response.data && Array.isArray(response.data.members)) {
-      return response.data.members;
+    const resData = response.data as Record<string, unknown> | undefined;
+    if (resData && Array.isArray(resData.members)) {
+      return resData.members as ApiDiscipleshipMember[];
     }
-    if (response.data?.data && Array.isArray(response.data.data)) {
-      return response.data.data;
+    const nestedData = resData?.data as Record<string, unknown> | ApiDiscipleshipMember[] | undefined;
+    if (Array.isArray(nestedData)) {
+      return nestedData;
     }
-    if (response.data?.data && Array.isArray(response.data.data.members)) {
-      return response.data.data.members;
+    if (nestedData && typeof nestedData === "object" && Array.isArray((nestedData as Record<string, unknown>).members)) {
+      return (nestedData as Record<string, unknown>).members as ApiDiscipleshipMember[];
     }
     return [];
   },
