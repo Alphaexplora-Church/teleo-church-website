@@ -16,6 +16,7 @@ export interface DiscipleshipGroupItem {
   title: string;
   leaderName: string;
   leaderImageUrl?: string;
+  leaderId?: string;
   currentSeats: number;
   maxSeats: number;
   isFull?: boolean;
@@ -37,6 +38,7 @@ export interface ApiDiscipleshipGroup {
   max_seats?: number | null;
   active_member_count?: number;
   current_seats?: number;
+  is_full?: boolean;
   leader_user_ids?: string[];
   leader_name?: string | null;
   leader_image_url?: string | null;
@@ -168,6 +170,51 @@ export interface UpdateDiscipleshipGroupResponse {
     capacity_limit?: number;
     status?: string;
     updated_at?: string;
+  };
+}
+
+/**
+ * Payload for POST /api/discipleship-leadership-handoffs
+ */
+export interface LeadershipHandoffPayload {
+  discipleship_id: string;
+  outgoing_user_id: string;
+  incoming_user_id: string;
+}
+
+/**
+ * Response for POST /api/discipleship-leadership-handoffs
+ */
+export interface LeadershipHandoffResponse {
+  handoff_id?: string;
+  discipleship_id: string;
+  outgoing_user_id: string;
+  incoming_user_id: string;
+  reassigned_at?: string;
+}
+
+/**
+ * Discipleship Group Member row contract
+ * Aligned with discipleship_members table and GET /api/discipleship-members?discipleship_id=
+ */
+export interface ApiDiscipleshipMember {
+  id?: string;
+  membership_id?: string;
+  member_id?: string;
+  discipleship_member_id?: string;
+  discipleship_id?: string;
+  user_id?: string;
+  userId?: string;
+  uid?: string;
+  role?: "leader" | "co_leader" | "member" | string;
+  status?: "active" | "paused" | "left" | "removed" | string;
+  user?: {
+    id?: string;
+    uid?: string;
+    first_name?: string;
+    last_name?: string;
+    name?: string;
+    email?: string;
   };
 }
 

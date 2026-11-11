@@ -8,6 +8,9 @@ import type {
   ApiDisciplerCandidate,
   UpdateDiscipleshipGroupPayload,
   UpdateDiscipleshipGroupResponse,
+  LeadershipHandoffPayload,
+  LeadershipHandoffResponse,
+  ApiDiscipleshipMember,
 } from "../types/groupsScheduleDirectory.types";
 
 /**
@@ -83,6 +86,71 @@ export const DiscipleshipGroupsApi = {
     const response = await apiClient.patch<UpdateDiscipleshipGroupResponse>(
       `/api/discipleships/${id}`,
       payload,
+      { signal },
+    );
+    return response.data;
+  },
+  /**
+   * Reassigns a group's discipler to an incoming candidate with audit log.
+   * Admin Endpoint: POST /api/discipleship-leadership-handoffs
+   */
+  executeLeadershipHandoff: async (
+    payload: LeadershipHandoffPayload,
+    signal?: AbortSignal,
+  ): Promise<LeadershipHandoffResponse> => {
+    const response = await apiClient.post<LeadershipHandoffResponse>(
+      "/api/discipleship-leadership-handoffs",
+      payload,
+      { signal },
+    );
+    return response.data;
+  },
+
+  /**
+   * Fetches active and paused members of a discipleship group.
+   * Endpoint: GET /api/discipleship-members?discipleship_id=
+   */
+  getGroupMembers: async (
+    discipleshipId: string,
+    signal?: AbortSignal,
+  ): Promise<ApiDiscipleshipMember[]> => {
+    const response = await apiClient.get<Record<string, unknown> | ApiDiscipleshipMember[]>(
+      `/api/discipleship-members?discipleship_id=${discipleshipId}`,
+      {
+        signal,
+      },
+    );
+    if (Array.isArray(response.data)) return response.data;
+    const resData = response.data as Record<string, unknown> | undefined;
+    if (resData && Array.isArray(resData.members)) {
+      return resData.members as ApiDiscipleshipMember[];
+    }
+    const nestedData = resData?.data as Record<string, unknown> | ApiDiscipleshipMember[] | undefined;
+    if (Array.isArray(nestedData)) {
+      return nestedData;
+    }
+    if (nestedData && typeof nestedData === "object" && Array.isArray((nestedData as Record<string, unknown>).members)) {
+      return (nestedData as Record<string, unknown>).members as ApiDiscipleshipMember[];
+    }
+    return [];
+  },
+
+  /**
+   * Updates membership status (e.g. 'removed', 'left', 'active').
+   * Endpoint: PATCH /api/discipleship-members/:memberId
+   */
+  updateMemberStatus: async (
+    memberId: string,
+    status: "active" | "paused" | "left" | "removed",
+    signal?: AbortSignal,
+  ): Promise<{ status: string }> => {
+    if (!memberId || memberId === "undefined") {
+      console.warn("Attempted to update member status with invalid memberId:", memberId);
+      return { status: "invalid" };
+    }
+    const response = await apiClient.patch<{ status: string }>(
+      `/api/discipleship-members/${memberId}`,
+      { status },
       { signal },
     );
     return response.data;

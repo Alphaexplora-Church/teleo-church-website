@@ -1,18 +1,22 @@
 import { useState } from "react";
-import { ToggleSwitch } from "../../../../../shared/components/ToggleSwitch/ToggleSwitch";
+// import { ToggleSwitch } from "../../../../../shared/components/ToggleSwitch/ToggleSwitch";
 import {
   DiscipleshipTabSwitch,
-} from "../../components/DiscipleshipTabSwitch/DiscipleshipTabSwitch";
-import { DiscipleshipModalNewGroup } from "../../components/DiscipleshipModal/DiscipleshipModalNewGroup";
-import { DiscipleshipModalDiscussionPrompt } from "../../components/DiscipleshipModal/DiscipleshipModalDiscussionPrompt";
+} from "../components/DiscipleshipTabSwitch/DiscipleshipTabSwitch";
+import { DiscipleshipModalNewGroup } from "../components/DiscipleshipModal/DiscipleshipModalNewGroup";
+import { DiscipleshipModalDiscussionPrompt } from "../components/DiscipleshipModal/DiscipleshipModalDiscussionPrompt";
+import { DiscipleshipModalRemoveGroup } from "../components/DiscipleshipModal/DiscipleshipModalRemoveGroup";
 import { DiscipleshipGroupsScheduleDirectory } from "./DiscipleshipGroupsScheduleDirectory";
 import { DiscipleshipGroupsScheduleCalendar } from "./DiscipleshipGroupsScheduleCalendar";
 import { GROUPS_SCHEDULE_UI } from "../../models/constants/groupsScheduleViews.constants";
 import { useDiscipleshipViewModel } from "../../viewmodels/useDiscipleshipViewModel";
+import type { DiscipleshipGroupItem } from "../../models/types/groupsScheduleDirectory.types";
 
 export function DiscipleshipGroupsScheduleViews() {
   const [isNewGroupModalOpen, setIsNewGroupModalOpen] = useState(false);
   const [isDiscussionPromptModalOpen, setIsDiscussionPromptModalOpen] = useState(false);
+  const [editingGroup, setEditingGroup] = useState<DiscipleshipGroupItem | null>(null);
+  const [removingGroup, setRemovingGroup] = useState<DiscipleshipGroupItem | null>(null);
 
   const vm = useDiscipleshipViewModel();
 
@@ -30,7 +34,27 @@ export function DiscipleshipGroupsScheduleViews() {
           </p>
         </div>
 
-        {/* Module Toggle Card: Full-width on mobile (< md), Inline on desktop (md+) */}
+        {/*
+          ====================================================================
+          [FEATURE ON HOLD / UNDER DECISION]
+          UI: "Active on mobile" Module Toggle Switch
+          
+          Purpose:
+          Allows church administrators to globally turn ON or OFF the Discipleship
+          module for their church on mobile devices.
+          
+          Endpoint:
+          - Method: PATCH
+          - Path: /api/churches/:churchId/modules
+          - Body: { "discipleship_enabled": boolean }
+          - Response: { "discipleship_enabled": boolean }
+          
+          Status:
+          Temporarily commented out pending team decision on mobile module
+          availability and access control requirements.
+          ====================================================================
+        */}
+        {/*
         <div className="flex w-full items-center rounded-2xl border border-midnight-teal/10 bg-white/90 px-4 py-2.5 shadow-xs backdrop-blur-md md:w-fit md:shrink-0 md:px-3.5 md:py-1.5">
           <ToggleSwitch
             checked={vm.module.isEnabled}
@@ -43,6 +67,7 @@ export function DiscipleshipGroupsScheduleViews() {
             {vm.module.isEnabled ? "Active" : "Disabled"} on mobile
           </ToggleSwitch>
         </div>
+        */}
       </div>
 
       {/* Tab Switch: Directory & Calendar */}
@@ -64,6 +89,8 @@ export function DiscipleshipGroupsScheduleViews() {
           status={vm.status}
           onNewGroupClick={() => setIsNewGroupModalOpen(true)}
           onDiscussionPromptsClick={() => setIsDiscussionPromptModalOpen(true)}
+          onEditGroup={(group) => setEditingGroup(group)}
+          onRemoveGroup={(group) => setRemovingGroup(group)}
         />
       ) : (
         <DiscipleshipGroupsScheduleCalendar availableLeaders={vm.filter.leaders} />
@@ -83,6 +110,63 @@ export function DiscipleshipGroupsScheduleViews() {
           const success = await vm.groupCreation.onCreateGroup(formData);
           if (success) {
             setIsNewGroupModalOpen(false);
+          }
+        }}
+      />
+
+      {/* Reusable Edit Discipleship Group Modal */}
+      <DiscipleshipModalNewGroup
+        isOpen={Boolean(editingGroup)}
+        title="Edit Discipleship Group"
+        submitLabel="Save Changes"
+        initialData={
+          editingGroup
+            ? {
+                name: editingGroup.title,
+                maxCapacity: editingGroup.maxSeats,
+                disciplerId: editingGroup.leaderId,
+                disciplerName: editingGroup.leaderName,
+                disciplerImageUrl: editingGroup.leaderImageUrl,
+              }
+            : undefined
+        }
+        onClose={() => {
+          setEditingGroup(null);
+          vm.groupManagement.clearErrors();
+        }}
+        availableLeaders={vm.groupManagement.candidates}
+        isLoading={vm.groupManagement.isUpdating}
+        error={vm.groupManagement.updateError}
+        onSubmit={async (formData) => {
+          if (!editingGroup) return;
+          const success = await vm.groupManagement.onUpdateGroup(
+            String(editingGroup.id),
+            formData,
+            editingGroup.leaderId,
+          );
+          if (success) {
+            setEditingGroup(null);
+          }
+        }}
+      />
+
+      {/* Reusable Remove Discipleship Group Modal */}
+      <DiscipleshipModalRemoveGroup
+        isOpen={Boolean(removingGroup)}
+        groupTitle={removingGroup?.title}
+        onClose={() => {
+          setRemovingGroup(null);
+          vm.groupManagement.clearErrors();
+        }}
+        isLoading={vm.groupManagement.isRemoving}
+        error={vm.groupManagement.removeError}
+        onConfirm={async () => {
+          if (!removingGroup) return;
+          const success = await vm.groupManagement.onRemoveGroup(
+            String(removingGroup.id),
+          );
+          if (success) {
+            setRemovingGroup(null);
           }
         }}
       />

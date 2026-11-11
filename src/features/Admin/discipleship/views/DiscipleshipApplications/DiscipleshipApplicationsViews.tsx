@@ -1,7 +1,7 @@
 import { AlertCircle, ClipboardList, RefreshCw, X } from "lucide-react";
-import { DiscipleshipApplicationFilter } from "../../components/DiscipleshipApplication/DiscipleshipApplicationFilter";
-import { DiscipleshipApplicationCollapsibleCard } from "../../components/DiscipleshipApplication/DiscipleshipApplicationCollapsibleCard";
-import { DiscipleshipModalIntakeSchema } from "../../components/DiscipleshipModal/DiscipleshipModalIntakeSchema";
+import { DiscipleshipApplicationFilter } from "../components/DiscipleshipApplication/DiscipleshipApplicationFilter";
+import { DiscipleshipApplicationCollapsibleCard } from "../components/DiscipleshipApplication/DiscipleshipApplicationCollapsibleCard";
+import { DiscipleshipModalIntakeSchema } from "../components/DiscipleshipModal/DiscipleshipModalIntakeSchema";
 import { DISCIPLESHIP_APPLICATIONS_UI } from "../../models/constants/groupsScheduleViews.constants";
 import { DISCIPLESHIP_APPLICATIONS_EMPTY_STATES } from "../../models/constants/discipleshipApplication.constants";
 import { useDiscipleshipApplicationsViewModel } from "../../viewmodels/useDiscipleshipApplicationsViewModel";

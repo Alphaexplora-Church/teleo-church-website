@@ -3,9 +3,9 @@ import { ChevronDown } from "lucide-react";
 import {
   Dropdown,
   type DropdownOption,
-} from "../../../../../shared/components/Dropdown/Dropdown";
-import type { DiscipleshipApplicationDropdownGroupProps } from "../../models/types/discipleshipApplication.types";
-import { getLowestRemainingCapacityGroupId } from "../../models/utils/discipleshipApplication.utils";
+} from "../../../../../../shared/components/Dropdown/Dropdown";
+import type { DiscipleshipApplicationDropdownGroupProps } from "../../../models/types/discipleshipApplication.types";
+import { getLowestRemainingCapacityGroupId } from "../../../models/utils/discipleshipApplication.utils";
 
 export function DiscipleshipApplicationDropdownGroup({
   groups,

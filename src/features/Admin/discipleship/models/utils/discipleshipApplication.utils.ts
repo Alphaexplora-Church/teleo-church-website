@@ -5,6 +5,7 @@ import type {
   ApiDiscipleshipApplication,
 } from "../types/discipleshipApplication.types";
 import type { ApiDiscipleshipGroup } from "../types/groupsScheduleDirectory.types";
+import { resolveLeaderInfo } from "./groupsSchedule.mappers";
 
 /**
  * Formats an ISO date into a human readable relative time (e.g. "Applied 2 days ago")
@@ -89,11 +90,13 @@ export function getLowestRemainingCapacityGroupId(groups: PlacementGroup[]): str
  * Maps a raw API discipleship group object to the placement group contract.
  */
 export function mapApiGroupToPlacementGroup(group: ApiDiscipleshipGroup): PlacementGroup {
+  const { leaderName } = resolveLeaderInfo(group);
+
   return {
     id: String(group.id ?? group.discipleship_id ?? ""),
     name: group.name ?? group.discipleship_name ?? group.title ?? "Discipleship Group",
     currentSeats: group.current_seats ?? group.active_member_count ?? 0,
     maxSeats: group.max_seats ?? group.capacity_limit ?? 10,
-    leaderName: group.leader_name ?? undefined,
+    leaderName: leaderName !== "Unassigned Leader" ? leaderName : undefined,
   };
 }

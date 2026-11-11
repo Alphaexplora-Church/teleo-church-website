@@ -8,7 +8,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "https://teleo-backend.onrender.com",
+        target: "https://teleo-backend-v3.onrender.com",
         changeOrigin: true,
         secure: true,
       },

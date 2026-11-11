@@ -1,16 +1,16 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CircleHelp, GripVertical, Pencil, Plus, Trash2, X } from "lucide-react";
-import { Button } from "../../../../../shared/components/Button/Button";
+import { Button } from "../../../../../../shared/components/Button/Button";
 import type {
   DiscipleshipModalIntakeSchemaProps,
   IntakeQuestion,
-} from "../../models/types/discipleshipApplication.types";
+} from "../../../models/types/discipleshipApplication.types";
 import {
   DISCIPLESHIP_APPLICATIONS_EMPTY_STATES,
   MAX_INTAKE_QUESTIONS,
   MAX_QUESTION_CHARS,
-} from "../../models/constants/discipleshipApplication.constants";
+} from "../../../models/constants/discipleshipApplication.constants";
 
 function IntakeSchemaModalContent({
   onClose,

@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { Badge } from "../../../../../shared/components/Badge/Badge";
-import { Button } from "../../../../../shared/components/Button/Button";
+import { Badge } from "../../../../../../shared/components/Badge/Badge";
+import { Button } from "../../../../../../shared/components/Button/Button";
 import { DiscipleshipApplicationDropdownGroup } from "./DiscipleshipApplicationDropdownGroup";
-import type { DiscipleshipApplicationCollapsibleCardProps } from "../../models/types/discipleshipApplication.types";
-import { getLowestRemainingCapacityGroupId } from "../../models/utils/discipleshipApplication.utils";
+import type { DiscipleshipApplicationCollapsibleCardProps } from "../../../models/types/discipleshipApplication.types";
+import { getLowestRemainingCapacityGroupId } from "../../../models/utils/discipleshipApplication.utils";
+import { DiscipleshipAvatar } from "../DiscipleshipAvatar/DiscipleshipAvatar";
 
 export function DiscipleshipApplicationCollapsibleCard({
   applicant,
@@ -52,19 +53,11 @@ export function DiscipleshipApplicationCollapsibleCard({
         className="flex items-center justify-between p-4 cursor-pointer select-none transition-colors hover:bg-slate-50/50 sm:p-5"
       >
         <div className="flex items-center gap-3.5 min-w-0">
-          {/* Profile Avatar (plain grey circle with NO letters/initials if no image) */}
-          {applicant.avatarUrl ? (
-            <img
-              src={applicant.avatarUrl}
-              alt={applicant.name}
-              className="h-10 w-10 shrink-0 rounded-full object-cover ring-1 ring-slate-200"
-            />
-          ) : (
-            <div
-              className="h-10 w-10 shrink-0 rounded-full bg-slate-200"
-              aria-hidden="true"
-            />
-          )}
+          <DiscipleshipAvatar
+            src={applicant.avatarUrl}
+            alt={applicant.name}
+            size="lg"
+          />
 
           <div className="min-w-0">
             <div className="flex items-center gap-2 min-w-0">

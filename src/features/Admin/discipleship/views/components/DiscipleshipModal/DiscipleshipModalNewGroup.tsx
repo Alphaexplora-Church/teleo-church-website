@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, ChevronDown, X } from "lucide-react";
-import { Button } from "../../../../../shared/components/Button/Button";
-import type { LeaderFilterOption } from "../../models/types/groupsScheduleDirectory.types";
+import { Button } from "../../../../../../shared/components/Button/Button";
+import type { LeaderFilterOption } from "../../../models/types/groupsScheduleDirectory.types";
+import { DiscipleshipAvatar } from "../DiscipleshipAvatar/DiscipleshipAvatar";
 
 export interface DiscipleshipNewGroupFormData {
   name: string;
@@ -20,6 +21,8 @@ export interface DiscipleshipModalNewGroupProps {
   initialData?: Partial<DiscipleshipNewGroupFormData>;
   isLoading?: boolean;
   error?: string | null;
+  title?: string;
+  submitLabel?: string;
 }
 
 function DiscipleshipNewGroupModalContent({
@@ -29,13 +32,17 @@ function DiscipleshipNewGroupModalContent({
   initialData,
   isLoading = false,
   error = null,
+  title = "Create New Discipleship Group",
+  submitLabel = "Create Group",
 }: Omit<DiscipleshipModalNewGroupProps, "isOpen">) {
   const leaders = availableLeaders;
 
   // Form State initialized fresh on mount
 
   const [name, setName] = useState(initialData?.name ?? "");
-  const [maxCapacity, setMaxCapacity] = useState<number>(initialData?.maxCapacity ?? 0);
+  const [maxCapacity, setMaxCapacity] = useState<number | string>(
+    initialData?.maxCapacity !== undefined ? initialData.maxCapacity : "",
+  );
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedDiscipler, setSelectedDiscipler] = useState<LeaderFilterOption | null>(() => {
     if (initialData?.disciplerId || initialData?.disciplerName) {
@@ -49,6 +56,12 @@ function DiscipleshipNewGroupModalContent({
   });
 
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const sortedLeaders = useMemo(() => {
+    return [...leaders].sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
+    );
+  }, [leaders]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -97,9 +110,14 @@ function DiscipleshipNewGroupModalContent({
     e.preventDefault();
     if (!name.trim() || !selectedDiscipler || isLoading) return;
 
+    const capacityNum =
+      typeof maxCapacity === "number"
+        ? maxCapacity
+        : parseInt(String(maxCapacity), 10) || 0;
+
     onSubmit?.({
       name: name.trim(),
-      maxCapacity,
+      maxCapacity: capacityNum,
       disciplerId: selectedDiscipler.id,
       disciplerName: selectedDiscipler.name,
       disciplerImageUrl: selectedDiscipler.imageUrl,
@@ -133,7 +151,7 @@ function DiscipleshipNewGroupModalContent({
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-0.5 sm:space-y-1">
             <h2 className="font-sans text-lg font-bold tracking-tight text-midnight-teal sm:text-xl">
-              Create New Discipleship Group
+              {title}
             </h2>
             <p className="text-xs text-slate-500">
               Set up cohort details and assign an active discipler
@@ -182,11 +200,17 @@ function DiscipleshipNewGroupModalContent({
             <input
               type="number"
               min={0}
-              required
               value={maxCapacity}
-              onChange={(e) =>
-                setMaxCapacity(Math.max(0, parseInt(e.target.value, 10) || 0))
-              }
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val === "") {
+                  setMaxCapacity("");
+                } else {
+                  const num = parseInt(val, 10);
+                  setMaxCapacity(isNaN(num) ? "" : Math.max(0, num));
+                }
+              }}
+              placeholder="e.g. 10"
               className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-base text-midnight-teal shadow-2xs transition-all placeholder:text-slate-400 focus:border-midnight-teal/40 focus:outline-none focus:ring-2 focus:ring-midnight-teal/10 sm:text-sm"
             />
           </div>
@@ -209,10 +233,10 @@ function DiscipleshipNewGroupModalContent({
                 <div className="flex min-w-0 items-center gap-2.5">
                   {selectedDiscipler ? (
                     <>
-                      {/* Grey Circle Placeholder for Lead */}
-                      <div
-                        className="h-7 w-7 shrink-0 rounded-full bg-slate-300 ring-1 ring-slate-200"
-                        aria-hidden="true"
+                      <DiscipleshipAvatar
+                        src={selectedDiscipler.imageUrl}
+                        alt={selectedDiscipler.name}
+                        size="sm"
                       />
 
                       <span className="truncate font-medium text-midnight-teal">
@@ -244,7 +268,7 @@ function DiscipleshipNewGroupModalContent({
                     className="absolute left-0 right-0 top-full mt-1.5 z-50 max-h-56 overflow-y-auto rounded-xl border border-gray-100 bg-white p-1 shadow-xl"
                   >
                     <ul className="m-0 flex flex-col gap-0.5 p-0 list-none">
-                      {leaders.map((leader) => {
+                      {sortedLeaders.map((leader) => {
                         const isSelected = selectedDiscipler?.id === leader.id;
                         return (
                           <li key={leader.id} className="list-none">
@@ -261,10 +285,10 @@ function DiscipleshipNewGroupModalContent({
                               }`}
                             >
                               <div className="flex min-w-0 items-center gap-2.5">
-                                {/* Grey Circle Placeholder for Lead */}
-                                <div
-                                  className="h-7 w-7 shrink-0 rounded-full bg-slate-300 ring-1 ring-slate-200"
-                                  aria-hidden="true"
+                                <DiscipleshipAvatar
+                                  src={leader.imageUrl}
+                                  alt={leader.name}
+                                  size="sm"
                                 />
 
                                 <span className="truncate">{leader.name}</span>
@@ -301,7 +325,7 @@ function DiscipleshipNewGroupModalContent({
               disabled={!name.trim() || !selectedDiscipler || isLoading}
               className="flex-1 rounded-xl font-semibold !text-white shadow-xs transition-all hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-initial sm:w-auto"
             >
-              {isLoading ? "Creating..." : "Create Group"}
+              {isLoading ? "Saving..." : submitLabel}
             </Button>
           </div>
         </form>

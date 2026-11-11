@@ -7,8 +7,8 @@ import { DiscipleshipModuleApi } from "../models/api/discipleshipModule.api";
 import { DiscipleshipCalendarApi } from "../models/api/discipleshipCalendar.api";
 import { DiscipleshipGroupsApi } from "../models/api/discipleshipGroups.api";
 import { DiscipleshipDiscussionApi } from "../models/api/discipleshipDiscussion.api";
-import type { DiscipleshipNewGroupFormData } from "../components/DiscipleshipModal/DiscipleshipModalNewGroup";
-import type { ActiveDiscussionPrompt } from "../components/DiscipleshipModal/DiscipleshipModalDiscussionPrompt";
+import type { DiscipleshipNewGroupFormData } from "../views/components/DiscipleshipModal/DiscipleshipModalNewGroup";
+import type { ActiveDiscussionPrompt } from "../views/components/DiscipleshipModal/DiscipleshipModalDiscussionPrompt";
 import {
   mapApiGroupToItem,
   extractLeaderFilterOptions,
@@ -22,7 +22,7 @@ import type {
   DiscipleshipTab,
 } from "../models/types/groupsScheduleDirectory.types";
 import type { ApiDiscipleshipMeeting } from "../models/types/discipleshipCalendar.types";
-import { filterDiscipleshipGroups } from "../components/DirectoriesFilter/directoriesFilter.utils";
+import { filterDiscipleshipGroups } from "../views/components/DirectoriesFilter/directoriesFilter.utils";
 import { formatDateISO } from "../models/utils/discipleshipCalendar.utils";
 
 export interface UseDiscipleshipViewModelOptions {
@@ -51,9 +51,13 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Group creation state
+  // Group creation, edit & removal state
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
   const [createGroupError, setCreateGroupError] = useState<string | null>(null);
+  const [isUpdatingGroup, setIsUpdatingGroup] = useState(false);
+  const [updateGroupError, setUpdateGroupError] = useState<string | null>(null);
+  const [isRemovingGroup, setIsRemovingGroup] = useState(false);
+  const [removeGroupError, setRemoveGroupError] = useState<string | null>(null);
 
   // Discussion prompt state
   const [activeDiscussionPrompt, setActiveDiscussionPrompt] =
@@ -88,6 +92,25 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
         if (typeof data.discipleship_enabled === "boolean") {
           setIsModuleEnabled(data.discipleship_enabled);
         }
+
+        // Check if backend dashboard returns an active discussion prompt
+        const anyData = data as unknown as Record<string, unknown>;
+        const backendQuestion =
+          (typeof anyData.discussion_question === "string" && anyData.discussion_question) ||
+          (typeof anyData.active_question === "string" && anyData.active_question) ||
+          (typeof anyData.active_prompt === "string" && anyData.active_prompt) ||
+          (typeof (anyData.question as Record<string, unknown>)?.question_text === "string" &&
+            ((anyData.question as Record<string, unknown>).question_text as string));
+
+        if (backendQuestion) {
+          const syncedPrompt: ActiveDiscussionPrompt = {
+            id: "server-prompt",
+            text: backendQuestion,
+            postedAt: "Active",
+            status: "ACTIVE",
+          };
+          setActiveDiscussionPrompt(syncedPrompt);
+        }
       } else if (dashboardResult.reason && !isAbortError(dashboardResult.reason)) {
         const message = getApiErrorMessage(dashboardResult.reason);
         setError(message || "Failed to load discipleship groups.");
@@ -116,18 +139,78 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
   }, [fetchDashboard]);
 
   /**
-   * Transforms raw API groups into UI model items
+   * Candidate pool derived from /discipler-candidates and discipler_load
+   */
+  const candidateLeadersPool = useMemo<LeaderFilterOption[]>(() => {
+    const leaderMap = new Map<string, LeaderFilterOption>();
+
+    disciplerCandidates.forEach((c) => {
+      const anyCandidate = c as Record<string, unknown>;
+      const id = c.uid || c.user_id || c.id || anyCandidate.profile_id;
+      const name = c.name || [c.first_name, c.last_name].filter(Boolean).join(" ");
+      const imageUrl =
+        c.profile_picture_url ||
+        (typeof anyCandidate.avatar_url === "string" ? anyCandidate.avatar_url : undefined) ||
+        (typeof anyCandidate.image_url === "string" ? anyCandidate.image_url : undefined) ||
+        undefined;
+
+      if (id && name) {
+        leaderMap.set(String(id), {
+          id: String(id),
+          name: name.trim(),
+          imageUrl,
+        });
+      }
+    });
+
+    disciplerLoad.forEach((load) => {
+      if (load.discipler_user_id && load.name && !leaderMap.has(String(load.discipler_user_id))) {
+        leaderMap.set(String(load.discipler_user_id), {
+          id: String(load.discipler_user_id),
+          name: load.name.trim(),
+          imageUrl: load.image_url,
+        });
+      }
+    });
+
+    return Array.from(leaderMap.values());
+  }, [disciplerCandidates, disciplerLoad]);
+
+  /**
+   * Transforms raw API groups into UI model items, resolving leader names against candidate pool
    */
   const groups = useMemo<DiscipleshipGroupItem[]>(() => {
-    return rawGroups.map(mapApiGroupToItem);
-  }, [rawGroups]);
+    return rawGroups.map((g) => mapApiGroupToItem(g, candidateLeadersPool));
+  }, [rawGroups, candidateLeadersPool]);
 
   /**
    * Dynamically extracts leader options from real API data
    */
   const availableLeaders = useMemo<LeaderFilterOption[]>(() => {
-    return extractLeaderFilterOptions(rawGroups, disciplerLoad);
-  }, [rawGroups, disciplerLoad]);
+    return extractLeaderFilterOptions(rawGroups, disciplerLoad, candidateLeadersPool);
+  }, [rawGroups, disciplerLoad, candidateLeadersPool]);
+
+  /**
+   * Candidate leaders for group assignment: merges eligible candidates from
+   * /discipler-candidates with existing group leaders.
+   */
+  const candidateLeaders = useMemo<LeaderFilterOption[]>(() => {
+    const leaderMap = new Map<string, LeaderFilterOption>();
+
+    candidateLeadersPool.forEach((c) => {
+      leaderMap.set(String(c.id), c);
+    });
+
+    availableLeaders.forEach((l) => {
+      if (!leaderMap.has(String(l.id))) {
+        leaderMap.set(String(l.id), l);
+      }
+    });
+
+    return Array.from(leaderMap.values()).sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
+    );
+  }, [candidateLeadersPool, availableLeaders]);
 
   /**
    * Real-time filtered groups based on search text and selected leaders
@@ -137,7 +220,10 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
   }, [groups, searchQuery, selectedLeaders]);
 
   /**
-   * Handles toggle switch change with optimistic update and PATCH request
+   * [FEATURE ON HOLD / UNDER DECISION]
+   * Handles toggle switch change for "Active on mobile".
+   * Endpoint: PATCH /api/churches/:churchId/modules with { discipleship_enabled: boolean }
+   * Currently on hold while the UI toggle is hidden.
    */
   const handleToggleModule = useCallback(
     async (nextValue: boolean) => {
@@ -180,34 +266,6 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
       return mDate === todayISO;
     }).length;
   }, [calendarMeetings]);
-
-  /**
-   * Candidate leaders for group assignment: merges eligible candidates from
-   * /discipler-candidates with existing group leaders.
-   */
-  const candidateLeaders = useMemo<LeaderFilterOption[]>(() => {
-    const leaderMap = new Map<string, LeaderFilterOption>();
-
-    disciplerCandidates.forEach((c) => {
-      const id = c.uid || c.user_id || c.id;
-      const name = c.name || [c.first_name, c.last_name].filter(Boolean).join(" ");
-      if (id && name) {
-        leaderMap.set(id, {
-          id,
-          name,
-          imageUrl: c.profile_picture_url || undefined,
-        });
-      }
-    });
-
-    availableLeaders.forEach((l) => {
-      if (!leaderMap.has(l.id)) {
-        leaderMap.set(l.id, l);
-      }
-    });
-
-    return Array.from(leaderMap.values());
-  }, [disciplerCandidates, availableLeaders]);
 
   /**
    * Creates a new discipleship group and assigns the designated discipler
@@ -255,6 +313,96 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
   );
 
   /**
+   * Updates an existing discipleship group and reassigns/updates discipler
+   */
+  const handleUpdateGroup = useCallback(
+    async (
+      groupId: string,
+      formData: DiscipleshipNewGroupFormData,
+      currentLeaderId?: string,
+    ): Promise<boolean> => {
+      if (isUpdatingGroup) return false;
+      setIsUpdatingGroup(true);
+      setUpdateGroupError(null);
+
+      try {
+        // 1. Update group details (name, capacity limit)
+        await DiscipleshipGroupsApi.updateGroup(groupId, {
+          name: formData.name.trim(),
+          capacity_limit: formData.maxCapacity > 0 ? formData.maxCapacity : undefined,
+        });
+
+        // 2. Only modify leader if a leader is selected AND it is different from the current leader
+        const isLeaderChanged =
+          formData.disciplerId &&
+          formData.disciplerId.trim() !== (currentLeaderId || "").trim();
+
+        if (isLeaderChanged) {
+          if (currentLeaderId) {
+            // Group already had a leader: execute leadership handoff
+            try {
+              await DiscipleshipGroupsApi.executeLeadershipHandoff({
+                discipleship_id: groupId,
+                outgoing_user_id: currentLeaderId,
+                incoming_user_id: formData.disciplerId,
+              });
+            } catch (handoffErr) {
+              console.error("Leadership handoff failed, falling back to assign:", handoffErr);
+              await DiscipleshipGroupsApi.assignDiscipler(groupId, {
+                user_id: formData.disciplerId,
+                role: "leader",
+              });
+            }
+          } else {
+            // Group had no leader (initial assignment)
+            await DiscipleshipGroupsApi.assignDiscipler(groupId, {
+              user_id: formData.disciplerId,
+              role: "leader",
+            });
+          }
+        }
+
+        await fetchDashboard();
+        return true;
+      } catch (err) {
+        const message = getApiErrorMessage(err);
+        setUpdateGroupError(message || "Failed to update discipleship group.");
+        return false;
+      } finally {
+        setIsUpdatingGroup(false);
+      }
+    },
+    [fetchDashboard, isUpdatingGroup],
+  );
+
+  /**
+   * Archives/removes an existing discipleship group
+   */
+  const handleRemoveGroup = useCallback(
+    async (groupId: string): Promise<boolean> => {
+      if (isRemovingGroup) return false;
+      setIsRemovingGroup(true);
+      setRemoveGroupError(null);
+
+      try {
+        await DiscipleshipGroupsApi.updateGroup(groupId, {
+          status: "archived",
+        });
+
+        await fetchDashboard();
+        return true;
+      } catch (err) {
+        const message = getApiErrorMessage(err);
+        setRemoveGroupError(message || "Failed to remove discipleship group.");
+        return false;
+      } finally {
+        setIsRemovingGroup(false);
+      }
+    },
+    [fetchDashboard, isRemovingGroup],
+  );
+
+  /**
    * Posts a new church-wide discussion prompt to backend: POST /api/discipleship-discussion-questions
    */
   const handlePostDiscussionPrompt = useCallback(
@@ -274,13 +422,14 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
             ? promptText
             : `“${promptText}”`;
 
-        setActiveDiscussionPrompt({
+        const newPrompt: ActiveDiscussionPrompt = {
           id: res.question_id || res.id || Date.now().toString(),
           text: res.question_text || formatted,
           postedAt: "Posted just now",
           status: "ACTIVE",
-        });
+        };
 
+        setActiveDiscussionPrompt(newPrompt);
         return true;
       } catch (err) {
         const message = getApiErrorMessage(err);
@@ -321,6 +470,25 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
       error: createGroupError,
       onCreateGroup: handleCreateGroup,
       clearError: () => setCreateGroupError(null),
+    },
+
+    // Group Management (Create, Edit, Remove)
+    groupManagement: {
+      candidates: candidateLeaders,
+      isCreating: isCreatingGroup,
+      createError: createGroupError,
+      onCreateGroup: handleCreateGroup,
+      isUpdating: isUpdatingGroup,
+      updateError: updateGroupError,
+      onUpdateGroup: handleUpdateGroup,
+      isRemoving: isRemovingGroup,
+      removeError: removeGroupError,
+      onRemoveGroup: handleRemoveGroup,
+      clearErrors: () => {
+        setCreateGroupError(null);
+        setUpdateGroupError(null);
+        setRemoveGroupError(null);
+      },
     },
 
     // Discussion Prompts

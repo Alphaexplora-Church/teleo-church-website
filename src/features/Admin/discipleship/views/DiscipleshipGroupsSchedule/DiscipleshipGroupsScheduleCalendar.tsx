@@ -1,5 +1,5 @@
-import { DiscipleshipCalendarFilter } from "../../components/DiscipleshipCalendar/DiscipleshipCalendarFilter";
-import { DiscipleshipCalendar } from "../../components/DiscipleshipCalendar/DiscipleshipCalendar";
+import { DiscipleshipCalendarFilter } from "../components/DiscipleshipCalendar/DiscipleshipCalendarFilter";
+import { DiscipleshipCalendar } from "../components/DiscipleshipCalendar/DiscipleshipCalendar";
 import { useDiscipleshipCalendarViewModel } from "../../viewmodels/useDiscipleshipCalendarViewModel";
 import type { LeaderFilterOption } from "../../models/types/groupsScheduleDirectory.types";
 

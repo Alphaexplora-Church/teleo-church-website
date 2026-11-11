@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Check, ChevronDown, Search, Users, X } from "lucide-react";
 import {
   Dropdown,
   DropdownDivider,
   DropdownHeader,
-} from "../../../../../shared/components/Dropdown/Dropdown";
-import { dropdownItemVariants } from "../../../../../shared/components/Dropdown/dropdown.animations";
-import type { LeaderFilterOption } from "../../models/types/groupsScheduleDirectory.types";
+} from "../../../../../../shared/components/Dropdown/Dropdown";
+import { dropdownItemVariants } from "../../../../../../shared/components/Dropdown/dropdown.animations";
+import type { LeaderFilterOption } from "../../../models/types/groupsScheduleDirectory.types";
+import { DiscipleshipAvatar } from "../DiscipleshipAvatar/DiscipleshipAvatar";
 
 export type { LeaderFilterOption };
 
@@ -83,6 +84,12 @@ export function DirectoriesFilter({
 
   const selectedCount = selectedLeaders.length;
 
+  const sortedLeaders = useMemo(() => {
+    return [...leaders].sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
+    );
+  }, [leaders]);
+
   return (
     <div
       className={`relative z-30 flex flex-col gap-2.5 w-full md:flex-row md:items-center md:gap-2 md:max-w-xl md:flex-1 ${className}`.trim()}
@@ -121,31 +128,17 @@ export function DirectoriesFilter({
         trigger={(isOpen) => (
           <button
             type="button"
-            className={`flex h-full min-h-11 w-full shrink-0 cursor-pointer items-center justify-between gap-2.5 rounded-2xl border border-midnight-teal/10 bg-white/90 px-4 py-2.5 text-sm font-semibold text-midnight-teal shadow-sm backdrop-blur-md transition-all select-none hover:bg-white hover:border-midnight-teal/20 focus:ring-2 focus:ring-midnight-teal/30 focus:outline-none md:w-auto md:min-w-[9rem] ${
-              selectedCount > 0
-                ? "border-midnight-teal bg-midnight-teal text-white hover:bg-midnight-teal/90"
-                : ""
-            }`}
+            className="flex h-full min-h-11 w-full shrink-0 cursor-pointer items-center justify-between gap-2.5 rounded-2xl border border-midnight-teal/10 bg-white/90 px-4 py-2.5 text-sm font-semibold text-midnight-teal shadow-sm backdrop-blur-md transition-all select-none hover:bg-white hover:border-midnight-teal/20 focus:ring-2 focus:ring-midnight-teal/30 focus:outline-none md:w-auto md:min-w-[9rem]"
           >
             <div className="flex items-center gap-2">
-              <Users
-                className={`h-4 w-4 shrink-0 ${
-                  selectedCount > 0 ? "text-white" : "text-midnight-teal/60"
-                }`}
-              />
+              <Users className="h-4 w-4 shrink-0 text-midnight-teal/60" />
               <span>Leaders</span>
-
-              {selectedCount > 0 && (
-                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-white/20 px-1.5 text-xs font-bold text-white">
-                  {selectedCount}
-                </span>
-              )}
             </div>
 
             <ChevronDown
-              className={`h-4 w-4 shrink-0 transition-transform duration-200 ${
-                selectedCount > 0 ? "text-white" : "text-midnight-teal/50"
-              } ${isOpen ? "rotate-180" : ""}`}
+              className={`h-4 w-4 shrink-0 text-midnight-teal/50 transition-transform duration-200 ${
+                isOpen ? "rotate-180" : ""
+              }`}
             />
           </button>
         )}
@@ -172,7 +165,7 @@ export function DirectoriesFilter({
 
           {/* Checklist of Leaders */}
           <ul className="m-0 flex max-h-64 flex-col gap-0.5 overflow-y-auto p-0 list-none">
-            {leaders.map((leader) => {
+            {sortedLeaders.map((leader) => {
               const isChecked = selectedLeaders.includes(leader.name);
 
               return (
@@ -186,19 +179,13 @@ export function DirectoriesFilter({
                     onClick={() => handleToggleLeader(leader.name)}
                     className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl px-2.5 py-2 text-left transition-colors hover:bg-midnight-teal/5"
                   >
-                    {/* Left side: Avatar Image / Gray Circle + Leader Name */}
+                    {/* Left side: Avatar Image + Leader Name */}
                     <div className="flex min-w-0 items-center gap-2.5">
-                      <div className="h-7 w-7 shrink-0 overflow-hidden rounded-full bg-slate-200 ring-1 ring-slate-300/40">
-                        {leader.imageUrl ? (
-                          <img
-                            src={leader.imageUrl}
-                            alt={leader.name}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <div className="h-full w-full bg-slate-200" />
-                        )}
-                      </div>
+                      <DiscipleshipAvatar
+                        src={leader.imageUrl}
+                        alt={leader.name}
+                        size="sm"
+                      />
 
                       <span className="truncate text-sm font-medium text-midnight-teal">
                         {leader.name}

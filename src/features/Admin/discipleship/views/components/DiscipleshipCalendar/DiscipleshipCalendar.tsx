@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { DiscipleshipCalendarSchedCard } from "./DiscipleshipCalendarSchedCard";
-import { DISCIPLESHIP_CALENDAR_UI } from "../../models/constants/discipleshipCalendar.constants";
-import type { DiscipleshipCalendarProps } from "../../models/types/discipleshipCalendar.types";
+import { DISCIPLESHIP_CALENDAR_UI } from "../../../models/constants/discipleshipCalendar.constants";
+import type { DiscipleshipCalendarProps } from "../../../models/types/discipleshipCalendar.types";
 
 export function DiscipleshipCalendar({
   days,
