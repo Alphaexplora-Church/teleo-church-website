@@ -25,6 +25,64 @@ import type { ApiDiscipleshipMeeting } from "../models/types/discipleshipCalenda
 import { filterDiscipleshipGroups } from "../views/components/DirectoriesFilter/directoriesFilter.utils";
 import { formatDateISO } from "../models/utils/discipleshipCalendar.utils";
 
+function parseActiveDiscussionPrompt(raw: unknown): ActiveDiscussionPrompt | null {
+  if (!raw) return null;
+  if (typeof raw === "string" && raw.trim().length > 0) {
+    return {
+      id: "server-prompt",
+      text: raw.trim(),
+      postedAt: "Active",
+      status: "ACTIVE",
+    };
+  }
+  if (Array.isArray(raw) && raw.length > 0) {
+    return parseActiveDiscussionPrompt(raw[0]);
+  }
+  if (typeof raw === "object") {
+    const obj = raw as Record<string, unknown>;
+    const text =
+      (typeof obj.question_text === "string" && obj.question_text) ||
+      (typeof obj.text === "string" && obj.text) ||
+      (typeof obj.prompt === "string" && obj.prompt) ||
+      (typeof obj.question === "string" && obj.question) ||
+      "";
+    if (text.trim().length > 0) {
+      let postedAt = "Active";
+      const createdAt =
+        typeof obj.created_at === "string"
+          ? obj.created_at
+          : typeof obj.posted_at === "string"
+          ? obj.posted_at
+          : undefined;
+      if (createdAt) {
+        const date = new Date(createdAt);
+        if (!isNaN(date.getTime())) {
+          const now = new Date();
+          const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / 60000);
+          if (diffInMinutes < 1) postedAt = "Posted just now";
+          else if (diffInMinutes < 60) postedAt = `Posted ${diffInMinutes}m ago`;
+          else {
+            const diffInHours = Math.floor(diffInMinutes / 60);
+            if (diffInHours < 24) postedAt = `Posted ${diffInHours}h ago`;
+            else {
+              const diffInDays = Math.floor(diffInHours / 24);
+              if (diffInDays < 7) postedAt = `Posted ${diffInDays}d ago`;
+              else postedAt = date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+            }
+          }
+        }
+      }
+      return {
+        id: obj.id ? String(obj.id) : obj.question_id ? String(obj.question_id) : "server-prompt",
+        text: text.trim(),
+        postedAt,
+        status: typeof obj.status === "string" ? obj.status.toUpperCase() : "ACTIVE",
+      };
+    }
+  }
+  return null;
+}
+
 export interface UseDiscipleshipViewModelOptions {
   /** Optional override for churchId; defaults to authenticated user's home_church_id */
   churchId?: string | number;
@@ -95,21 +153,27 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
 
         // Check if backend dashboard returns an active discussion prompt
         const anyData = data as unknown as Record<string, unknown>;
-        const backendQuestion =
-          (typeof anyData.discussion_question === "string" && anyData.discussion_question) ||
-          (typeof anyData.active_question === "string" && anyData.active_question) ||
-          (typeof anyData.active_prompt === "string" && anyData.active_prompt) ||
-          (typeof (anyData.question as Record<string, unknown>)?.question_text === "string" &&
-            ((anyData.question as Record<string, unknown>).question_text as string));
+        const activePromptData =
+          anyData.active_discussion_question ??
+          anyData.discussion_question ??
+          anyData.active_question ??
+          anyData.active_prompt ??
+          anyData.question;
 
-        if (backendQuestion) {
-          const syncedPrompt: ActiveDiscussionPrompt = {
-            id: "server-prompt",
-            text: backendQuestion,
-            postedAt: "Active",
-            status: "ACTIVE",
-          };
+        const syncedPrompt = parseActiveDiscussionPrompt(activePromptData);
+        if (syncedPrompt) {
           setActiveDiscussionPrompt(syncedPrompt);
+        } else {
+          // Fallback to standalone endpoint if dashboard does not contain active question
+          try {
+            const standaloneQuestion = await DiscipleshipDiscussionApi.getDiscussionQuestions(churchId, signal);
+            const fallbackPrompt = parseActiveDiscussionPrompt(standaloneQuestion);
+            if (fallbackPrompt) {
+              setActiveDiscussionPrompt(fallbackPrompt);
+            }
+          } catch {
+            // Non-blocking fallback
+          }
         }
       } else if (dashboardResult.reason && !isAbortError(dashboardResult.reason)) {
         const message = getApiErrorMessage(dashboardResult.reason);
@@ -430,6 +494,7 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
         };
 
         setActiveDiscussionPrompt(newPrompt);
+        void fetchDashboard();
         return true;
       } catch (err) {
         const message = getApiErrorMessage(err);
@@ -439,7 +504,7 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
         setIsPostingPrompt(false);
       }
     },
-    [churchId, isPostingPrompt],
+    [churchId, fetchDashboard, isPostingPrompt],
   );
 
   return {
