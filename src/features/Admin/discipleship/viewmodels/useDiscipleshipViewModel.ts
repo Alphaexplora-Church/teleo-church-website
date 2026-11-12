@@ -17,6 +17,7 @@ import type {
   ApiDisciplerLoad,
   ApiDiscipleshipGroup,
   ApiDisciplerCandidate,
+  ApiDiscipleshipMember,
   DiscipleshipGroupItem,
   LeaderFilterOption,
   DiscipleshipTab,
@@ -402,27 +403,109 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
           formData.disciplerId.trim() !== (currentLeaderId || "").trim();
 
         if (isLeaderChanged) {
-          if (currentLeaderId) {
-            // Group already had a leader: execute leadership handoff
+          const incomingUserId = String(formData.disciplerId).trim();
+
+          // Fetch current group members to identify outgoing leader(s)
+          let existingMembers: ApiDiscipleshipMember[] = [];
+          try {
+            existingMembers = await DiscipleshipGroupsApi.getGroupMembers(groupId);
+          } catch (membersErr) {
+            console.warn("Could not fetch group members before leadership handoff:", membersErr);
+          }
+
+          // Find outgoing leader(s) who currently occupy a seat
+          const outgoingMemberRecords = existingMembers.filter((m) => {
+            const memberUserId = String(
+              m.user_id ||
+                m.userId ||
+                m.uid ||
+                (m.user as { id?: string | number })?.id ||
+                "",
+            ).trim();
+            const isDifferentFromIncoming = memberUserId !== incomingUserId;
+            const isLeaderRole = m.role === "leader" || m.role === "discipler";
+            const isCurrentLeader = Boolean(
+              currentLeaderId && memberUserId === String(currentLeaderId).trim(),
+            );
+            return isDifferentFromIncoming && (isLeaderRole || isCurrentLeader);
+          });
+
+          // Determine outgoing user ID
+          const outgoingUserId =
+            (outgoingMemberRecords[0] &&
+              String(
+                outgoingMemberRecords[0].user_id ||
+                  outgoingMemberRecords[0].userId ||
+                  outgoingMemberRecords[0].uid ||
+                  (outgoingMemberRecords[0].user as { id?: string | number })?.id ||
+                  "",
+              ).trim()) ||
+            (currentLeaderId ? String(currentLeaderId).trim() : undefined);
+
+          // Execute handoff or direct assign
+          let handoffSuccess = false;
+          if (outgoingUserId && outgoingUserId !== incomingUserId) {
             try {
               await DiscipleshipGroupsApi.executeLeadershipHandoff({
                 discipleship_id: groupId,
-                outgoing_user_id: currentLeaderId,
-                incoming_user_id: formData.disciplerId,
+                outgoing_user_id: outgoingUserId,
+                incoming_user_id: incomingUserId,
               });
+              handoffSuccess = true;
             } catch (handoffErr) {
-              console.error("Leadership handoff failed, falling back to assign:", handoffErr);
-              await DiscipleshipGroupsApi.assignDiscipler(groupId, {
-                user_id: formData.disciplerId,
-                role: "leader",
-              });
+              console.warn("Leadership handoff failed, assigning directly:", handoffErr);
             }
-          } else {
-            // Group had no leader (initial assignment)
+          }
+
+          if (!handoffSuccess) {
             await DiscipleshipGroupsApi.assignDiscipler(groupId, {
-              user_id: formData.disciplerId,
+              user_id: incomingUserId,
               role: "leader",
             });
+          }
+
+          // Unseat/remove previous leader(s) so they no longer count towards disciple seats
+          for (const outgoing of outgoingMemberRecords) {
+            const memberId =
+              outgoing.id ||
+              outgoing.membership_id ||
+              outgoing.member_id ||
+              outgoing.discipleship_member_id;
+            if (memberId) {
+              try {
+                await DiscipleshipGroupsApi.updateMemberStatus(String(memberId), "removed");
+              } catch (unseatErr) {
+                console.warn(`Failed to unseat outgoing leader member ${memberId}:`, unseatErr);
+              }
+            }
+          }
+
+          // Clean up any remaining records of the outgoing user (e.g. demoted to 'member' by backend)
+          if (outgoingUserId) {
+            const remainingMatches = existingMembers.filter((m) => {
+              const memberUserId = String(
+                m.user_id ||
+                  m.userId ||
+                  m.uid ||
+                  (m.user as { id?: string | number })?.id ||
+                  "",
+              ).trim();
+              return (
+                memberUserId === outgoingUserId &&
+                !outgoingMemberRecords.some((om) => om.id === m.id)
+              );
+            });
+            for (const rem of remainingMatches) {
+              const remMemberId =
+                rem.id || rem.membership_id || rem.member_id || rem.discipleship_member_id;
+              if (remMemberId) {
+                try {
+                  await DiscipleshipGroupsApi.updateMemberStatus(String(remMemberId), "removed");
+                } catch (unseatErr) {
+                  console.warn(`Failed to unseat demoted previous leader member ${remMemberId}:`, unseatErr);
+                }
+              }
+            }
           }
         }
 
