@@ -148,9 +148,13 @@ export const DiscipleshipGroupsApi = {
       console.warn("Attempted to update member status with invalid memberId:", memberId);
       return { status: "invalid" };
     }
+    const payload: { status: string; left_at?: string } = { status };
+    if (status === "removed" || status === "left") {
+      payload.left_at = new Date().toISOString();
+    }
     const response = await apiClient.patch<{ status: string }>(
       `/api/discipleship-members/${memberId}`,
-      { status },
+      payload,
       { signal },
     );
     return response.data;

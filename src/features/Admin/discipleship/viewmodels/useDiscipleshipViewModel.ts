@@ -164,17 +164,6 @@ export function useDiscipleshipViewModel(options?: UseDiscipleshipViewModelOptio
         const syncedPrompt = parseActiveDiscussionPrompt(activePromptData);
         if (syncedPrompt) {
           setActiveDiscussionPrompt(syncedPrompt);
-        } else {
-          // Fallback to standalone endpoint if dashboard does not contain active question
-          try {
-            const standaloneQuestion = await DiscipleshipDiscussionApi.getDiscussionQuestions(churchId, signal);
-            const fallbackPrompt = parseActiveDiscussionPrompt(standaloneQuestion);
-            if (fallbackPrompt) {
-              setActiveDiscussionPrompt(fallbackPrompt);
-            }
-          } catch {
-            // Non-blocking fallback
-          }
         }
       } else if (dashboardResult.reason && !isAbortError(dashboardResult.reason)) {
         const message = getApiErrorMessage(dashboardResult.reason);
