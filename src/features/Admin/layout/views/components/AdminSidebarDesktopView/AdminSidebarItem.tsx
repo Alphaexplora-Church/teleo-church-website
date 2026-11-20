@@ -1,72 +1,140 @@
-import { useLocation } from "react-router-dom";
-import { NavLink } from "../NavLink/NavLink";
+import { useLocation, useNavigate } from "react-router-dom";
+import { Button } from "../../../../../../shared/components/Button/Button";
 import type { AdminSidebarItemProps } from "../../../models/types/adminLayoutView.types";
 
-export function AdminSidebarItem({ item }: AdminSidebarItemProps) {
+export function AdminSidebarItem({
+  item,
+  isCollapsed = false,
+  onExpand,
+}: AdminSidebarItemProps) {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const hasSubItems = Boolean(item.subItems && item.subItems.length > 0);
+  const Icon = item.icon;
 
   // Checks if the user is currently on this route or any of its sub-routes
-  const isSelfOrChildActive =
-    location.pathname === item.to ||
-    location.pathname.startsWith(`${item.to}/`);
+  const isExactActive = location.pathname === item.to;
+  const isChildActive = Boolean(
+    item.subItems?.some(
+      (sub) => location.pathname === sub.to || location.pathname.startsWith(`${sub.to}/`)
+    )
+  );
+  const isActive = isExactActive || (!hasSubItems && location.pathname.startsWith(`${item.to}/`));
+  const isSelfOrChildActive = isActive || isChildActive;
 
-  // Regular single NavLink when there are no sub-items
-  if (!hasSubItems) {
+  // Handler for menu clicks: if minimized, auto-expand sidebar as requested
+  const handleItemClick = () => {
+    if (isCollapsed) {
+      onExpand?.();
+    }
+    navigate(item.to);
+  };
+
+  // Minimized state (Icon only)
+  if (isCollapsed) {
     return (
-      <NavLink
-        to={item.to}
-        className="rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200 text-midnight-teal/65 hover:text-midnight-teal"
-        activeClassName="bg-midnight-teal text-white shadow-lg shadow-midnight-teal/15 hover:bg-midnight-teal hover:text-white"
-      >
-        {item.label}
-      </NavLink>
+      <div className="flex justify-center w-full py-0.5">
+        <Button
+          type="button"
+          variant={isActive ? "primary" : "ghost"}
+          size="sm"
+          title={item.label}
+          onClick={handleItemClick}
+          className={`h-11 w-11 p-0 rounded-xl justify-center transition-all duration-200 cursor-pointer ${
+            isActive
+              ? "!bg-primary !text-white shadow-md shadow-primary/25 hover:!bg-primary hover:!text-white"
+              : "text-slate-600 hover:bg-slate-100 hover:text-primary"
+          }`}
+        >
+          {Icon ? (
+            <Icon className="h-5 w-5 shrink-0 stroke-[2]" />
+          ) : (
+            <span className="text-xs font-bold">{item.label[0]}</span>
+          )}
+        </Button>
+      </div>
     );
   }
 
-  // Parent item with sub-items: sub-items only appear when user is on discipleship
+  // Expanded state: Regular single Button when there are no sub-items
+  if (!hasSubItems) {
+    return (
+      <Button
+        type="button"
+        variant={isActive ? "primary" : "ghost"}
+        size="md"
+        onClick={handleItemClick}
+        className={`w-full justify-start gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-all duration-200 cursor-pointer ${
+          isActive
+            ? "!bg-primary !text-white shadow-md shadow-primary/25 hover:!bg-primary hover:!text-white"
+            : "text-slate-700 hover:bg-slate-100/80 hover:text-primary"
+        }`}
+      >
+        {Icon && <Icon className="h-4.5 w-4.5 shrink-0 stroke-[2]" />}
+        <span className="truncate">{item.label}</span>
+      </Button>
+    );
+  }
+
+  // Expanded state: Parent item with sub-items
   return (
     <div className="flex flex-col">
-      <NavLink
-        to={item.to}
-        end
-        className="w-full rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200 text-midnight-teal/65 hover:text-midnight-teal"
-        activeClassName="bg-midnight-teal text-white shadow-lg shadow-midnight-teal/15 hover:bg-midnight-teal hover:text-white"
+      <Button
+        type="button"
+        variant={isActive ? "primary" : "ghost"}
+        size="md"
+        onClick={handleItemClick}
+        className={`w-full justify-start gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-all duration-200 cursor-pointer ${
+          isActive
+            ? "!bg-primary !text-white shadow-md shadow-primary/25 hover:!bg-primary hover:!text-white"
+            : "text-slate-700 hover:bg-slate-100/80 hover:text-primary"
+        }`}
       >
-        {item.label}
-      </NavLink>
+        {Icon && <Icon className="h-4.5 w-4.5 shrink-0 stroke-[2]" />}
+        <span className="truncate">{item.label}</span>
+      </Button>
 
       {/* Sub-items list only rendered when parent or child route is active */}
       {isSelfOrChildActive && item.subItems && (
-        <div className="ml-4 mt-1 flex flex-col gap-1 border-l-2 border-midnight-teal/10 pl-3">
+        <div className="ml-5 mt-1 flex flex-col gap-1 border-l-2 border-slate-200 pl-3">
           {item.subItems.map((sub) => {
             const isSubActive =
               location.pathname === sub.to ||
               location.pathname.startsWith(`${sub.to}/`);
+            const SubIcon = sub.icon;
 
             return (
-              <NavLink
+              <Button
                 key={sub.to}
-                to={sub.to}
-                className="flex items-center justify-between rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-200 text-midnight-teal/65 hover:text-midnight-teal"
-                activeClassName="bg-midnight-teal text-white shadow-sm font-bold hover:bg-midnight-teal hover:text-white"
+                type="button"
+                variant={isSubActive ? "primary" : "ghost"}
+                size="sm"
+                onClick={() => {
+                  navigate(sub.to);
+                }}
+                className={`w-full justify-between rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all duration-200 cursor-pointer ${
+                  isSubActive
+                    ? "!bg-primary !text-white shadow-xs font-bold hover:!bg-primary hover:!text-white"
+                    : "text-slate-600 hover:bg-slate-100/80 hover:text-primary"
+                }`}
               >
-                <span className="flex items-center gap-1.5">
-                  <span>{sub.label}</span>
-                  {typeof sub.count === "number" && (
-                    <span
-                      className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full min-w-[18px] text-center leading-none ${
-                        isSubActive
-                          ? "bg-white/20 text-white"
-                          : "bg-slate-200 text-slate-700"
-                      }`}
-                    >
-                      {sub.count}
-                    </span>
-                  )}
+                <span className="flex items-center gap-2 truncate">
+                  {SubIcon && <SubIcon className="h-3.5 w-3.5 shrink-0 stroke-[2]" />}
+                  <span className="truncate">{sub.label}</span>
                 </span>
-              </NavLink>
+                {typeof sub.count === "number" && (
+                  <span
+                    className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full min-w-[18px] text-center leading-none ${
+                      isSubActive
+                        ? "bg-white/20 text-white"
+                        : "bg-slate-200 text-slate-700"
+                    }`}
+                  >
+                    {sub.count}
+                  </span>
+                )}
+              </Button>
             );
           })}
         </div>

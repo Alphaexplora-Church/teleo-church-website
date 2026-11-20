@@ -1,20 +1,53 @@
-import { useAdminHeaderViewModel } from "../../../viewmodels/useAdminHeaderViewModel";
+import { Menu, Building2 } from "lucide-react";
+import type { AdminHeaderDesktopViewProps } from "../../../models/types/adminLayoutView.types";
+import { UserProfile } from "../UserProfile/UserProfile";
+import { Button } from "../../../../../../shared/components/Button/Button";
 
-export function AdminHeaderDesktopView() {
-  const vm = useAdminHeaderViewModel();
-
+export function AdminHeaderDesktopView({
+  churchName = "No Church",
+  user,
+  isSidebarCollapsed = false,
+  onToggleSidebar,
+  onLogout,
+  isLoggingOut = false,
+}: AdminHeaderDesktopViewProps) {
   return (
-    <header className="mx-auto flex w-full max-w-7xl items-center justify-between border-b border-midnight-teal/10 bg-white/25 px-6 py-6 backdrop-blur-md lg:px-10">
-      <span className="font-serif text-2xl text-midnight-teal sm:text-3xl">
-        Welcome, {vm.userName}
-      </span>
-      <button
-        onClick={() => void vm.logout()}
-        disabled={vm.isLoggingOut}
-        className="rounded-xl border border-midnight-teal/10 bg-white/50 px-4 py-2 text-sm font-bold text-harvest-orange shadow-sm backdrop-blur-xl transition-colors hover:bg-white/80 disabled:opacity-60 disabled:cursor-not-allowed"
-      >
-        {vm.isLoggingOut ? "Signing out..." : "Logout"}
-      </button>
+    <header className="flex w-full items-center justify-between border-b border-midnight-teal/10 bg-white/70 px-5 py-3.5 backdrop-blur-md lg:px-8">
+      {/* Left Section: Burger Button + Name of Church */}
+      <div className="flex items-center gap-4 min-w-0">
+        {/* Burger Button with parallel state when minimized */}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={onToggleSidebar}
+          aria-label="Toggle sidebar"
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-midnight-teal/10 bg-white/80 p-0 text-midnight-teal shadow-2xs backdrop-blur-sm transition-all duration-200 hover:bg-white hover:text-midnight-teal hover:border-midnight-teal/25 active:scale-95 cursor-pointer"
+        >
+          <Menu
+            className={`h-5 w-5 stroke-[2.2] transition-transform duration-300 ease-in-out ${
+              isSidebarCollapsed ? "rotate-90" : "rotate-0"
+            }`}
+          />
+        </Button>
+
+        {/* Church Name (larger, no border) */}
+        <div className="flex items-center gap-2.5 min-w-0">
+          <Building2 className="h-5 w-5 shrink-0 text-midnight-teal/70" />
+          <span className="font-sans text-base sm:text-lg font-bold text-midnight-teal truncate tracking-tight">
+            {churchName || "No Church"}
+          </span>
+        </div>
+      </div>
+
+      {/* Right Section: User Profile component */}
+      <div className="flex items-center gap-3 shrink-0">
+        <UserProfile
+          user={user}
+          onLogout={onLogout}
+          isLoggingOut={isLoggingOut}
+        />
+      </div>
     </header>
   );
 }

@@ -1,4 +1,5 @@
-import type { FeaturesConfig } from "../../../../../shared/models/types/auth.types";
+import type { ComponentType } from "react";
+import type { FeaturesConfig, AuthUser } from "../../../../../shared/models/types/auth.types";
 
 /**
  * Branding contract for the Admin layout shell.
@@ -16,6 +17,7 @@ export interface AdminNavSubItem {
   to: string;
   label: string;
   count?: number;
+  icon?: ComponentType<{ className?: string }>;
 }
 
 /**
@@ -24,6 +26,7 @@ export interface AdminNavSubItem {
 export interface AdminNavMenuConfig {
   to: string;
   label: string;
+  icon?: ComponentType<{ className?: string }>;
   featureKey?: Extract<keyof FeaturesConfig, string>;
   subItems?: readonly AdminNavSubItem[];
   count?: number;
@@ -35,6 +38,7 @@ export interface AdminNavMenuConfig {
 export interface AdminNavItem {
   to: string;
   label: string;
+  icon?: ComponentType<{ className?: string }>;
   subItems?: readonly AdminNavSubItem[];
   count?: number;
 }
@@ -45,6 +49,8 @@ export interface AdminNavItem {
 export interface AdminSidebarDesktopViewProps {
   brand?: AdminBrand;
   items: readonly AdminNavItem[];
+  isCollapsed?: boolean;
+  onExpand?: () => void;
   className?: string;
 }
 
@@ -53,6 +59,8 @@ export interface AdminSidebarDesktopViewProps {
  */
 export interface AdminSidebarItemProps {
   item: AdminNavItem;
+  isCollapsed?: boolean;
+  onExpand?: () => void;
 }
 
 /**
@@ -60,8 +68,22 @@ export interface AdminSidebarItemProps {
  */
 export interface AdminHeaderViewModel {
   userName: string;
+  churchName: string;
+  user: AuthUser | null;
   isLoggingOut: boolean;
   logout: () => Promise<void>;
+}
+
+/**
+ * Props for AdminHeaderDesktopView component.
+ */
+export interface AdminHeaderDesktopViewProps {
+  churchName?: string;
+  user?: AuthUser | null;
+  isSidebarCollapsed?: boolean;
+  onToggleSidebar?: () => void;
+  onLogout?: () => Promise<void> | void;
+  isLoggingOut?: boolean;
 }
 
 /**
@@ -69,6 +91,10 @@ export interface AdminHeaderViewModel {
  */
 export interface AdminSidebarViewModel {
   navLinks: AdminNavItem[];
+  isCollapsed: boolean;
+  toggleCollapse: () => void;
+  expand: () => void;
+  collapse: () => void;
   pendingApplicationsCount: number;
   showPrayerWall: boolean;
   showContentManagement: boolean;

@@ -21,8 +21,19 @@ export function useAdminHeaderViewModel(): AdminHeaderViewModel {
     }
   };
 
+  // Derive Church Name from user session or fallback cleanly to "No Church"
+  const rawUser = user as unknown as Record<string, unknown> | null;
+  const churchName =
+    (typeof rawUser?.church_name === "string" && rawUser.church_name.trim()) ||
+    (typeof rawUser?.home_church_name === "string" && rawUser.home_church_name.trim()) ||
+    (typeof (rawUser?.church as Record<string, unknown>)?.name === "string" &&
+      ((rawUser?.church as Record<string, unknown>).name as string).trim()) ||
+    "No Church";
+
   return {
     userName: user?.username || "Admin",
+    churchName,
+    user,
     isLoggingOut,
     logout: handleLogout,
   };
