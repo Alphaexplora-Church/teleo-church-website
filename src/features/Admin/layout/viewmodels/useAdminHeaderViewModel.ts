@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../../shared/context/useAuth";
+import type { AdminHeaderViewModel } from "../models/types/adminLayoutView.types";
 
-export function useAdminHeaderViewModel() {
+export function useAdminHeaderViewModel(): AdminHeaderViewModel {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const navigate = useNavigate();
   const { user, logout } = useAuth();

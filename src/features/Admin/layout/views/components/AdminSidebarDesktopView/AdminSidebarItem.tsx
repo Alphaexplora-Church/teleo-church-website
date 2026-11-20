@@ -1,22 +1,6 @@
 import { useLocation } from "react-router-dom";
 import { NavLink } from "../NavLink/NavLink";
-
-export interface AdminSidebarSubItem {
-  to: string;
-  label: string;
-  count?: number;
-}
-
-export interface AdminSidebarItemData {
-  to: string;
-  label: string;
-  subItems?: readonly AdminSidebarSubItem[];
-  count?: number;
-}
-
-export interface AdminSidebarItemProps {
-  item: AdminSidebarItemData;
-}
+import type { AdminSidebarItemProps } from "../../../models/types/adminLayoutView.types";
 
 export function AdminSidebarItem({ item }: AdminSidebarItemProps) {
   const location = useLocation();

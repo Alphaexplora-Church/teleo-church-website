@@ -1,10 +1,17 @@
 import { useAuth } from "../../../../shared/context/useAuth";
 import type { FeaturesConfig } from "../../../../shared/models/types/auth.types";
 import { ADMIN_NAV_MENU_CONFIG } from "../models/constants/adminLayoutView.constants";
-import type { AdminNavItem } from "../models/types/adminLayoutView.types";
+import type {
+  AdminNavItem,
+  AdminSidebarViewModel,
+} from "../models/types/adminLayoutView.types";
 import { usePendingApplicationsCount } from "../../discipleship/models/utils/discipleshipApplication.store";
 
-export type { AdminNavItem, AdminNavSubItem } from "../models/types/adminLayoutView.types";
+export type {
+  AdminNavItem,
+  AdminNavSubItem,
+  AdminSidebarViewModel,
+} from "../models/types/adminLayoutView.types";
 
 /**
  * useAdminSidebarViewModel
@@ -13,7 +20,7 @@ export type { AdminNavItem, AdminNavSubItem } from "../models/types/adminLayoutV
  * Evaluates feature gates against ADMIN_NAV_MENU_CONFIG and returns
  * the active list of navigation links including nested subItems with dynamic notification badges.
  */
-export function useAdminSidebarViewModel() {
+export function useAdminSidebarViewModel(): AdminSidebarViewModel {
   const { features } = useAuth();
   const pendingApplicationsCount = usePendingApplicationsCount();
 

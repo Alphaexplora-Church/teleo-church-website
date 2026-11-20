@@ -1,9 +1,9 @@
-import type { AdminNavMenuConfig } from "../types/adminLayoutView.types";
+import type { AdminBrand, AdminNavMenuConfig } from "../types/adminLayoutView.types";
 
 /**
  * Branding and identity constants for the Admin layout shell.
  */
-export const ADMIN_BRAND = {
+export const ADMIN_BRAND: AdminBrand = {
   name: "TELEO",
   logoSrc: "/teleo-logo.png",
   logoAlt: "Teleo",

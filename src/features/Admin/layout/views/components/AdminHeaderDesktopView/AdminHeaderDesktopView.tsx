@@ -1,6 +1,6 @@
-import { useAdminHeaderViewModel } from "../../viewmodels/useAdminHeaderViewModel";
+import { useAdminHeaderViewModel } from "../../../viewmodels/useAdminHeaderViewModel";
 
-export default function AdminHeader() {
+export function AdminHeaderDesktopView() {
   const vm = useAdminHeaderViewModel();
 
   return (
@@ -18,3 +18,5 @@ export default function AdminHeader() {
     </header>
   );
 }
+
+export default AdminHeaderDesktopView;

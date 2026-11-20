@@ -1,24 +1,11 @@
-import { AdminSidebarItem, type AdminSidebarItemData } from "./AdminSidebarItem";
+import { AdminSidebarItem } from "./AdminSidebarItem";
+import type { AdminSidebarDesktopViewProps } from "../../../models/types/adminLayoutView.types";
 
-export type { AdminSidebarItemData, AdminSidebarSubItem } from "./AdminSidebarItem";
-
-export interface AdminSidebarBrand {
-  name: string;
-  logoSrc: string;
-  logoAlt: string;
-}
-
-export interface AdminSidebarProps {
-  brand?: AdminSidebarBrand;
-  items: AdminSidebarItemData[];
-  className?: string;
-}
-
-export function AdminSidebar({
+export function AdminSidebarDesktopView({
   brand,
   items,
   className = "",
-}: AdminSidebarProps) {
+}: AdminSidebarDesktopViewProps) {
   return (
     <aside
       className={`admin-nav relative z-40 flex w-full shrink-0 flex-col border-b border-midnight-teal/10 bg-white/80 px-5 backdrop-blur-2xl lg:h-full lg:self-stretch lg:w-64 lg:border-b-0 lg:border-r lg:px-6 ${className}`}
@@ -45,4 +32,4 @@ export function AdminSidebar({
   );
 }
 
-export default AdminSidebar;
+export default AdminSidebarDesktopView;

@@ -1,7 +1,7 @@
 import { Outlet } from "react-router-dom";
-import AdminHeader from "../components/AdminHeader/AdminHeader";
+import { AdminHeaderDesktopView } from "./components/AdminHeaderDesktopView/AdminHeaderDesktopView";
 import adminBg from "../../../../assets/admin-bg.jpg";
-import { AdminSidebar } from "../components/AdminSidebar/AdminSidebar";
+import { AdminSidebarDesktopView } from "./components/AdminSidebarDesktopView/AdminSidebarDesktopView";
 import { ADMIN_BRAND } from "../models/constants/adminLayoutView.constants";
 import { useAdminSidebarViewModel } from "../viewmodels/useAdminSidebarViewModel";
 
@@ -27,11 +27,11 @@ export default function AdminLayoutView() {
           boxShadow: "0 2rem 6rem rgba(0, 46, 56, 0.18)",
         }}
       >
-        <AdminSidebar brand={ADMIN_BRAND} items={vm.navLinks} />
+        <AdminSidebarDesktopView brand={ADMIN_BRAND} items={vm.navLinks} />
 
         {/* Main Container Shell */}
         <div className="relative flex flex-1 flex-col overflow-hidden min-w-0">
-          <AdminHeader />
+          <AdminHeaderDesktopView />
 
           <main
             id="admin-main-viewport"
