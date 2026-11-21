@@ -28,7 +28,7 @@ export function UserProfile({
   const trigger = (
     <button
       type="button"
-      className={`group flex items-center gap-2.5 rounded-full border border-midnight-teal/10 bg-white/70 py-1 pl-1 pr-3.5 shadow-2xs backdrop-blur-md transition-all duration-200 hover:border-midnight-teal/25 hover:bg-white/90 hover:shadow-xs focus:outline-none focus:ring-2 focus:ring-midnight-teal/20 ${className}`.trim()}
+      className={`group flex cursor-pointer select-none items-center gap-2.5 rounded-full border border-midnight-teal/15 bg-white/80 py-1 pl-1 pr-3.5 shadow-2xs backdrop-blur-md transition-all duration-200 hover:border-midnight-teal/30 hover:bg-white hover:shadow-xs focus:outline-none focus:ring-2 focus:ring-primary/20 ${className}`.trim()}
     >
       {/* Avatar with fallback skeleton/gray circle */}
       {avatarUrl && !imageError ? (
