@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../../shared/context/useAuth";
 import type { AdminHeaderViewModel } from "../models/types/adminLayoutView.types";
+import { extractChurchName } from "../models/utils/adminLayout.utils";
 
 export function useAdminHeaderViewModel(): AdminHeaderViewModel {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -21,14 +22,7 @@ export function useAdminHeaderViewModel(): AdminHeaderViewModel {
     }
   };
 
-  // Derive Church Name from user session or fallback cleanly to "No Church"
-  const rawUser = user as unknown as Record<string, unknown> | null;
-  const churchName =
-    (typeof rawUser?.church_name === "string" && rawUser.church_name.trim()) ||
-    (typeof rawUser?.home_church_name === "string" && rawUser.home_church_name.trim()) ||
-    (typeof (rawUser?.church as Record<string, unknown>)?.name === "string" &&
-      ((rawUser?.church as Record<string, unknown>).name as string).trim()) ||
-    "No Church";
+  const churchName = extractChurchName(user);
 
   return {
     userName: user?.username || "Admin",

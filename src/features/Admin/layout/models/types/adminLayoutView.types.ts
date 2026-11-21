@@ -121,11 +121,4 @@ export interface AdminSidebarViewModel {
   expand: () => void;
   collapse: () => void;
   pendingApplicationsCount: number;
-  showPrayerWall: boolean;
-  showContentManagement: boolean;
-  showServices: boolean;
-  showCommunity: boolean;
-  showGiving: boolean;
-  showEventsAnnouncement: boolean;
-  showRegistrations: boolean;
 }

@@ -1,10 +1,11 @@
+import { AnimatePresence, motion } from "framer-motion";
+import { LogOut, User as UserIcon } from "lucide-react";
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { useLocation, useNavigate } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
-import { LogOut, User as UserIcon } from "lucide-react";
 import { Button } from "../../../../../../shared/components/Button/Button";
 import type { DropDownNavmenuProps } from "../../../models/types/adminLayoutView.types";
+import { isNavItemActive } from "../../../models/utils/adminLayout.utils";
 
 export function DropDownNavmenu({
   isOpen,
@@ -101,22 +102,13 @@ export function DropDownNavmenu({
               {/* Navigation Menu Items List */}
               <nav className="flex flex-col gap-1.5 pt-1">
                 {items.map((item) => {
-                  const isExactActive = location.pathname === item.to;
-                  const isChildActive = Boolean(
-                    item.subItems?.some(
-                      (sub) =>
-                        location.pathname === sub.to ||
-                        location.pathname.startsWith(`${sub.to}/`),
-                    ),
+                  const { isActive, isSelfOrChildActive } = isNavItemActive(
+                    location.pathname,
+                    item
                   );
-                  const isActive =
-                    isExactActive ||
-                    (!item.subItems &&
-                      location.pathname.startsWith(`${item.to}/`));
-                  const isSelfOrChildActive = isActive || isChildActive;
                   const Icon = item.icon;
                   const hasSubItems = Boolean(
-                    item.subItems && item.subItems.length > 0,
+                    item.subItems && item.subItems.length > 0
                   );
 
                   return (

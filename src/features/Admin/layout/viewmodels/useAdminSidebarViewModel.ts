@@ -69,12 +69,5 @@ export function useAdminSidebarViewModel(): AdminSidebarViewModel {
     expand,
     collapse,
     pendingApplicationsCount,
-    showPrayerWall: can("prayer_wall"),
-    showContentManagement: can("content_management"),
-    showServices: can("services"),
-    showCommunity: can("community"),
-    showGiving: can("giving"),
-    showEventsAnnouncement: can("events_announcement"),
-    showRegistrations: can("registrations"),
   };
 }

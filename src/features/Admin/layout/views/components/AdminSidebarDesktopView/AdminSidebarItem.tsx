@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "../../../../../../shared/components/Button/Button";
 import type { AdminSidebarItemProps } from "../../../models/types/adminLayoutView.types";
+import { isNavItemActive } from "../../../models/utils/adminLayout.utils";
 
 export function AdminSidebarItem({
   item,
@@ -13,15 +14,11 @@ export function AdminSidebarItem({
   const hasSubItems = Boolean(item.subItems && item.subItems.length > 0);
   const Icon = item.icon;
 
-  // Checks if the user is currently on this route or any of its sub-routes
-  const isExactActive = location.pathname === item.to;
-  const isChildActive = Boolean(
-    item.subItems?.some(
-      (sub) => location.pathname === sub.to || location.pathname.startsWith(`${sub.to}/`)
-    )
+  // Checks route active status (self or any nested sub-items)
+  const { isActive, isSelfOrChildActive } = isNavItemActive(
+    location.pathname,
+    item
   );
-  const isActive = isExactActive || (!hasSubItems && location.pathname.startsWith(`${item.to}/`));
-  const isSelfOrChildActive = isActive || isChildActive;
 
   // Handler for menu clicks: if minimized, auto-expand sidebar as requested
   const handleItemClick = () => {
