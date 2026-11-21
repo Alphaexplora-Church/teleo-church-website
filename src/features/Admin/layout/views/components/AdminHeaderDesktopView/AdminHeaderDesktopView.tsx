@@ -1,4 +1,4 @@
-import { Menu, Building2 } from "lucide-react";
+import { Menu } from "lucide-react";
 import type { AdminHeaderDesktopViewProps } from "../../../models/types/adminLayoutView.types";
 import { UserProfile } from "../UserProfile/UserProfile";
 import { Button } from "../../../../../../shared/components/Button/Button";
@@ -12,7 +12,7 @@ export function AdminHeaderDesktopView({
   isLoggingOut = false,
 }: AdminHeaderDesktopViewProps) {
   return (
-    <header className="flex w-full items-center justify-between border-b border-midnight-teal/10 bg-white/70 px-5 py-3.5 backdrop-blur-md lg:px-8">
+    <header className="relative z-30 flex w-full items-center justify-between border-b border-midnight-teal/10 bg-white/70 px-5 py-3.5 backdrop-blur-md lg:px-8">
       {/* Left Section: Burger Button + Name of Church */}
       <div className="flex items-center gap-4 min-w-0">
         {/* Burger Button with parallel state when minimized */}
@@ -31,10 +31,9 @@ export function AdminHeaderDesktopView({
           />
         </Button>
 
-        {/* Church Name (larger, no border) */}
-        <div className="flex items-center gap-2.5 min-w-0">
-          <Building2 className="h-5 w-5 shrink-0 text-midnight-teal/70" />
-          <span className="font-sans text-base sm:text-lg font-bold text-midnight-teal truncate tracking-tight">
+        {/* Church Name (large, name only, primary color) */}
+        <div className="flex items-center min-w-0">
+          <span className="font-sans text-xl font-bold text-primary truncate tracking-tight">
             {churchName || "No Church"}
           </span>
         </div>

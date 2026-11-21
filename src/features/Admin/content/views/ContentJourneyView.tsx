@@ -105,7 +105,7 @@ export function ContentJourneyView() {
   } = useAdminContentViewModel();
 
   return (
-    <div className="flex flex-col min-h-full w-full overflow-x-hidden overflow-y-auto px-4 sm:px-6 md:px-8 py-4 sm:py-6 gap-4 sm:gap-6 pb-12 sm:pb-16">
+    <div className="w-full space-y-6">
       {/* 1. Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full shrink-0">
         <div>

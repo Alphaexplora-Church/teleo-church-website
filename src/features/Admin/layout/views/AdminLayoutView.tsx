@@ -47,9 +47,16 @@ export default function AdminLayoutView() {
 
         <main
           id="admin-main-viewport"
-          className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 overscroll-contain p-4 lg:p-8"
+          onClick={() => {
+            if (!sidebarVm.isCollapsed) {
+              sidebarVm.collapse();
+            }
+          }}
+          className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 overscroll-contain p-4 sm:p-6 lg:p-8"
         >
-          <Outlet />
+          <div className="w-full">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

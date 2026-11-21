@@ -32,6 +32,10 @@
   --font-sans: "Outfit", sans-serif;
 }
 
+* {
+  @apply border border-red-400;
+}
+
 html {
   @apply scroll-smooth;
 }

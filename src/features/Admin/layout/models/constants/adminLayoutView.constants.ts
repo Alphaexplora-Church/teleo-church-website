@@ -8,7 +8,6 @@ import {
   ClipboardCheck,
   MessageSquareHeart,
   UserCog,
-  Settings,
   ClipboardList,
 } from "lucide-react";
 import type { AdminBrand, AdminNavMenuConfig } from "../types/adminLayoutView.types";
@@ -83,10 +82,5 @@ export const ADMIN_NAV_MENU_CONFIG: readonly AdminNavMenuConfig[] = [
     to: "/admin/users",
     label: "User Account Management",
     icon: UserCog,
-  },
-  {
-    to: "/admin/settings",
-    label: "Settings",
-    icon: Settings,
   },
 ] as const;

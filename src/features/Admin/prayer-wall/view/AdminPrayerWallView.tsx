@@ -9,7 +9,7 @@ export default function AdminPrayerWallView() {
     const theme = CARD_THEMES[vm.featuredIndex % CARD_THEMES.length];
 
     return (
-        <div className="mx-auto w-full max-w-7xl space-y-6">
+        <div className="w-full space-y-6">
                     {/* Header with Title & View Mode Switcher */}
                     <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <div>

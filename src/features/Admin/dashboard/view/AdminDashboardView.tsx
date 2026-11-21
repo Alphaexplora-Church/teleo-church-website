@@ -11,7 +11,7 @@ export default function AdminDashboardView() {
     // const firstTimePercent = visitorTotal ? Math.round(((vm.data?.visitors.firstTime ?? 0) / visitorTotal) * 100) : 0;
 
     return (
-        <div className="mx-auto w-full max-w-7xl space-y-6">
+        <div className="w-full space-y-6">
             <header>
                 <h1 className="font-serif text-2xl text-midnight-teal">Home Dashboard</h1>
                 <p className="mt-1 text-sm text-gray-500">A quick overview of church content and registrations.</p>

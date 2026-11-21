@@ -60,7 +60,7 @@ export default function AdminEventsView() {
     const visibleItems: ContentItem[] = isEvent ? vm.filteredEvents : vm.filteredAnnouncements;
 
     return (
-        <div className="mx-auto w-full max-w-7xl space-y-6">
+        <div className="w-full space-y-6">
                     <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                         <div>
                             <h1 className="font-serif text-2xl text-midnight-teal">{isEvent ? 'Events' : 'Announcements'}</h1>

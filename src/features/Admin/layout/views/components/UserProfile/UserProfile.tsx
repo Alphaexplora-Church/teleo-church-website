@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "react-router-dom";
 import { User as UserIcon } from "lucide-react";
 import type { AuthUser } from "../../../../../../shared/models/types/auth.types";
 import { Dropdown } from "../../../../../../shared/components/Dropdown/Dropdown";
@@ -17,7 +18,9 @@ export function UserProfile({
   isLoggingOut = false,
   className = "",
 }: UserProfileProps) {
+  const [isOpen, setIsOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const location = useLocation();
 
   const displayName = user?.username || user?.email?.split("@")[0] || "Admin";
   const avatarUrl = user?.profile_picture_url;
@@ -50,6 +53,9 @@ export function UserProfile({
 
   return (
     <Dropdown
+      key={location.pathname}
+      isOpen={isOpen}
+      onOpenChange={setIsOpen}
       trigger={trigger}
       align="right"
       width="w-56"
@@ -57,6 +63,7 @@ export function UserProfile({
     >
       <UserDropdownInfo
         user={user}
+        onClose={() => setIsOpen(false)}
         onLogout={onLogout}
         isLoggingOut={isLoggingOut}
       />

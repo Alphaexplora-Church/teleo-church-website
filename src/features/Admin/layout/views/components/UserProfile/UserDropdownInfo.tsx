@@ -9,12 +9,14 @@ import {
 
 export interface UserDropdownInfoProps {
   user?: AuthUser | null;
+  onClose?: () => void;
   onLogout?: () => Promise<void> | void;
   isLoggingOut?: boolean;
 }
 
 export function UserDropdownInfo({
   user,
+  onClose,
   onLogout,
   isLoggingOut = false,
 }: UserDropdownInfoProps) {
@@ -45,7 +47,7 @@ export function UserDropdownInfo({
       <DropdownItem
         icon={<User className="h-4 w-4 text-midnight-teal/70" />}
         onClick={() => {
-          // Navigates or opens user profile view
+          onClose?.();
           navigate("/admin/settings");
         }}
       >
@@ -55,6 +57,7 @@ export function UserDropdownInfo({
       <DropdownItem
         icon={<Settings className="h-4 w-4 text-midnight-teal/70" />}
         onClick={() => {
+          onClose?.();
           navigate("/admin/settings");
         }}
       >
@@ -68,6 +71,7 @@ export function UserDropdownInfo({
         danger
         disabled={isLoggingOut}
         onClick={() => {
+          onClose?.();
           void onLogout?.();
         }}
       >
