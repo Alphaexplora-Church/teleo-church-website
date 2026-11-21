@@ -87,6 +87,31 @@ export interface AdminHeaderDesktopViewProps {
 }
 
 /**
+ * Props for AdminHeaderMobileView component.
+ */
+export interface AdminHeaderMobileViewProps {
+  churchName?: string;
+  brand?: AdminBrand;
+  items: readonly AdminNavItem[];
+  user?: AuthUser | null;
+  onLogout?: () => Promise<void> | void;
+  isLoggingOut?: boolean;
+}
+
+/**
+ * Props for DropDownNavmenu component.
+ */
+export interface DropDownNavmenuProps {
+  isOpen: boolean;
+  onClose: () => void;
+  brand?: AdminBrand;
+  user?: AuthUser | null;
+  items: readonly AdminNavItem[];
+  onLogout?: () => Promise<void> | void;
+  isLoggingOut?: boolean;
+}
+
+/**
  * ViewModel contract for Admin Sidebar.
  */
 export interface AdminSidebarViewModel {

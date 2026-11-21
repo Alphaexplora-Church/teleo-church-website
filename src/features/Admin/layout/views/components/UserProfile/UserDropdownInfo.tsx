@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { User, Settings, LogOut } from "lucide-react";
+import { Settings, LogOut } from "lucide-react";
 import type { AuthUser } from "../../../../../../shared/models/types/auth.types";
 import {
   DropdownHeader,
@@ -43,17 +43,7 @@ export function UserDropdownInfo({
 
       <DropdownDivider />
 
-      {/* Menu Options matching wireframe */}
-      <DropdownItem
-        icon={<User className="h-4 w-4 text-midnight-teal/70" />}
-        onClick={() => {
-          onClose?.();
-          navigate("/admin/settings");
-        }}
-      >
-        User Profile
-      </DropdownItem>
-
+      {/* Menu Options */}
       <DropdownItem
         icon={<Settings className="h-4 w-4 text-midnight-teal/70" />}
         onClick={() => {

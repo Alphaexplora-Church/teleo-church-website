@@ -10,7 +10,7 @@ export function AdminSidebarDesktopView({
 }: AdminSidebarDesktopViewProps) {
   return (
     <aside
-      className={`admin-nav relative z-40 flex shrink-0 flex-col border-r border-midnight-teal/10 bg-white/85 backdrop-blur-2xl transition-all duration-300 ease-in-out h-full ${
+      className={`admin-nav relative z-40 hidden lg:flex shrink-0 flex-col border-r border-midnight-teal/10 bg-white/85 backdrop-blur-2xl transition-all duration-300 ease-in-out h-full ${
         isCollapsed ? "w-20 px-2" : "w-64 px-4"
       } ${className}`.trim()}
     >

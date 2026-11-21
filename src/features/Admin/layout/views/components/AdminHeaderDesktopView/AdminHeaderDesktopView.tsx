@@ -11,7 +11,7 @@ export function AdminHeaderDesktopView({
   isLoggingOut = false,
 }: AdminHeaderDesktopViewProps) {
   return (
-    <header className="relative z-30 flex w-full items-center justify-between border-b border-midnight-teal/10 bg-white/70 px-5 py-3.5 backdrop-blur-md lg:px-8">
+    <header className="relative z-30 hidden lg:flex w-full items-center justify-between border-b border-midnight-teal/10 bg-white/70 px-5 py-3.5 backdrop-blur-md lg:px-8">
       {/* Left Section: Burger Button + Name of Church */}
       <div className="flex items-center gap-10 min-w-0">
         {/* Burger Button with border */}
