@@ -65,7 +65,7 @@ export default function AdminRegistrationsView() {
     };
 
     return (
-        <div className="mx-auto w-full max-w-7xl space-y-6">
+        <div className="w-full space-y-6">
                     {/* ── Page Title ─────────────────────────────────── */}
                     <div>
                         <h1 className="text-2xl font-serif text-midnight-teal">Registrations</h1>

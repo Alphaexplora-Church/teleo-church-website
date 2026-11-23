@@ -1,15 +1,23 @@
 import { Outlet } from "react-router-dom";
-import AdminHeader from "../components/AdminHeader/AdminHeader";
+import { AdminHeaderDesktopView } from "./components/AdminHeaderDesktopView/AdminHeaderDesktopView";
+import { AdminHeaderMobileView } from "./components/AdminHeaderMobileView/AdminHeaderMobileView";
 import adminBg from "../../../../assets/admin-bg.jpg";
-import { AdminSidebar } from "../components/AdminSidebar/AdminSidebar";
+import { AdminSidebarDesktopView } from "./components/AdminSidebarDesktopView/AdminSidebarDesktopView";
 import { ADMIN_BRAND } from "../models/constants/adminLayoutView.constants";
 import { useAdminSidebarViewModel } from "../viewmodels/useAdminSidebarViewModel";
+import { useAdminHeaderViewModel } from "../viewmodels/useAdminHeaderViewModel";
 
 export default function AdminLayoutView() {
-  const vm = useAdminSidebarViewModel();
+  const sidebarVm = useAdminSidebarViewModel();
+  const headerVm = useAdminHeaderViewModel();
 
   return (
-    <div className="fixed inset-0 overflow-hidden bg-[#d9dfdd] flex items-center justify-center p-0 lg:p-4">
+    <div
+      className="relative flex h-screen w-screen overflow-hidden text-midnight-teal flex-col lg:flex-row"
+      style={{
+        background: `linear-gradient(135deg, rgba(235, 242, 239, 0.88), rgba(247, 244, 236, 0.94)), url(${adminBg}) center / cover fixed no-repeat`,
+      }}
+    >
       {/* Background Decor Layer */}
       <div
         className="fixed inset-0 pointer-events-none -z-10"
@@ -19,27 +27,48 @@ export default function AdminLayoutView() {
         }}
       />
 
-      {/* Main Admin Shell Frame */}
-      <div
-        className="relative isolate flex flex-col lg:flex-row w-full lg:max-w-[1500px] h-full lg:h-[calc(100vh-2rem)] overflow-hidden lg:rounded-[2rem] border-0 lg:border lg:border-white/60 text-midnight-teal"
-        style={{
-          background: `linear-gradient(135deg, rgba(235, 242, 239, 0.84), rgba(247, 244, 236, 0.9)), url(${adminBg}) center / cover fixed no-repeat`,
-          boxShadow: "0 2rem 6rem rgba(0, 46, 56, 0.18)",
-        }}
-      >
-        <AdminSidebar brand={ADMIN_BRAND} items={vm.navLinks} />
+      {/* Mobile Header & Responsive DropDown Navmenu */}
+      <AdminHeaderMobileView
+        churchName={headerVm.churchName}
+        brand={ADMIN_BRAND}
+        items={sidebarVm.navLinks}
+        user={headerVm.user}
+        onLogout={headerVm.logout}
+        isLoggingOut={headerVm.isLoggingOut}
+      />
 
-        {/* Main Container Shell */}
-        <div className="relative flex flex-1 flex-col overflow-hidden min-w-0">
-          <AdminHeader />
+      {/* Desktop Sidebar (Collapsible with smooth transition) */}
+      <AdminSidebarDesktopView
+        brand={ADMIN_BRAND}
+        items={sidebarVm.navLinks}
+        isCollapsed={sidebarVm.isCollapsed}
+        onExpand={sidebarVm.expand}
+      />
 
-          <main
-            id="admin-main-viewport"
-            className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 overscroll-contain p-4 lg:p-6"
-          >
+      {/* Main Full-Width Column: Header + Viewport */}
+      <div className="relative flex flex-1 flex-col overflow-hidden min-w-0">
+        <AdminHeaderDesktopView
+          churchName={headerVm.churchName}
+          user={headerVm.user}
+          isSidebarCollapsed={sidebarVm.isCollapsed}
+          onToggleSidebar={sidebarVm.toggleCollapse}
+          onLogout={headerVm.logout}
+          isLoggingOut={headerVm.isLoggingOut}
+        />
+
+        <main
+          id="admin-main-viewport"
+          onClick={() => {
+            if (!sidebarVm.isCollapsed) {
+              sidebarVm.collapse();
+            }
+          }}
+          className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 overscroll-contain p-4 sm:p-6 lg:p-8"
+        >
+          <div className="w-full">
             <Outlet />
-          </main>
-        </div>
+          </div>
+        </main>
       </div>
     </div>
   );

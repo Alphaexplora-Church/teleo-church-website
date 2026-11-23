@@ -69,12 +69,27 @@ export interface ApiDisciplerLoad {
 }
 
 /**
+ * Active discussion question structure returned inside dashboard or from discussion questions endpoint
+ */
+export interface ApiDiscussionQuestion {
+  id?: string | number;
+  question_id?: string | number;
+  church_id?: string | number;
+  question_text?: string;
+  text?: string;
+  status?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/**
  * Full response structure for GET /api/churches/:churchId/discipleship-dashboard (Journey 13a)
  */
 export interface DiscipleshipDashboardResponse {
   groups: ApiDiscipleshipGroup[];
   discipler_load?: ApiDisciplerLoad[];
   discipleship_enabled?: boolean;
+  active_discussion_question?: ApiDiscussionQuestion | string | null;
 }
 
 /**

@@ -32,7 +32,7 @@ export function resolveLeaderInfo(
     (typeof leaderObj === "object" && leaderObj !== null ? leaderObj : {}) as Record<string, unknown>;
 
   // 2. Identify leader ID from any possible field
-  const leaderId =
+  let leaderId =
     leaderObjRecord.id ||
     leaderObjRecord.uid ||
     leaderObjRecord.user_id ||
@@ -109,14 +109,24 @@ export function resolveLeaderInfo(
     (typeof leaderObjRecord.imageUrl === "string" && leaderObjRecord.imageUrl) ||
     undefined;
 
-  // 6. Fallback: match via candidate leaders pool by leaderId
-  if ((!leaderName || leaderName === "Unassigned Leader") && leaderId && candidates?.length) {
-    const matched = candidates.find(
-      (c) => String(c.id).toLowerCase() === String(leaderId).toLowerCase(),
-    );
-    if (matched) {
-      leaderName = matched.name;
-      if (!leaderImageUrl) leaderImageUrl = matched.imageUrl;
+  // 6. Match via candidate leaders pool
+  if (candidates?.length) {
+    if ((!leaderName || leaderName === "Unassigned Leader") && leaderId) {
+      const matched = candidates.find(
+        (c) => String(c.id).toLowerCase() === String(leaderId).toLowerCase(),
+      );
+      if (matched) {
+        leaderName = matched.name;
+        if (!leaderImageUrl) leaderImageUrl = matched.imageUrl;
+      }
+    } else if (!leaderId && leaderName && leaderName !== "Unassigned Leader") {
+      const matched = candidates.find(
+        (c) => c.name.trim().toLowerCase() === leaderName.trim().toLowerCase(),
+      );
+      if (matched && matched.id) {
+        leaderId = String(matched.id);
+        if (!leaderImageUrl) leaderImageUrl = matched.imageUrl;
+      }
     }
   }
 

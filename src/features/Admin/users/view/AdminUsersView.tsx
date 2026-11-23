@@ -6,7 +6,7 @@ export default function AdminUsersView() {
     const vm = useAdminUsersViewModel();
 
     return (
-        <div className="mx-auto w-full max-w-7xl space-y-6">
+        <div className="w-full space-y-6">
                     <header>
                         <h1 className="font-serif text-2xl text-midnight-teal">User Account Management</h1>
                         <p className="mt-1 text-sm text-gray-500">View and update user account information.</p>
