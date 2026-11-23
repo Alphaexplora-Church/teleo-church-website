@@ -1,7 +1,9 @@
 import axios, { type AxiosError } from 'axios';
 import type { ApiErrorResponse } from '../types/auth.types';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
+// In dev, call relative paths so the Vite proxy (target: VITE_API_BASE_URL) forwards them.
+// In production, call VITE_API_BASE_URL directly.
+const API_BASE = import.meta.env.DEV ? '' : (import.meta.env.VITE_API_BASE_URL ?? '');
 
 export const axiosClient = axios.create({
   baseURL: API_BASE,
